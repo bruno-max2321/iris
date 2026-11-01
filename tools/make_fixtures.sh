@@ -34,7 +34,11 @@ ffmpeg -y -loglevel error -f lavfi -i "testsrc2=s=540x960:r=30:d=4" \
 
 # 5. Rotation metadata
 ffmpeg -y -loglevel error -f lavfi -i "testsrc2=s=1920x1080:r=30:d=3" -c:v libx264 -pix_fmt yuv420p -crf 20 rot_src.mp4
-ffmpeg -y -loglevel error -display_rotation 90 -i rot_src.mp4 -c copy rotation_meta.mp4 && rm -f rot_src.mp4
+# Write rotation both ways: display-matrix side data (ffmpeg >= 6 input option) and the legacy rotate tag.
+ffmpeg -y -loglevel error -display_rotation 90 -i rot_src.mp4 -c copy -metadata:s:v:0 rotate=90 rotation_meta.mp4 && rm -f rot_src.mp4
+if ! ffprobe -v error -select_streams v:0 -show_entries stream_side_data=rotation:stream_tags=rotate -of csv=p=0 rotation_meta.mp4 | grep -qE "[0-9]"; then
+  echo "warning: this ffmpeg did not write rotation metadata; rotation fixture will be skipped by tests" >&2
+fi
 
 # 6. Silent (no audio stream)
 ffmpeg -y -loglevel error -f lavfi -i "testsrc2=s=540x960:r=30:d=3" -an -c:v libx264 -pix_fmt yuv420p -crf 20 silent.mp4

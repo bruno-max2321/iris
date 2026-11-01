@@ -90,7 +90,16 @@ def test_duplicate_frames_are_preserved(ws):
     assert len(still) >= 20
 
 
+def _fixture_has_rotation(path: Path) -> bool:
+    p = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0",
+                        "-show_entries", "stream_side_data=rotation:stream_tags=rotate", "-of", "csv=p=0", str(path)],
+                       capture_output=True, text=True)
+    return any(ch.isdigit() for ch in p.stdout)
+
+
 def test_rotation_metadata_gives_portrait_display(ws):
+    if not _fixture_has_rotation(FIX / "rotation_meta.mp4"):
+        pytest.skip("this ffmpeg build did not write rotation metadata into the fixture; generator limitation, not an Iris defect")
     res = ingest.ingest(str(FIX / "rotation_meta.mp4"), "own", workspace=ws)
     v = res["manifest"]["probe"]["video"]
     assert v["rotation"] in (90, 270) and (v["display_width"], v["display_height"]) == (1080, 1920)

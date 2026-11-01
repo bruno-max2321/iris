@@ -268,7 +268,9 @@ Estados: `created → indexed → measuring → interpreting_grok → interpreti
 | Red | Internet, PyPI, yt-dlp; YouTube e Instagram piden cookies | Cuenta dedicada |
 | Persistencia | `/workspace` ext4 persistente | Instalación única; `doctor` verifica |
 
-Pendiente de medir en el piloto: PyAV y Farneback sobre un minuto; MediaPipe a 320 px; coste real por referencia de J2; tasa de acuerdo entre jueces; minutos de revisión.
+**Medido en la VM con el hito 1 (bot, 2026-11-01):** medición por frame a 320 px ≈ 30,7 frames/s (el Mac M-series hace 61); un reel real de Instagram de 68,7 s a 24 fps (1 650 frames) se indexó y midió completo en 53,6 s, es decir ≈ 47 s por minuto de video a 24 fps y ≈ 60 s a 30 fps; salida Parquet; cobertura full/full. La ingesta por URL de Instagram funcionó **sin cookies** en esa prueba; se mantiene la cuenta dedicada como respaldo porque el bloqueo es intermitente. Decodificación vía ffmpeg rawvideo con `-fps_mode passthrough`; PyAV no fue necesario en el hito 1.
+
+Pendiente de medir: Farneback y PySceneDetect sobre un minuto; MediaPipe a 320 px; OCR sobre video real; coste real por referencia de J2; tasa de acuerdo entre jueces; minutos de revisión.
 
 Presupuesto de interpretación: 100 USD/mes. Tope por referencia 1,5 USD en economy. Límite mensual configurado en el servidor de Anthropic como tope duro. `iris ledger summary` muestra el acumulado; al 80 % el bot avisa; al 100 % `interpret run` sale con código 4.
 
