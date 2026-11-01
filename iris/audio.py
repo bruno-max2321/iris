@@ -11,7 +11,7 @@ from typing import Any
 
 import numpy as np
 
-METHOD_VERSION = "audio@0.1.0"
+METHOD_VERSION = "audio@0.1.1"
 
 
 def _ffmpeg(args: list[str], timeout: int = 900) -> tuple[int, str]:
@@ -22,17 +22,34 @@ def _ffmpeg(args: list[str], timeout: int = 900) -> tuple[int, str]:
 
 def loudness(src: Path) -> dict[str, Any]:
     rc, out = _ffmpeg(["-i", str(src), "-vn", "-af", "ebur128=peak=true", "-f", "null", "-"])
+    # ebur128 logs one progress line per 100 ms ("I: -70.0 LUFS" while gated) before the final Summary
+    # block. Only the Summary carries the programme values, so everything before it is discarded.
+    summary = out[out.rfind("Summary:"):] if "Summary:" in out else ""
+
     def grab(pattern: str) -> float | None:
-        m = re.search(pattern, out)
+        m = re.search(pattern, summary)
         return float(m.group(1)) if m else None
+
     return {
-        "integrated_lufs": grab(r"I:\s*(-?[\d.]+) LUFS"),
-        "lra_lu": grab(r"LRA:\s*(-?[\d.]+) LU"),
+        "integrated_lufs": grab(r"\n\s*I:\s*(-?[\d.]+) LUFS"),
+        "lra_lu": grab(r"\n\s*LRA:\s*(-?[\d.]+) LU"),
         "true_peak_dbtp": grab(r"Peak:\s*(-?[\d.]+) dBFS"),
-        "threshold_lufs": grab(r"Threshold:\s*(-?[\d.]+) LUFS"),
-        "method": "ffmpeg ebur128=peak=true",
-        "ok": rc == 0,
+        "threshold_lufs": grab(r"Integrated loudness:\s*\n\s*I:[^\n]*\n\s*Threshold:\s*(-?[\d.]+) LUFS"),
+        "method": "ffmpeg ebur128=peak=true (summary block)",
+        "ok": rc == 0 and bool(summary),
     }
+
+
+def loudness_crosscheck(src: Path) -> dict[str, Any]:
+    """Independent read of the same programme through loudnorm's measurement pass (used by tests)."""
+    import json as _json
+
+    rc, out = _ffmpeg(["-i", str(src), "-vn", "-af", "loudnorm=print_format=json", "-f", "null", "-"])
+    i, j = out.rfind("{"), out.rfind("}")
+    if rc != 0 or i < 0 or j < i:
+        return {"ok": False}
+    d = _json.loads(out[i:j + 1])
+    return {"ok": True, "integrated_lufs": float(d["input_i"]), "lra_lu": float(d["input_lra"]), "true_peak_dbtp": float(d["input_tp"])}
 
 
 def silences(src: Path, noise_db: float = -35.0, min_s: float = 0.3) -> list[dict[str, float]]:

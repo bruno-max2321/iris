@@ -22,21 +22,16 @@ KEYFRAME_WIDTH = 320
 
 
 def extract_keyframes(src: Path, frame_ids: list[int], out_dir: Path, width: int, display_w: int, display_h: int) -> dict[int, np.ndarray]:
-    from PIL import Image
+    """Exactly the requested presented frames as RGB arrays (streaming pick; no select expression)."""
+    from . import decode
 
     if not frame_ids:
         return {}
     h = int(round(display_h * width / display_w)); h -= h % 2
-    expr = "+".join(f"eq(n\\,{i})" for i in frame_ids)
-    subprocess.run(["ffmpeg", "-nostdin", "-loglevel", "error", "-i", str(src), "-fps_mode", "passthrough", "-an",
-                    "-vf", f"select='{expr}',scale={width}:{h}:flags=area", str(out_dir / "k_%06d.png")],
-                   check=False, capture_output=True, timeout=1800)
-    files = sorted(out_dir.glob("k_*.png"))
-    out = {}
-    for fid, f in zip(frame_ids, files):
-        with Image.open(f) as im:
-            out[fid] = np.asarray(im.convert("RGB"))
-    return out
+    arrays, err = decode.pick_frames(src, sorted(set(frame_ids)), width, max(2, h))
+    if err:
+        raise RuntimeError(f"keyframe extraction incomplete: {err}")
+    return arrays
 
 
 def skin_mask(rgb: np.ndarray) -> np.ndarray:

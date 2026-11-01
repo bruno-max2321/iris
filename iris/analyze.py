@@ -213,7 +213,7 @@ def build_coverage(manifest: dict[str, Any], index: dict[str, Any] | None, meas:
 
 
 # --------------------------------------------------------------------------------------------- entry
-def analyze(asset_id: str, mode: str = "economy", workspace: Path | None = None) -> dict[str, Any]:
+def analyze(asset_id: str, mode: str = "economy", workspace: Path | None = None, force: bool = False) -> dict[str, Any]:
     if mode not in ("economy", "strict"):
         raise AnalyzeError("mode must be economy or strict", "usage")
     manifest = ingest.load_manifest(asset_id, workspace)
@@ -224,8 +224,15 @@ def analyze(asset_id: str, mode: str = "economy", workspace: Path | None = None)
         job, created = store.create_or_get_job(key, asset_id, "analyze", mode)
         ref_dir = store.workspace / "refs" / asset_id
         cov_path = ref_dir / "coverage.json"
-        if not created and job["state"] in ("review_ready", "partial", "failed") and "coverage" in job["stages_done"] and cov_path.exists():
-            return {"job": job, "created": False, "coverage": _read(cov_path)}
+        if force and not created:
+            # keep index and per-frame measurement (versioned in the job key); recompute every derived stage
+            for name in DERIVED_STAGES:
+                (ref_dir / f"{name}.done.json").unlink(missing_ok=True)
+            cov_path.unlink(missing_ok=True)
+            job = store.update_job(job["job_id"], state="measuring")
+        elif not created and job["state"] in ("review_ready", "partial", "failed") and "coverage" in job["stages_done"] and cov_path.exists():
+            cov = _read(cov_path)
+            return {"job": job, "created": False, "coverage": cov, "stages": cov.get("stages")}
         try:
             with store.heavy_job_lock():
                 return _run(store, job, manifest, ref_dir, mode)

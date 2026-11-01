@@ -16,7 +16,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-METHOD_VERSION = "textocr@0.1.1"
+METHOD_VERSION = "textocr@0.1.2"
 OCR_LONG_SIDE = 960
 ECONOMY_STEP = 6
 FIRST_FRAME_BUDGET_S = float(os.environ.get("IRIS_OCR_FIRST_FRAME_BUDGET_S", "30"))
@@ -124,20 +124,28 @@ def sample_frame_ids(n_frames: int, shots: list[dict[str, Any]], mode: str) -> l
     return sorted(i for i in ids if 0 <= i < n_frames)
 
 
-def extract_frames(src: Path, frame_ids: list[int], out_dir: Path, long_side: int, display_w: int, display_h: int) -> dict[int, Path]:
-    """Extract exactly these presented frames as JPEG, scaled so the long side is `long_side`."""
+def extract_frames(src: Path, frame_ids: list[int], out_dir: Path, long_side: int, display_w: int, display_h: int) -> tuple[dict[int, Path], str | None]:
+    """Write exactly these presented frames as JPEG, long side = `long_side`. Returns (files, error)."""
+    from PIL import Image
+
+    from . import decode
+
     if not frame_ids:
-        return {}
+        return {}, None
     if display_h >= display_w:
-        scale = f"scale=-2:{long_side}"
+        h = long_side - (long_side % 2); w = int(round(display_w * h / display_h)); w -= w % 2
     else:
-        scale = f"scale={long_side}:-2"
-    expr = "+".join(f"eq(n\\,{i})" for i in frame_ids)
-    cmd = ["ffmpeg", "-nostdin", "-loglevel", "error", "-i", str(src), "-fps_mode", "passthrough", "-an",
-           "-vf", f"select='{expr}',{scale}", "-q:v", "3", str(out_dir / "f_%06d.jpg")]
-    subprocess.run(cmd, check=False, capture_output=True, timeout=1800)
-    files = sorted(out_dir.glob("f_*.jpg"))
-    return {fid: f for fid, f in zip(frame_ids, files)}
+        w = long_side - (long_side % 2); h = int(round(display_h * w / display_w)); h -= h % 2
+    try:
+        arrays, err = decode.pick_frames(src, frame_ids, max(2, w), max(2, h))
+    except decode.DecodeError as exc:
+        return {}, f"decode failed: {exc}"
+    files: dict[int, Path] = {}
+    for fid, rgb in arrays.items():
+        f = out_dir / f"f_{fid:06d}.jpg"
+        Image.fromarray(rgb).save(f, quality=92)
+        files[fid] = f
+    return files, err
 
 
 # ----------------------------------------------------------------------------------------------- tracks
@@ -217,8 +225,12 @@ def run(src: Path, ref_dir: Path, shots: list[dict[str, Any]], n_frames: int, di
     img_w = img_h = None
     timings: list[float] = []
     try:
-        files = extract_frames(src, ids, tmp, OCR_LONG_SIDE, display_w, display_h)
-        for n, (fid, f) in enumerate(files.items()):
+        files, extract_err = extract_frames(src, ids, tmp, OCR_LONG_SIDE, display_w, display_h)
+        if len(files) != len(ids):
+            return {"schema_version": "1.0.0", "method_version": METHOD_VERSION, "status": "failed",
+                    "reason": f"frame extraction returned {len(files)} of {len(ids)} frames: {extract_err or 'unknown'}",
+                    "backend": backend.name, "sampled_frames": len(ids), "frames_done": 0, "tracks": []}
+        for n, (fid, f) in enumerate(sorted(files.items())):
             if img_w is None:
                 from PIL import Image
 

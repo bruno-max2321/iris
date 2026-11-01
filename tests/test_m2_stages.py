@@ -102,10 +102,18 @@ def test_regions_and_light_on_colour_blocks(ws):
 
 
 def test_audio_loudness_matches_ffmpeg_and_silent_is_absent(ws):
+    from iris import audio
+
     out, ref = _analyze(ws, "cfr_30.mp4")
     a = _j(ref / "audio.json")
     assert a["status"] == "ok" and a["loudness"]["integrated_lufs"] is not None
     assert a["loudness"]["true_peak_dbtp"] is not None
+    # the summary block, not the first gated progress line (-70.0): cross-check against loudnorm
+    x = audio.loudness_crosscheck(FIX / "cfr_30.mp4")
+    assert x["ok"]
+    assert abs(a["loudness"]["integrated_lufs"] - x["integrated_lufs"]) <= 0.5
+    assert abs(a["loudness"]["true_peak_dbtp"] - x["true_peak_dbtp"]) <= 0.5
+    assert a["loudness"]["integrated_lufs"] > -60
     out2, ref2 = _analyze(ws, "silent.mp4")
     assert _j(ref2 / "audio.json")["status"] == "absent" and out2["coverage"]["stages"]["audio"]["status"] == "absent"
 
@@ -123,3 +131,23 @@ def test_rerun_uses_checkpoints(ws):
     (ref / "motion.json").unlink()
     out2 = analyze.analyze(out1["job"]["asset_id"], workspace=ws)
     assert out2["created"] is False  # job already complete; nothing recomputed
+
+
+def test_pick_frames_returns_exactly_the_requested_ids_without_select_expressions():
+    from iris import decode
+
+    ids = list(range(0, 90, 1)) + [89]
+    arrays, err = decode.pick_frames(FIX / "cfr_30.mp4", ids, 96, 54)
+    assert err is None and sorted(arrays) == list(range(90))
+    arrays, err = decode.pick_frames(FIX / "cfr_30.mp4", [5, 400], 96, 54)
+    assert 5 in arrays and 400 not in arrays and "1 of 2" in err
+
+
+def test_analyze_force_recomputes_derived_stages(ws):
+    out1, ref = _analyze(ws, "cfr_30.mp4")
+    (ref / "shots.json").unlink()
+    out2 = analyze.analyze(out1["job"]["asset_id"], workspace=ws)
+    assert out2["created"] is False and out2["stages"]["shots"]["status"] == "ok"
+    out3 = analyze.analyze(out1["job"]["asset_id"], workspace=ws, force=True)
+    assert out3["created"] is True and (ref / "shots.json").exists()
+    assert out3["stages"]["shots"].get("cached") is None
