@@ -79,7 +79,7 @@ def cmd_analyze(args: argparse.Namespace) -> int:
     code = exit_codes.OK if cov.get("decode") == "full" and cov.get("measurement") == "full" else exit_codes.PARTIAL
     return _emit({"ok": code == exit_codes.OK, "job_id": out["job"]["job_id"], "state": out["job"]["state"],
                   "created": out["created"], "coverage": cov, "index": out.get("index_summary"),
-                  "measure": out.get("measure_summary")}, code)
+                  "measure": out.get("measure_summary"), "stages": out.get("stages")}, code)
 
 
 def cmd_jobs(args: argparse.Namespace) -> int:
