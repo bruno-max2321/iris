@@ -28,7 +28,7 @@ import numpy as np
 
 from . import decode, worker
 
-METHOD_VERSION = "textocr@0.2.1"
+METHOD_VERSION = "textocr@0.2.2"
 OCR_LONG_SIDE = int(os.environ.get("IRIS_OCR_LONG_SIDE", "960"))
 ECONOMY_STEP = 6
 FIRST_FRAME_BUDGET_S = float(os.environ.get("IRIS_OCR_FIRST_FRAME_BUDGET_S", "180"))   # model load + first frame
@@ -225,28 +225,34 @@ def _containment(a: list[float], b: list[float]) -> float:
     return inter / small if small > 0 else 0.0
 
 
-def _same_line(prev_box: list[float], box: list[float]) -> bool:
-    """Vertical overlap of the two boxes relative to the shorter one (text lines keep their baseline)."""
-    top, bottom = max(prev_box[1], box[1]), min(prev_box[3], box[3])
-    h = min(prev_box[3] - prev_box[1], box[3] - box[1])
-    return h > 0 and (bottom - top) / h >= 0.5
+def _near(prev_box: list[float], box: list[float]) -> bool:
+    """Same caption line despite the block moving: captions anchored at the bottom or centre shift every
+    earlier line up when a new line or word is added. Horizontal overlap >= 0.3 of the narrower box and
+    a vertical centre distance <= 0.3 of the frame height count as the same place."""
+    x0, x1 = max(prev_box[0], box[0]), min(prev_box[2], box[2])
+    narrow = min(prev_box[2] - prev_box[0], box[2] - box[0])
+    if narrow <= 0 or (x1 - x0) / narrow < 0.3:
+        return False
+    cy_prev = (prev_box[1] + prev_box[3]) / 2
+    cy = (box[1] + box[3]) / 2
+    return abs(cy - cy_prev) <= 0.3
 
 
 def _match_score(tr: dict[str, Any], d_norm: str, nb: list[float]) -> tuple[float, str] | None:
     """Return (score, kind) when detection continues the track. kind: same | grow | shrink | similar."""
     t_norm = tr["norm"]
-    if not t_norm or not d_norm:
+    if not t_norm or not d_norm or not _near(tr["box"], nb):
         return None
-    if _iou(tr["box"], nb) >= 0.4 and t_norm == d_norm:
-        return 2.0 + _iou(tr["box"], nb), "same"
-    if _same_line(tr["box"], nb) and _containment(tr["box"], nb) >= 0.6:
-        if len(t_norm) >= 2 and d_norm.startswith(t_norm) and len(d_norm) > len(t_norm):
-            return 1.5 + _containment(tr["box"], nb), "grow"        # build-on reveal: "He" -> "He climbed"
-        if len(d_norm) >= 2 and t_norm.startswith(d_norm) and len(d_norm) < len(t_norm):
-            return 1.2 + _containment(tr["box"], nb), "shrink"      # reveal read with a dropped word, or exit
+    iou = _iou(tr["box"], nb)
+    if t_norm == d_norm:
+        return 2.0 + iou, "same"
+    if len(t_norm) >= 2 and d_norm.startswith(t_norm) and len(d_norm) > len(t_norm):
+        return 1.5 + iou, "grow"            # build-on reveal: "he" -> "heclimbed"
+    if len(d_norm) >= 2 and t_norm.startswith(d_norm) and len(d_norm) < len(t_norm):
+        return 1.2 + iou, "shrink"          # reveal read with a dropped word, or the line exiting
     sim = difflib.SequenceMatcher(None, t_norm, d_norm).ratio()
-    if _iou(tr["box"], nb) >= 0.4 and sim >= 0.6:
-        return _iou(tr["box"], nb) + sim, "similar"
+    if sim >= 0.7:
+        return sim + iou, "similar"         # recogniser slips: "hadamn" / "hadamin" / "hadam:n"; "climbea" -> "climbedonto"
     return None
 
 
@@ -298,10 +304,16 @@ def build_tracks(detections: dict[int, list[dict[str, Any]]], img_w: int, img_h:
     tracks.extend(open_tracks)
     out = []
     for k, tr in enumerate(tracks):
-        # final text: among readings of the longest normalised content, most spaces first, then confidence
+        # final text: majority vote over normalised readings that are at least 80% as long as the longest
+        # (slips like "hadamin" lose to the repeated "hadamn"; partial reveals lose to the full line),
+        # then the longest, the one with most spaces, the most confident
         longest = max(len(r[2]) for r in tr["readings"])
-        finals = [r for r in tr["readings"] if len(r[2]) == longest]
-        text, conf, _, t_full = max(finals, key=lambda r: (r[0].count(" "), r[1]))
+        finals = [r for r in tr["readings"] if len(r[2]) >= 0.8 * longest]
+        counts: dict[str, int] = {}
+        for r in finals:
+            counts[r[2]] = counts.get(r[2], 0) + 1
+        text, conf, _, t_full = max(finals, key=lambda r: (counts[r[2]], len(r[2]), r[0].count(" "), r[1]))
+        t_full = min(r[3] for r in finals if r[2] == _norm(text))
         cy = (tr["box"][1] + tr["box"][3]) / 2
         zone = "upper_third" if cy < 1 / 3 else ("middle_band" if cy < 2 / 3 else "lower_third")
         rel_h = tr["box"][3] - tr["box"][1]

@@ -87,8 +87,15 @@ def stage_measure(src: Path, ref_dir: Path, manifest: dict[str, Any], index: dic
     return result
 
 
+STAGE_OUTPUTS = {"shots": ["shots.json", "events.json"], "motion": ["motion.json"], "text": ["text.json"],
+                 "regions": ["color.json"], "audio": ["audio.json"], "sheets": ["sheets.json"]}
+
+
 def _derived(ref_dir: Path, name: str, fn, *, mode: str) -> dict[str, Any]:
-    """Run a derived stage with a checkpoint; never raise, always return a status record."""
+    """Run a derived stage with a checkpoint; never raise, always return a status record.
+
+    A recompute that fails (or is skipped) must not destroy an earlier good output: the previous files
+    are snapshotted first and restored on failure, and the record says so (`kept_previous_output`)."""
     marker = ref_dir / f"{name}.done.json"
     if marker.exists():
         rec = _read(marker)
@@ -96,6 +103,16 @@ def _derived(ref_dir: Path, name: str, fn, *, mode: str) -> dict[str, Any]:
             rec["cached"] = True
             return rec
         # failed or skipped stages are retried on resume: the environment may have been repaired
+    previous: dict[str, bytes] = {}
+    prev_ok = False
+    for out_name in STAGE_OUTPUTS.get(name, []):
+        p = ref_dir / out_name
+        if p.exists():
+            previous[out_name] = p.read_bytes()
+            try:
+                prev_ok = prev_ok or json.loads(previous[out_name]).get("status", "ok") in ("ok", "absent")
+            except (json.JSONDecodeError, AttributeError):
+                pass
     t0 = time.time()
     try:
         summary = fn()
@@ -104,6 +121,11 @@ def _derived(ref_dir: Path, name: str, fn, *, mode: str) -> dict[str, Any]:
     except Exception as exc:  # noqa: BLE001 - a derived stage failing must not kill the job
         rec = {"stage": name, "status": "failed", "elapsed_s": round(time.time() - t0, 3), "mode": mode,
                "error": f"{type(exc).__name__}: {exc}", "trace": traceback.format_exc()[-1200:]}
+    if rec["status"] in ("failed", "skipped") and prev_ok:
+        for out_name, data in previous.items():
+            (ref_dir / out_name).write_bytes(data)
+        rec["kept_previous_output"] = True
+        rec["note"] = "recompute failed; the previous ok output was restored and downstream stages keep using it"
     _write(marker, rec)
     return rec
 

@@ -207,5 +207,40 @@ def test_tracks_merge_word_by_word_caption_growth():
     assert texts == ["He climbed onto a", "had a man", "cut the"], texts
     first = tracks[0]
     assert first["reveal_steps"] == 3 and first["animation"] == "build_on"
-    assert first["frame_first_seen"] == 0 and first["frame_last_seen"] == 30 and first["frame_full_text_seen"] == 24
+    assert first["frame_first_seen"] == 0 and first["frame_last_seen"] == 30 and first["frame_full_text_seen"] == 18  # full content first read (unspaced) at 18
     assert tracks[1]["text"] == "had a man" and tracks[1]["reveal_steps"] == 0
+
+
+def test_tracks_follow_a_caption_block_that_shifts_up_as_lines_are_added():
+    from iris import textocr
+
+    W, H = 540, 960
+    def box(x0, x1, y):
+        return [x0, y, x1, y + 40]
+    # bottom-anchored block: line 1 moves up by one line height when line 2 appears, and again for line 3;
+    # readings carry recogniser slips ("hadamn" / "hadamin" / "hadam:n")
+    dets = {
+        0: [{"text": "cut the", "conf": 0.99, "box": box(150, 300, 700)}],
+        6: [{"text": "cut theon", "conf": 0.95, "box": box(150, 340, 650)}, {"text": "hadamn", "conf": 0.97, "box": box(160, 300, 700)}],
+        12: [{"text": "cut theonly", "conf": 0.97, "box": box(150, 380, 600)}, {"text": "hadamin", "conf": 0.97, "box": box(160, 300, 650)}, {"text": "cable", "conf": 0.99, "box": box(170, 280, 700)}],
+        18: [{"text": "cut the only", "conf": 0.97, "box": box(150, 380, 600)}, {"text": "hadam:n", "conf": 0.90, "box": box(160, 300, 650)}, {"text": "cable", "conf": 0.99, "box": box(170, 280, 700)}],
+    }
+    tracks = textocr.build_tracks(dets, W, H, step=6, n_frames=60)
+    texts = sorted(t["text"] for t in tracks)
+    assert texts == ["cable", "cut the only", "hadamn"], texts
+    first = next(t for t in tracks if t["text"] == "cut the only")
+    assert first["reveal_steps"] >= 2 and first["frame_first_seen"] == 0 and first["frame_last_seen"] == 18
+
+
+def test_forced_recompute_that_fails_keeps_previous_output(ws, monkeypatch):
+    out1, ref = _analyze(ws, "cfr_30.mp4")
+    before = (ref / "audio.json").read_bytes()
+    from iris import audio
+
+    def boom(*a, **k):
+        raise RuntimeError("simulated backend failure")
+    monkeypatch.setattr(audio, "run", boom)
+    out3 = analyze.analyze(out1["job"]["asset_id"], workspace=ws, force=True, stages=["audio"])
+    rec = out3["stages"]["audio"]
+    assert rec["status"] == "failed" and rec.get("kept_previous_output") is True
+    assert (ref / "audio.json").read_bytes() == before
