@@ -15,10 +15,10 @@ dependencies = [
 
 [project.optional-dependencies]
 # Stage dependencies are added per milestone and pinned in uv.lock on the Grok Bot VM.
+# `media` deliberately carries no OpenCV: every measurement stage is numpy + ffmpeg. The only cv2 on the VM
+# is opencv-contrib-python==4.10.0.84, pinned by paddlex (text) and mediapipe (people). scenedetect pulls
+# opencv-python and would create a second variant, so it is not a dependency.
 media = [
-  "opencv-python-headless>=4.10",
-  "scenedetect>=0.6.5",
-  "imagehash>=4.3",
   "pyarrow>=17.0",
 ]
 text = [

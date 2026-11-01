@@ -96,7 +96,10 @@ def check_modules() -> list[dict[str, Any]]:
 def check_opencv_variants() -> dict[str, Any]:
     names = sorted({d.metadata["Name"] for d in md.distributions() if d.metadata["Name"].lower().startswith("opencv")})
     status = "ok" if len(names) <= 1 else "fail"
-    return _check("opencv.single_variant", status, {"installed": names, "expected": ["opencv-python-headless"]})
+    return _check("opencv.single_variant", status, {
+        "installed": names, "expected": ["opencv-contrib-python"],
+        "note": "Iris itself never imports cv2; paddlex and mediapipe pin opencv-contrib-python. Two variants shadow each other's cv2 module.",
+    })
 
 
 def check_registry() -> dict[str, Any]:

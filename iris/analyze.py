@@ -16,7 +16,7 @@ from typing import Any
 from . import __version__, decode, frames_io, ingest, measure, probe
 from .store import Store, job_key, now_iso
 
-PIPELINE_VERSION = "m2.0"
+PIPELINE_VERSION = "m2.1"
 ANALYSIS_WIDTH = 320
 CORE_STAGES = ["index", "measure"]
 DERIVED_STAGES = ["shots", "motion", "text", "regions", "audio", "sheets"]
@@ -86,8 +86,10 @@ def _derived(ref_dir: Path, name: str, fn, *, mode: str) -> dict[str, Any]:
     marker = ref_dir / f"{name}.done.json"
     if marker.exists():
         rec = _read(marker)
-        rec["cached"] = True
-        return rec
+        if rec.get("status") in ("ok", "absent"):
+            rec["cached"] = True
+            return rec
+        # failed or skipped stages are retried on resume: the environment may have been repaired
     t0 = time.time()
     try:
         summary = fn()

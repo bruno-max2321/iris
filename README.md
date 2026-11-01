@@ -37,7 +37,7 @@ iris selftest
 iris lexicon camera.movement.dolly_in
 ```
 
-Stage extras (`media`, `text`, `audio`, `people`, `interpret`) are installed per milestone; on the Grok Bot VM the lock file pins exact versions.
+Stage extras (`media`, `text`, `audio`, `people`, `interpret`) are installed per milestone. Iris never imports OpenCV; the only cv2 in the venv is `opencv-contrib-python`, pinned by paddlex and mediapipe, and `iris doctor` fails when a second variant is installed.
 
 ## Status
 

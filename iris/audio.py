@@ -90,19 +90,28 @@ def speech_music_split(y: np.ndarray, sr: int = 16000) -> dict[str, Any]:
     return {"active_share": round(float((rms > thr).mean()), 4), "rms_p50": float(np.percentile(rms, 50)), "method": "rms_activity_50ms"}
 
 
-def transcript(src: Path) -> dict[str, Any]:
+def transcript(y: np.ndarray | None, sr: int = 16000) -> dict[str, Any]:
+    """faster-whisper on the PCM we already decoded with ffmpeg. The array path avoids PyAV entirely
+    (faster-whisper's own decoder calls av.open with keyword arguments newer PyAV releases removed).
+    Any failure is reported as `failed` and never takes the loudness and onset results down with it."""
     try:
         from faster_whisper import WhisperModel  # type: ignore
     except Exception:  # noqa: BLE001
         return {"status": "skipped", "reason": "faster-whisper not installed"}
-    model = WhisperModel("small", device="cpu", compute_type="int8")
-    segments, info = model.transcribe(str(src), word_timestamps=True, vad_filter=True)
-    words = []
-    text_parts = []
-    for seg in segments:
-        text_parts.append(seg.text)
-        for w in seg.words or []:
-            words.append({"w": w.word.strip(), "start": round(w.start, 3), "end": round(w.end, 3), "p": round(float(w.probability), 3)})
+    if y is None or y.size < sr // 2:
+        return {"status": "skipped", "reason": "no decodable PCM"}
+    try:
+        model = WhisperModel("small", device="cpu", compute_type="int8")
+        segments, info = model.transcribe(y.astype(np.float32), word_timestamps=True, vad_filter=True)
+        words = []
+        text_parts = []
+        for seg in segments:
+            text_parts.append(seg.text)
+            for w in seg.words or []:
+                words.append({"w": w.word.strip(), "start": round(w.start, 3), "end": round(w.end, 3), "p": round(float(w.probability), 3)})
+    except Exception as exc:  # noqa: BLE001
+        first_line = (str(exc).strip().splitlines() or [""])[0][:240]
+        return {"status": "failed", "reason": f"{type(exc).__name__}: {first_line}".rstrip(": ")}
     dur = max((w["end"] for w in words), default=0.0) - min((w["start"] for w in words), default=0.0)
     return {"status": "ok", "model": "faster-whisper small int8", "language": info.language, "language_probability": round(float(info.language_probability), 3),
             "text": " ".join(t.strip() for t in text_parts), "words": words, "word_count": len(words),
@@ -129,5 +138,5 @@ def run(src: Path, has_audio: bool, cut_times_s: list[float]) -> dict[str, Any]:
         "cuts_within_40ms_of_onset": near, "cuts_total": len(cut_times_s),
         "share_of_cuts_on_onset": round(near / len(cut_times_s), 3) if cut_times_s else None,
         "activity": None if y is None else speech_music_split(y),
-        "transcript": transcript(src),
+        "transcript": transcript(y),
     }
