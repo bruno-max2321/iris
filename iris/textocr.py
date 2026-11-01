@@ -1,13 +1,21 @@
 """Stage F: on-screen text. Sampled OCR (economy: every 6th frame plus shot boundaries; strict: every
-frame) with PaddleOCR mobile when installed, Tesseract CLI as a fallback, and an honest `skipped`
-status when neither exists. Detections are grouped into tracks; one-frame text events are kept."""
+frame) with PaddleOCR mobile in a supervised child process when installed, Tesseract CLI as a fallback,
+and an honest `skipped` status when neither exists. Detections are grouped into tracks; one-frame text
+events are kept.
+
+Speed and robustness levers, all reported in text.json:
+- frames are extracted in one streaming decode pass (no ffmpeg `select` expression);
+- visually unchanged samples reuse the previous key frame's detections (zone-max difference below a
+  threshold; `frames_reused`), which typically halves the OCR work on caption-driven reels;
+- PaddleOCR runs in its own interpreter with capped threads; a frame that stalls past its budget is
+  recorded in `frames_timed_out`, the worker restarts on the next frame, and the stage still completes."""
 
 from __future__ import annotations
 
 import csv
 import difflib
+import importlib.util
 import io
-import json
 import os
 import shutil
 import subprocess
@@ -16,54 +24,28 @@ import time
 from pathlib import Path
 from typing import Any
 
-METHOD_VERSION = "textocr@0.1.2"
-OCR_LONG_SIDE = 960
+import numpy as np
+
+from . import decode, worker
+
+METHOD_VERSION = "textocr@0.2.0"
+OCR_LONG_SIDE = int(os.environ.get("IRIS_OCR_LONG_SIDE", "960"))
 ECONOMY_STEP = 6
-FIRST_FRAME_BUDGET_S = float(os.environ.get("IRIS_OCR_FIRST_FRAME_BUDGET_S", "30"))
-FRAME_BUDGET_S = float(os.environ.get("IRIS_OCR_FRAME_BUDGET_S", "5"))
+FIRST_FRAME_BUDGET_S = float(os.environ.get("IRIS_OCR_FIRST_FRAME_BUDGET_S", "180"))   # model load + first frame
+FRAME_BUDGET_S = float(os.environ.get("IRIS_OCR_FRAME_BUDGET_S", "20"))                 # stall budget per frame
+MAX_RESTARTS = 3
+DEDUP_THRESHOLD = float(os.environ.get("IRIS_OCR_DEDUP_THRESHOLD", "3.0"))              # zone-max mean abs diff, 0-255
+DEDUP_ZONES = (4, 3)   # rows, cols
 
 
 # ----------------------------------------------------------------------------------------------- backends
-class _Paddle:
-    name = "paddleocr-mobile"
-
-    def __init__(self) -> None:
-        from paddleocr import PaddleOCR  # type: ignore
-
-        lang = os.environ.get("IRIS_OCR_LANG", "en")
-        # Document orientation and UVDoc unwarping are on by default in PaddleOCR 3.x and take minutes per
-        # image on a CPU without oneDNN. Video frames are never warped documents, so both stay off.
-        kwargs = dict(
-            lang=lang, device="cpu", enable_mkldnn=False, cpu_threads=min(4, os.cpu_count() or 1),
-            text_det_limit_side_len=OCR_LONG_SIDE, text_det_limit_type="max",
-            use_doc_orientation_classify=False, use_doc_unwarping=False, use_textline_orientation=False,
-        )
-        try:
-            self.ocr = PaddleOCR(text_detection_model_name="PP-OCRv5_mobile_det",
-                                 text_recognition_model_name="PP-OCRv5_mobile_rec", **kwargs)
-            self.models = "PP-OCRv5_mobile_det + PP-OCRv5_mobile_rec"
-        except TypeError:
-            self.ocr = PaddleOCR(lang=lang, enable_mkldnn=False, use_doc_orientation_classify=False,
-                                 use_doc_unwarping=False, use_textline_orientation=False)
-            self.models = "paddleocr default"
-        self.lang = lang
-
-    def detect(self, image_path: Path) -> list[dict[str, Any]]:
-        out = []
-        res = self.ocr.predict(str(image_path)) if hasattr(self.ocr, "predict") else self.ocr.ocr(str(image_path))
-        for page in res:
-            polys = page.get("dt_polys") if isinstance(page, dict) else None
-            if polys is not None:
-                texts, scores = page.get("rec_texts", []), page.get("rec_scores", [])
-                for poly, text, score in zip(polys, texts, scores):
-                    xs = [p[0] for p in poly]; ys = [p[1] for p in poly]
-                    out.append({"text": text, "conf": float(score), "box": [min(xs), min(ys), max(xs), max(ys)]})
-            else:  # legacy list format
-                for item in page or []:
-                    poly, (text, score) = item[0], item[1]
-                    xs = [p[0] for p in poly]; ys = [p[1] for p in poly]
-                    out.append({"text": text, "conf": float(score), "box": [min(xs), min(ys), max(xs), max(ys)]})
-        return out
+def available_backend() -> tuple[str | None, str | None]:
+    """Decide the backend WITHOUT importing paddle in this process (its thread runtime stays in the child)."""
+    if importlib.util.find_spec("paddleocr") is not None and importlib.util.find_spec("paddle") is not None:
+        return "paddleocr-mobile", None
+    if shutil.which("tesseract"):
+        return "tesseract-cli", None
+    return None, "paddleocr not installed; tesseract not found"
 
 
 class _Tesseract:
@@ -80,7 +62,6 @@ class _Tesseract:
         if p.returncode != 0:
             return []
         rows = list(csv.DictReader(io.StringIO(p.stdout), delimiter="\t"))
-        # group words by line (block, par, line) into text lines
         lines: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
         for r in rows:
             try:
@@ -100,18 +81,6 @@ class _Tesseract:
         return out
 
 
-def load_backend() -> tuple[Any | None, str | None]:
-    try:
-        return _Paddle(), None
-    except Exception as exc:  # noqa: BLE001
-        first_line = (str(exc).strip().splitlines() or [""])[0][:240]
-        paddle_err = f"paddleocr unavailable: {type(exc).__name__}: {first_line}".rstrip(": ")
-    try:
-        return _Tesseract(), None
-    except Exception:  # noqa: BLE001
-        return None, paddle_err + "; tesseract not found"
-
-
 # ----------------------------------------------------------------------------------------------- sampling
 def sample_frame_ids(n_frames: int, shots: list[dict[str, Any]], mode: str) -> list[int]:
     if mode == "strict":
@@ -124,28 +93,116 @@ def sample_frame_ids(n_frames: int, shots: list[dict[str, Any]], mode: str) -> l
     return sorted(i for i in ids if 0 <= i < n_frames)
 
 
-def extract_frames(src: Path, frame_ids: list[int], out_dir: Path, long_side: int, display_w: int, display_h: int) -> tuple[dict[int, Path], str | None]:
-    """Write exactly these presented frames as JPEG, long side = `long_side`. Returns (files, error)."""
-    from PIL import Image
-
-    from . import decode
-
-    if not frame_ids:
-        return {}, None
+def ocr_size(display_w: int, display_h: int, long_side: int) -> tuple[int, int]:
     if display_h >= display_w:
         h = long_side - (long_side % 2); w = int(round(display_w * h / display_h)); w -= w % 2
     else:
         w = long_side - (long_side % 2); h = int(round(display_h * w / display_w)); h -= h % 2
-    try:
-        arrays, err = decode.pick_frames(src, frame_ids, max(2, w), max(2, h))
-    except decode.DecodeError as exc:
-        return {}, f"decode failed: {exc}"
+    return max(2, w), max(2, h)
+
+
+def _thumb(rgb: np.ndarray) -> np.ndarray:
+    """Coarse grayscale (about 16x16 cells per axis) used for the change test between samples."""
+    g = (0.299 * rgb[..., 0] + 0.587 * rgb[..., 1] + 0.114 * rgb[..., 2]).astype(np.float32)
+    h, w = g.shape
+    bh, bw = max(1, h // 16), max(1, w // 16)
+    return g[: (h // bh) * bh, : (w // bw) * bw].reshape(h // bh, bh, w // bw, bw).mean(axis=(1, 3))
+
+
+def zone_max_diff(a: np.ndarray, b: np.ndarray) -> float:
+    """Largest mean absolute difference over a rows x cols grid of zones (0-255). A caption changing in one
+    zone registers even when the rest of the frame is identical."""
+    d = np.abs(a - b)
+    rows, cols = DEDUP_ZONES
+    h, w = d.shape
+    bh, bw = max(1, h // rows), max(1, w // cols)
+    zones = d[: (h // bh) * bh, : (w // bw) * bw].reshape(h // bh, bh, w // bw, bw).mean(axis=(1, 3))
+    return float(zones.max())
+
+
+def extract_frames(src: Path, frame_ids: list[int], out_dir: Path, long_side: int, display_w: int, display_h: int,
+                   dedup: bool = True) -> tuple[dict[int, Path], dict[int, int], tuple[int, int] | None, str | None]:
+    """Stream-decode once; write each sampled frame as JPEG; decide which frames need OCR.
+
+    Returns (files, reuse_of, image_size, error). `reuse_of[fid] = key_fid` for frames visually unchanged
+    versus the last key frame; those are not sent to the backend and inherit its detections."""
+    from PIL import Image
+
+    if not frame_ids:
+        return {}, {}, None, None
+    w, h = ocr_size(display_w, display_h, long_side)
     files: dict[int, Path] = {}
-    for fid, rgb in arrays.items():
-        f = out_dir / f"f_{fid:06d}.jpg"
-        Image.fromarray(rgb).save(f, quality=92)
-        files[fid] = f
-    return files, err
+    reuse_of: dict[int, int] = {}
+    last_key_fid: int | None = None
+    last_thumb: np.ndarray | None = None
+    size: tuple[int, int] | None = None
+    try:
+        for fid, rgb in decode.pick_frames_iter(src, frame_ids, w, h):
+            f = out_dir / f"f_{fid:06d}.jpg"
+            Image.fromarray(rgb).save(f, quality=92)
+            files[fid] = f
+            size = (rgb.shape[1], rgb.shape[0])
+            if dedup:
+                th = _thumb(rgb)
+                if last_thumb is not None and last_key_fid is not None and zone_max_diff(th, last_thumb) < DEDUP_THRESHOLD:
+                    reuse_of[fid] = last_key_fid
+                else:
+                    last_key_fid, last_thumb = fid, th
+    except decode.DecodeError as exc:
+        return files, reuse_of, size, f"decode failed: {exc}"
+    missing = sorted(set(frame_ids) - files.keys())
+    err = f"{len(missing)} of {len(frame_ids)} requested frames not reached (first missing {missing[0]})" if missing else None
+    return files, reuse_of, size, err
+
+
+# ----------------------------------------------------------------------------------------------- paddle run
+def run_paddle(files: dict[int, Path], key_ids: list[int], workdir: Path) -> dict[str, Any]:
+    """OCR the key frames in a supervised child; restart past a stalled frame; never raise."""
+    by_path = {str(files[i]): i for i in key_ids}
+    remaining = list(key_ids)
+    detections: dict[int, list[dict[str, Any]]] = {}
+    timings: list[float] = []
+    timed_out: list[int] = []
+    restarts = 0
+    models = None
+    init_s = None
+    mkldnn = os.environ.get("IRIS_OCR_MKLDNN", "0") == "1"
+    base = {"detections": detections, "timings": timings, "timed_out": timed_out, "models": models, "init_s": init_s, "mkldnn": mkldnn}
+    while remaining:
+        payload = {"images": [str(files[i]) for i in remaining], "lang": os.environ.get("IRIS_OCR_LANG", "en"),
+                   "long_side": OCR_LONG_SIDE, "mkldnn": mkldnn}
+        total = FIRST_FRAME_BUDGET_S + FRAME_BUDGET_S * len(remaining) + 60
+        r = worker.run_worker("ocr", payload, first_budget_s=FIRST_FRAME_BUDGET_S, stall_budget_s=FRAME_BUDGET_S,
+                              total_budget_s=total, workdir=workdir)
+        done_here: set[int] = set()
+        for ev in r["events"]:
+            if ev.get("event") == "ready":
+                base["models"], base["init_s"] = ev.get("models"), ev.get("init_s")
+            elif ev.get("event") == "frame":
+                fid = by_path.get(ev["image"])
+                if fid is None:
+                    continue
+                detections[fid] = ev.get("dets", [])
+                timings.append(float(ev.get("s", 0.0)))
+                done_here.add(fid)
+        remaining = [i for i in remaining if i not in done_here]
+        base["restarts"] = restarts
+        if r["killed"] == "stall" and remaining:
+            offender = remaining.pop(0)
+            timed_out.append(offender)
+            restarts += 1
+            base["restarts"] = restarts
+            if restarts > MAX_RESTARTS:
+                return {**base, "status": "failed",
+                        "reason": f"paddleocr stalled on {len(timed_out)} frames (budget {FRAME_BUDGET_S:.0f} s each) after {MAX_RESTARTS} restarts; first stalled frame {timed_out[0]}"}
+            continue
+        if r["killed"] == "total":
+            return {**base, "status": "failed", "reason": f"paddleocr exceeded the total budget of {total:.0f} s with {len(remaining)} frames left"}
+        if r["exit"] not in (0, None) or (r["result"] or {}).get("status") != "ok":
+            reason = (r["result"] or {}).get("reason") or (r["stderr_tail"].strip().splitlines() or ["worker exited"])[-1][:240]
+            return {**base, "status": "failed", "reason": f"paddleocr worker failed: {reason}"}
+        break
+    return {**base, "status": "ok", "restarts": restarts}
 
 
 # ----------------------------------------------------------------------------------------------- tracks
@@ -212,56 +269,64 @@ def build_tracks(detections: dict[int, list[dict[str, Any]]], img_w: int, img_h:
     return out
 
 
+# ----------------------------------------------------------------------------------------------- stage
 def run(src: Path, ref_dir: Path, shots: list[dict[str, Any]], n_frames: int, display_w: int, display_h: int,
         index_frames: list[dict[str, Any]], mode: str = "economy") -> dict[str, Any]:
-    backend, err = load_backend()
+    base = {"schema_version": "1.0.0", "method_version": METHOD_VERSION}
+    backend, err = available_backend()
     if backend is None:
-        return {"schema_version": "1.0.0", "method_version": METHOD_VERSION, "status": "skipped", "reason": err,
-                "sampled_frames": 0, "tracks": []}
+        return {**base, "status": "skipped", "reason": err, "sampled_frames": 0, "tracks": []}
     step = 1 if mode == "strict" else ECONOMY_STEP
     ids = sample_frame_ids(n_frames, shots, mode)
     tmp = Path(tempfile.mkdtemp(prefix="iris-ocr-", dir=str(ref_dir)))
-    detections: dict[int, list[dict[str, Any]]] = {}
-    img_w = img_h = None
-    timings: list[float] = []
+    timing: dict[str, Any] = {}
     try:
-        files, extract_err = extract_frames(src, ids, tmp, OCR_LONG_SIDE, display_w, display_h)
+        t0 = time.time()
+        files, reuse_of, size, extract_err = extract_frames(src, ids, tmp, OCR_LONG_SIDE, display_w, display_h,
+                                                            dedup=os.environ.get("IRIS_OCR_DEDUP", "1") == "1")
+        timing["extract_s"] = round(time.time() - t0, 3)
         if len(files) != len(ids):
-            return {"schema_version": "1.0.0", "method_version": METHOD_VERSION, "status": "failed",
-                    "reason": f"frame extraction returned {len(files)} of {len(ids)} frames: {extract_err or 'unknown'}",
-                    "backend": backend.name, "sampled_frames": len(ids), "frames_done": 0, "tracks": []}
-        for n, (fid, f) in enumerate(sorted(files.items())):
-            if img_w is None:
-                from PIL import Image
-
-                with Image.open(f) as im:
-                    img_w, img_h = im.size
-            t0 = time.time()
-            dets = backend.detect(f)
-            dt = time.time() - t0
-            timings.append(dt)
-            # a backend that is pathologically slow is a broken environment, not a result: stop early and say so
-            budget = FIRST_FRAME_BUDGET_S if n == 0 else FRAME_BUDGET_S * 4
-            if dt > budget:
-                return {"schema_version": "1.0.0", "method_version": METHOD_VERSION, "status": "failed",
-                        "reason": f"{backend.name} too slow: frame {n} took {dt:.1f} s (budget {budget:.0f} s); "
-                                  f"check oneDNN/thread settings or the doc-preprocessing flags",
-                        "backend": backend.name, "sampled_frames": len(ids), "frames_done": n, "tracks": []}
-            if dets:
-                detections[fid] = dets
+            return {**base, "status": "failed", "backend": backend, "sampled_frames": len(ids), "tracks": [],
+                    "reason": f"frame extraction returned {len(files)} of {len(ids)} frames: {extract_err or 'unknown'}"}
+        key_ids = [i for i in ids if i not in reuse_of]
+        t0 = time.time()
+        if backend == "paddleocr-mobile":
+            res = run_paddle(files, key_ids, tmp)
+        else:
+            tess = _Tesseract()
+            res = {"status": "ok", "detections": {}, "timings": [], "timed_out": [], "models": f"tesseract {tess.lang}", "restarts": 0, "init_s": 0.0}
+            for fid in key_ids:
+                t1 = time.time()
+                res["detections"][fid] = tess.detect(files[fid])
+                res["timings"].append(time.time() - t1)
+        timing["ocr_s"] = round(time.time() - t0, 3)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
-    tracks = build_tracks(detections, img_w or 1, img_h or 1, step, n_frames) if detections else []
+
+    detections: dict[int, list[dict[str, Any]]] = {}
+    for fid in ids:
+        dets = res["detections"].get(reuse_of.get(fid, fid))
+        if dets:
+            detections[fid] = dets
+    img_w, img_h = size or (1, 1)
+    tracks = build_tracks(detections, img_w, img_h, step, n_frames) if detections else []
     pts = {f["frame_id"]: f.get("pts_time") for f in index_frames}
     for tr in tracks:
         tr["t_first_seen"] = pts.get(tr["frame_first_seen"])
         tr["t_last_seen"] = pts.get(tr["frame_last_seen"])
+    timings = res.get("timings") or []
+    reason = res.get("reason")
+    if res["status"] == "ok" and res.get("timed_out"):
+        reason = f"{len(res['timed_out'])} frames exceeded the per-frame budget and were skipped"
     return {
-        "schema_version": "1.0.0", "method_version": METHOD_VERSION, "status": "ok",
-        "backend": backend.name, "models": getattr(backend, "models", None), "lang": getattr(backend, "lang", None),
-        "mode": mode, "step": step,
+        **base, "status": res["status"], "reason": reason,
+        "backend": backend, "models": res.get("models"), "lang": os.environ.get("IRIS_OCR_LANG", "en"),
+        "mode": mode, "step": step, "long_side": OCR_LONG_SIDE,
+        "sampled_frames": len(ids), "frames_ocr": len(key_ids), "frames_reused": len(reuse_of),
+        "frames_timed_out": res.get("timed_out", []), "worker_restarts": res.get("restarts", 0),
         "seconds_per_frame": round(sum(timings) / len(timings), 3) if timings else None,
-        "sampled_frames": len(ids), "frames_with_text": len(detections), "detections": sum(len(v) for v in detections.values()),
+        "timing": {**timing, "model_init_s": res.get("init_s")},
+        "frames_with_text": len(detections), "detections": sum(len(v) for v in detections.values()),
         "image_size": [img_w, img_h], "tracks": tracks,
-        "cue_timing_uncertainty_frames": step - 1,
+        "cue_timing_uncertainty_frames": step - 1, "dedup_threshold": DEDUP_THRESHOLD,
     }

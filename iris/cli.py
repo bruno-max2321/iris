@@ -71,7 +71,8 @@ def cmd_analyze(args: argparse.Namespace) -> int:
     from . import analyze, ingest
 
     try:
-        out = analyze.analyze(args.asset_id, mode=args.mode, force=args.force)
+        stages = [x.strip() for x in args.stages.split(",") if x.strip()] if args.stages else None
+        out = analyze.analyze(args.asset_id, mode=args.mode, force=args.force, stages=stages)
     except (analyze.AnalyzeError, ingest.IngestError) as exc:
         code = _CODE_BY_NAME.get(exc.code, exit_codes.VALIDATION)
         return _emit(exit_codes.error_payload(code, str(exc)), code)
@@ -161,6 +162,7 @@ def build_parser() -> argparse.ArgumentParser:
     an.add_argument("asset_id")
     an.add_argument("--mode", choices=["economy", "strict"], default="economy")
     an.add_argument("--force", action="store_true", help="recompute the derived stages of an existing job (index and measurement are kept)")
+    an.add_argument("--stages", help="with --force: comma-separated subset to recompute (dependents are recomputed too), e.g. text,audio")
     an.add_argument("--json", action="store_true")
     an.set_defaults(func=cmd_analyze)
 

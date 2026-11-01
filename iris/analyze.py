@@ -7,7 +7,10 @@ stage never counts as success."""
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+
 import json
+import shutil
 import time
 import traceback
 from pathlib import Path
@@ -20,6 +23,9 @@ PIPELINE_VERSION = "m2.1"
 ANALYSIS_WIDTH = 320
 CORE_STAGES = ["index", "measure"]
 DERIVED_STAGES = ["shots", "motion", "text", "regions", "audio", "sheets"]
+# stages whose checkpoints must be dropped when a stage is forced (they consume its output)
+DERIVED_DEPENDENTS = {"shots": ["motion", "text", "regions", "audio", "sheets"], "text": ["regions", "sheets"],
+                      "regions": ["sheets"], "motion": [], "audio": [], "sheets": []}
 
 
 class AnalyzeError(RuntimeError):
@@ -120,6 +126,8 @@ def run_derived_stages(src: Path, ref_dir: Path, manifest: dict[str, Any], index
     records["shots"] = _derived(ref_dir, "shots", do_shots, mode=mode)
     shots_doc = _read(ref_dir / "shots.json") if (ref_dir / "shots.json").exists() else {"shots": [], "cut_times_s": []}
     shot_list = shots_doc.get("shots", [])
+    work = ref_dir / "work"
+    work.mkdir(exist_ok=True)
 
     def do_motion():
         doc = motion.run(src, dw, dh, shot_list, frames, fps)
@@ -128,15 +136,35 @@ def run_derived_stages(src: Path, ref_dir: Path, manifest: dict[str, Any], index
         for s in doc["shots"]:
             classes[s.get("class", "unclear")] = classes.get(s.get("class", "unclear"), 0) + 1
         return {"pairs": doc["pairs"], "classes": classes}
-    records["motion"] = _derived(ref_dir, "motion", do_motion, mode=mode)
 
     def do_text():
         doc = textocr.run(src, ref_dir, shot_list, index["frame_count"], dw, dh, index["frames"], mode=mode)
         _write(ref_dir / "text.json", doc)
         return {"_status": doc.get("status", "ok"), "backend": doc.get("backend"), "reason": doc.get("reason"),
                 "seconds_per_frame": doc.get("seconds_per_frame"), "sampled_frames": doc.get("sampled_frames"),
+                "frames_ocr": doc.get("frames_ocr"), "frames_reused": doc.get("frames_reused"),
+                "frames_timed_out": len(doc.get("frames_timed_out") or []), "timing": doc.get("timing"),
                 "tracks": len(doc.get("tracks", []))}
-    records["text"] = _derived(ref_dir, "text", do_text, mode=mode)
+
+    def do_audio():
+        has_audio = bool((manifest.get("probe") or {}).get("audio"))
+        doc = audio.run(src, has_audio, shots_doc.get("cut_times_s", []), workdir=work / "whisper")
+        _write(ref_dir / "audio.json", doc)
+        return {"_status": "absent" if doc.get("status") == "absent" else "ok",
+                "lufs": (doc.get("loudness") or {}).get("integrated_lufs"), "onsets": doc.get("onset_count"),
+                "share_of_cuts_on_onset": doc.get("share_of_cuts_on_onset"), "transcript": (doc.get("transcript") or {}).get("status"),
+                "timing": doc.get("timing")}
+
+    # motion (numpy, in-process), text (OCR child process) and audio (ffmpeg + whisper child process) are
+    # independent once shots exist; they run concurrently and wall time is bounded by the slowest one.
+    with ThreadPoolExecutor(max_workers=3, thread_name_prefix="iris-stage") as pool:
+        futures = {
+            "motion": pool.submit(_derived, ref_dir, "motion", do_motion, mode=mode),
+            "text": pool.submit(_derived, ref_dir, "text", do_text, mode=mode),
+            "audio": pool.submit(_derived, ref_dir, "audio", do_audio, mode=mode),
+        }
+        for name, fut in futures.items():
+            records[name] = fut.result()
     text_doc = _read(ref_dir / "text.json") if (ref_dir / "text.json").exists() else {"tracks": []}
 
     def do_regions():
@@ -145,15 +173,6 @@ def run_derived_stages(src: Path, ref_dir: Path, manifest: dict[str, Any], index
         return {"shots": sum(1 for s in doc["shots"] if s.get("status") == "ok"), "summary": doc["summary"]}
     records["regions"] = _derived(ref_dir, "regions", do_regions, mode=mode)
 
-    def do_audio():
-        has_audio = bool((manifest.get("probe") or {}).get("audio"))
-        doc = audio.run(src, has_audio, shots_doc.get("cut_times_s", []))
-        _write(ref_dir / "audio.json", doc)
-        return {"_status": "absent" if doc.get("status") == "absent" else "ok",
-                "lufs": (doc.get("loudness") or {}).get("integrated_lufs"), "onsets": doc.get("onset_count"),
-                "share_of_cuts_on_onset": doc.get("share_of_cuts_on_onset"), "transcript": (doc.get("transcript") or {}).get("status")}
-    records["audio"] = _derived(ref_dir, "audio", do_audio, mode=mode)
-
     def do_sheets():
         color_doc = _read(ref_dir / "color.json") if (ref_dir / "color.json").exists() else None
         doc = sheets.run(src, ref_dir, shot_list, frames, color_doc)
@@ -161,7 +180,8 @@ def run_derived_stages(src: Path, ref_dir: Path, manifest: dict[str, Any], index
         return {"timeline_pages": len(doc["timeline"]["pages"]), "shot_pages": len(doc["shots"]["pages"]),
                 "timecode_burned": doc["timeline"]["timecode_burned"]}
     records["sheets"] = _derived(ref_dir, "sheets", do_sheets, mode=mode)
-    return records
+    shutil.rmtree(work, ignore_errors=True)
+    return {name: records[name] for name in DERIVED_STAGES if name in records}
 
 
 # ---------------------------------------------------------------------------------------- coverage
@@ -213,7 +233,8 @@ def build_coverage(manifest: dict[str, Any], index: dict[str, Any] | None, meas:
 
 
 # --------------------------------------------------------------------------------------------- entry
-def analyze(asset_id: str, mode: str = "economy", workspace: Path | None = None, force: bool = False) -> dict[str, Any]:
+def analyze(asset_id: str, mode: str = "economy", workspace: Path | None = None, force: bool = False,
+            stages: list[str] | None = None) -> dict[str, Any]:
     if mode not in ("economy", "strict"):
         raise AnalyzeError("mode must be economy or strict", "usage")
     manifest = ingest.load_manifest(asset_id, workspace)
@@ -225,8 +246,15 @@ def analyze(asset_id: str, mode: str = "economy", workspace: Path | None = None,
         ref_dir = store.workspace / "refs" / asset_id
         cov_path = ref_dir / "coverage.json"
         if force and not created:
-            # keep index and per-frame measurement (versioned in the job key); recompute every derived stage
-            for name in DERIVED_STAGES:
+            # keep index and per-frame measurement (versioned in the job key); recompute the derived stages
+            # asked for (default all) plus the stages that consume their output
+            targets = set(stages or DERIVED_STAGES)
+            unknown = targets - set(DERIVED_STAGES)
+            if unknown:
+                raise AnalyzeError(f"unknown stages: {sorted(unknown)}; choose from {DERIVED_STAGES}", "usage")
+            for name in list(targets):
+                targets.update(DERIVED_DEPENDENTS[name])
+            for name in targets:
                 (ref_dir / f"{name}.done.json").unlink(missing_ok=True)
             cov_path.unlink(missing_ok=True)
             job = store.update_job(job["job_id"], state="measuring")

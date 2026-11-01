@@ -61,6 +61,20 @@ def iter_frames(path: Path, width: int, height: int, threads: int = 2) -> Iterat
         raise DecodeError(err[-400:])
 
 
+def pick_frames_iter(path: Path, frame_ids: list[int], width: int, height: int) -> Iterator[tuple[int, np.ndarray]]:
+    """Yield (frame_id, rgb) for exactly the requested presented frames, in order, from one decode pass.
+    Memory stays bounded: the caller consumes each frame before the next is decoded."""
+    wanted = set(frame_ids)
+    if not wanted:
+        return
+    last = max(wanted)
+    for i, rgb in enumerate(iter_frames(path, width, height)):
+        if i in wanted:
+            yield i, rgb.copy()
+        if i >= last:
+            break
+
+
 def pick_frames(path: Path, frame_ids: list[int], width: int, height: int) -> tuple[dict[int, np.ndarray], str | None]:
     """Return exactly the requested presented frames (by position in presentation order) as RGB arrays.
 
@@ -68,14 +82,6 @@ def pick_frames(path: Path, frame_ids: list[int], width: int, height: int) -> tu
     "Cannot allocate memory" past roughly 300 `eq(n,i)` terms, and the failure used to be swallowed.
     The second element names the frame ids that were not reached (short stream), or None."""
     wanted = set(frame_ids)
-    out: dict[int, np.ndarray] = {}
-    if not wanted:
-        return out, None
-    last = max(wanted)
-    for i, rgb in enumerate(iter_frames(path, width, height)):
-        if i in wanted:
-            out[i] = rgb.copy()
-        if i >= last:
-            break
+    out: dict[int, np.ndarray] = dict(pick_frames_iter(path, frame_ids, width, height))
     missing = sorted(wanted - out.keys())
     return out, (f"{len(missing)} of {len(wanted)} requested frames not reached (first missing {missing[0]})" if missing else None)

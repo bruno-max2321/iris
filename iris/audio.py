@@ -11,7 +11,7 @@ from typing import Any
 
 import numpy as np
 
-METHOD_VERSION = "audio@0.1.1"
+METHOD_VERSION = "audio@0.2.0"
 
 
 def _ffmpeg(args: list[str], timeout: int = 900) -> tuple[int, str]:
@@ -107,47 +107,64 @@ def speech_music_split(y: np.ndarray, sr: int = 16000) -> dict[str, Any]:
     return {"active_share": round(float((rms > thr).mean()), 4), "rms_p50": float(np.percentile(rms, 50)), "method": "rms_activity_50ms"}
 
 
-def transcript(y: np.ndarray | None, sr: int = 16000) -> dict[str, Any]:
-    """faster-whisper on the PCM we already decoded with ffmpeg. The array path avoids PyAV entirely
-    (faster-whisper's own decoder calls av.open with keyword arguments newer PyAV releases removed).
-    Any failure is reported as `failed` and never takes the loudness and onset results down with it."""
-    try:
-        from faster_whisper import WhisperModel  # type: ignore
-    except Exception:  # noqa: BLE001
+def transcript(y: np.ndarray | None, sr: int = 16000, workdir: Path | None = None) -> dict[str, Any]:
+    """faster-whisper in a supervised child process on the PCM ffmpeg already decoded.
+
+    The child keeps CTranslate2's thread runtime away from PaddlePaddle's (sharing one interpreter made
+    whisper 35x slower on the VM) and PyAV is never touched. Budgets: model load and first segment within
+    IRIS_WHISPER_FIRST_BUDGET_S (first run downloads the model), then a stall budget between segments."""
+    import importlib.util
+    import os
+    import tempfile
+
+    from . import worker
+
+    if importlib.util.find_spec("faster_whisper") is None:
         return {"status": "skipped", "reason": "faster-whisper not installed"}
     if y is None or y.size < sr // 2:
         return {"status": "skipped", "reason": "no decodable PCM"}
+    duration = y.size / sr
+    workdir = Path(workdir or tempfile.mkdtemp(prefix="iris-whisper-"))
+    workdir.mkdir(parents=True, exist_ok=True)
+    pcm = workdir / "pcm16k.npy"
+    np.save(pcm, y.astype(np.float32))
+    first = float(os.environ.get("IRIS_WHISPER_FIRST_BUDGET_S", "900"))
+    stall = float(os.environ.get("IRIS_WHISPER_STALL_BUDGET_S", "120"))
+    total = first + max(120.0, 6.0 * duration)
+    r = worker.run_worker("whisper", {"pcm": str(pcm), "model": os.environ.get("IRIS_WHISPER_MODEL", "small")},
+                          first_budget_s=first, stall_budget_s=stall, total_budget_s=total, workdir=workdir)
     try:
-        model = WhisperModel("small", device="cpu", compute_type="int8")
-        segments, info = model.transcribe(y.astype(np.float32), word_timestamps=True, vad_filter=True)
-        words = []
-        text_parts = []
-        for seg in segments:
-            text_parts.append(seg.text)
-            for w in seg.words or []:
-                words.append({"w": w.word.strip(), "start": round(w.start, 3), "end": round(w.end, 3), "p": round(float(w.probability), 3)})
-    except Exception as exc:  # noqa: BLE001
-        first_line = (str(exc).strip().splitlines() or [""])[0][:240]
-        return {"status": "failed", "reason": f"{type(exc).__name__}: {first_line}".rstrip(": ")}
-    dur = max((w["end"] for w in words), default=0.0) - min((w["start"] for w in words), default=0.0)
-    return {"status": "ok", "model": "faster-whisper small int8", "language": info.language, "language_probability": round(float(info.language_probability), 3),
-            "text": " ".join(t.strip() for t in text_parts), "words": words, "word_count": len(words),
-            "words_per_minute": round(len(words) / dur * 60, 1) if dur > 0 else None}
+        pcm.unlink(missing_ok=True)
+    except OSError:
+        pass
+    res = r.get("result") or {}
+    if r["killed"]:
+        return {"status": "failed", "reason": f"whisper worker killed ({r['killed']} budget) after {r['elapsed_s']} s",
+                "elapsed_s": r["elapsed_s"]}
+    if r["exit"] not in (0, None) or res.get("status") != "ok":
+        reason = res.get("reason") or (r["stderr_tail"].strip().splitlines() or ["worker exited"])[-1][:240]
+        return {"status": "failed", "reason": f"whisper worker failed: {reason}", "elapsed_s": r["elapsed_s"]}
+    res["elapsed_s"] = r["elapsed_s"]
+    return res
 
 
-def run(src: Path, has_audio: bool, cut_times_s: list[float]) -> dict[str, Any]:
+def run(src: Path, has_audio: bool, cut_times_s: list[float], workdir: Path | None = None) -> dict[str, Any]:
     if not has_audio:
         return {"schema_version": "1.0.0", "method_version": METHOD_VERSION, "status": "absent", "reason": "no audio stream"}
-    loud = loudness(src)
-    sil = silences(src)
-    y = pcm_mono(src)
-    ons, ons_meta = ([], {}) if y is None else onsets(y)
+    import time
+
+    timing: dict[str, float] = {}
+    t = time.time(); loud = loudness(src); timing["loudness_s"] = round(time.time() - t, 3)
+    t = time.time(); sil = silences(src); timing["silences_s"] = round(time.time() - t, 3)
+    t = time.time(); y = pcm_mono(src); timing["pcm_s"] = round(time.time() - t, 3)
+    t = time.time(); ons, ons_meta = ([], {}) if y is None else onsets(y); timing["onsets_s"] = round(time.time() - t, 3)
     near = 0
     if ons and cut_times_s:
         arr = np.array(ons)
         for c in cut_times_s:
             if np.min(np.abs(arr - c)) <= 0.040:
                 near += 1
+    t = time.time(); tr = transcript(y, workdir=workdir); timing["transcript_s"] = round(time.time() - t, 3)
     return {
         "schema_version": "1.0.0", "method_version": METHOD_VERSION, "status": "ok",
         "loudness": loud, "silences": sil, "silence_count": len(sil),
@@ -155,5 +172,6 @@ def run(src: Path, has_audio: bool, cut_times_s: list[float]) -> dict[str, Any]:
         "cuts_within_40ms_of_onset": near, "cuts_total": len(cut_times_s),
         "share_of_cuts_on_onset": round(near / len(cut_times_s), 3) if cut_times_s else None,
         "activity": None if y is None else speech_music_split(y),
-        "transcript": transcript(y),
+        "transcript": tr,
+        "timing": timing,
     }

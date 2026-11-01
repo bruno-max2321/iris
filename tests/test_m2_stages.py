@@ -151,3 +151,34 @@ def test_analyze_force_recomputes_derived_stages(ws):
     out3 = analyze.analyze(out1["job"]["asset_id"], workspace=ws, force=True)
     assert out3["created"] is True and (ref / "shots.json").exists()
     assert out3["stages"]["shots"].get("cached") is None
+
+
+def test_worker_echo_and_stall_supervision(tmp_path):
+    from iris import worker
+
+    r = worker.run_worker("echo", {"n": 3, "sleep": 0.01}, first_budget_s=30, stall_budget_s=30, total_budget_s=60, workdir=tmp_path / "a")
+    assert r["killed"] is None and r["result"]["status"] == "ok" and sum(1 for e in r["events"] if e["event"] == "tick") == 3
+    r = worker.run_worker("echo", {"n": 2, "sleep": 0.01, "hang_after": 0}, first_budget_s=30, stall_budget_s=1.0, total_budget_s=60, workdir=tmp_path / "b")
+    assert r["killed"] == "stall" and sum(1 for e in r["events"] if e["event"] == "tick") == 2
+
+
+def test_ocr_dedup_marks_unchanged_samples(ws):
+    from iris import textocr
+
+    res = ingest.ingest(str(FIX / "caption_1frame.mp4"), "own", workspace=ws)
+    m = res["manifest"]["probe"]["video"]
+    out = ws / "x"; out.mkdir()
+    ids = list(range(0, 90, 6))
+    files, reuse_of, size, err = textocr.extract_frames(FIX / "caption_1frame.mp4", ids, out, 480, m["display_width"], m["display_height"])
+    assert err is None and len(files) == len(ids) and size is not None
+    # a static clip with one caption frame: most samples are visually identical to the previous key frame
+    assert len(reuse_of) >= len(ids) // 2
+
+
+def test_analyze_force_stages_subset_keeps_other_checkpoints(ws):
+    out1, ref = _analyze(ws, "cfr_30.mp4")
+    m_before = (ref / "motion.done.json").stat().st_mtime_ns
+    out3 = analyze.analyze(out1["job"]["asset_id"], workspace=ws, force=True, stages=["audio"])
+    assert out3["created"] is True
+    assert (ref / "motion.done.json").stat().st_mtime_ns == m_before
+    assert out3["stages"]["motion"].get("cached") is True and out3["stages"]["audio"].get("cached") is None
