@@ -1,0 +1,689 @@
+{
+  "schema_version": "1.0.0",
+  "style_id": "kinetic-editorial-v1",
+  "status": "draft",
+  "language": "en",
+  "built_from": [
+    "ref_a1b2c3"
+  ],
+  "coverage_summary": {
+    "decode": "full",
+    "measurement": "full",
+    "model_exposure": "economy",
+    "notes": "ILLUSTRATIVE EXAMPLE. Numbers are placeholders, not measurements of a real video."
+  },
+  "identity": {
+    "one_line": "Fast picture montage on a locked camera, high-key warm neutrals, word-highlight captions riding the voice.",
+    "iris_operations": {
+      "dominant": "differentiate",
+      "secondary": "sequence"
+    },
+    "signature_techniques": [
+      "isolation",
+      "figureground",
+      "popout",
+      "framewithin"
+    ],
+    "tone_words": [
+      "crisp",
+      "warm",
+      "direct",
+      "playful"
+    ],
+    "meta": {
+      "claim_kind": "mixed",
+      "review_status": "pending",
+      "n_refs": 1
+    }
+  },
+  "concept": {
+    "visual_concept": "One idea per shot, isolated on a clean warm field; the picture changes faster than the voice, the text lands on the key word.",
+    "metaphor_language": [
+      "objects stand in for abstract nouns",
+      "text behaves like a physical card"
+    ],
+    "subject_treatment": {
+      "person": "head-and-shoulders, eye level, looks to camera, never cropped at the chin",
+      "food": "macro, single hero item, side light, visible texture",
+      "interface": "real screen on a generated phone, front-facing, never perspective-warped"
+    },
+    "viewer_promise": "You will see the answer, not hear about it.",
+    "meta": {
+      "claim_kind": "interpreted",
+      "review_status": "pending",
+      "n_refs": 1
+    }
+  },
+  "rhythm": {
+    "duration_s": {
+      "p25": 28,
+      "p50": 34,
+      "p75": 41,
+      "unit": "s"
+    },
+    "hook": {
+      "window_s": {
+        "min": 1.4,
+        "max": 2.2
+      },
+      "cuts_in_hook": {
+        "min": 3,
+        "max": 4
+      },
+      "first_text_at_s": {
+        "min": 0.2,
+        "max": 0.5
+      }
+    },
+    "cut_rate_per_s": {
+      "overall": {
+        "min": 0.9,
+        "max": 1.3
+      },
+      "hook": {
+        "min": 1.8,
+        "max": 2.4
+      },
+      "body": {
+        "min": 0.8,
+        "max": 1.1
+      },
+      "close": {
+        "min": 0.4,
+        "max": 0.6
+      }
+    },
+    "shot_length_s": {
+      "p25": 0.6,
+      "p50": 0.9,
+      "p75": 1.5,
+      "max": 4.2,
+      "unit": "s"
+    },
+    "speech_wpm": {
+      "min": 150,
+      "max": 185,
+      "typical": 168
+    },
+    "silence": {
+      "max_gap_s": 0.4,
+      "pause_before_turn": true
+    },
+    "music_relation": {
+      "term": "sound.music_relation.cut_on_beat",
+      "share_of_cuts_on_beat": 0.72
+    },
+    "image_reuse": {
+      "unique_pictures": {
+        "min": 25,
+        "max": 35
+      },
+      "reuse_factor": {
+        "min": 2.3,
+        "max": 3.1
+      },
+      "variation_on_reuse": [
+        "blur",
+        "recolor",
+        "scale"
+      ]
+    },
+    "meta": {
+      "claim_kind": "measured",
+      "review_status": "accepted",
+      "n_refs": 1
+    }
+  },
+  "camera": {
+    "movement": {
+      "static": 0.65,
+      "apparent_push_in": 0.25,
+      "pan_left": 0.05,
+      "pan_right": 0.05
+    },
+    "shot_size": {
+      "close_up": 0.4,
+      "medium_shot": 0.45,
+      "wide_shot": 0.15
+    },
+    "angle": {
+      "eye_level": 0.85,
+      "top_down": 0.15
+    },
+    "support": {
+      "locked_off": 0.8,
+      "handheld": 0.2
+    },
+    "movement_dynamics": {
+      "push_speed_pct_per_s": {
+        "min": 3,
+        "max": 6
+      },
+      "easing": "graphic.motion.ease_out",
+      "settle_before_cut_s": {
+        "min": 0.1,
+        "max": 0.3
+      }
+    },
+    "optics": {
+      "depth_of_field": "optics.shallow_depth_of_field",
+      "lens_look": [],
+      "focus_changes": {
+        "none": 0.95,
+        "rack_focus": 0.05
+      }
+    },
+    "never": [
+      "camera.movement.whip_pan",
+      "camera.movement.orbit_360",
+      "camera.angle.dutch_angle"
+    ],
+    "meta": {
+      "claim_kind": "estimated",
+      "review_status": "accepted",
+      "n_refs": 1
+    }
+  },
+  "light": {
+    "key": "light.key.high_key",
+    "direction": {
+      "side_light": 0.6,
+      "front_light": 0.4
+    },
+    "edge": "light.quality.soft_light",
+    "contrast_ratio": {
+      "min": 4.5,
+      "max": 7.0
+    },
+    "scheme": [
+      "light.scheme.soft_cross",
+      "light.scheme.window_light"
+    ],
+    "rim_or_separation": "subtle",
+    "contact_shadows": "soft",
+    "practicals_visible": false,
+    "never": [
+      "light.scheme.silhouette_lighting",
+      "light.scheme.contre_jour",
+      "light.quality.hard_light"
+    ],
+    "meta": {
+      "claim_kind": "estimated",
+      "review_status": "accepted",
+      "n_refs": 1
+    }
+  },
+  "color": {
+    "grade_family": "color.grade_family.naturalistic_clean",
+    "temperature": "color.temperature.warm",
+    "regions": {
+      "background": {
+        "L": {
+          "min": 88,
+          "max": 95
+        },
+        "b": {
+          "min": 4,
+          "max": 9
+        },
+        "saturation": "low",
+        "palette": [
+          "#F4EDDF",
+          "#FFFFFF"
+        ]
+      },
+      "subject_food": {
+        "L": {
+          "min": 45,
+          "max": 70
+        },
+        "saturation": "medium_high",
+        "dominant_hue_deg": {
+          "min": 20,
+          "max": 60
+        }
+      },
+      "skin": {
+        "L": {
+          "min": 60,
+          "max": 72
+        },
+        "b": {
+          "min": 12,
+          "max": 18
+        },
+        "saturation": "medium"
+      },
+      "graphics": {
+        "L": {
+          "min": 15,
+          "max": 25
+        },
+        "saturation": "low",
+        "palette": [
+          "#2B2B2B",
+          "#9E7852"
+        ]
+      }
+    },
+    "palette_roles": {
+      "dominant": [
+        "#F4EDDF"
+      ],
+      "secondary": [
+        "#FFFFFF"
+      ],
+      "accent": [
+        "#9E7852"
+      ],
+      "accent_share_of_frame": {
+        "min": 0.0,
+        "max": 0.08
+      }
+    },
+    "delta_e_between_shots": {
+      "p25": 2.0,
+      "p50": 3.1,
+      "p75": 4.6,
+      "max": 6.8
+    },
+    "never": [
+      "color.grade_family.teal_orange",
+      "color.grade_family.hyper_neon",
+      "color.grade_family.black_and_white"
+    ],
+    "meta": {
+      "claim_kind": "measured",
+      "review_status": "accepted",
+      "n_refs": 1
+    }
+  },
+  "composition": {
+    "techniques": {
+      "isolation": 0.45,
+      "figureground": 0.25,
+      "popout": 0.15,
+      "framewithin": 0.15
+    },
+    "subject_placement": {
+      "center": 0.6,
+      "lower_center": 0.3,
+      "upper_center": 0.1
+    },
+    "negative_space": {
+      "min": 0.35,
+      "max": 0.55
+    },
+    "text_safe_zone_respected": true,
+    "depth_layers": {
+      "min": 1,
+      "max": 2
+    },
+    "never": [
+      "forcedperspective",
+      "temporalsynthesis"
+    ],
+    "meta": {
+      "claim_kind": "mixed",
+      "review_status": "pending",
+      "n_refs": 1
+    }
+  },
+  "environment": {
+    "settings": [
+      "seamless off-white studio field",
+      "kitchen counter, daylight from left"
+    ],
+    "surfaces": [
+      "material.surface.matte",
+      "material.surface.wood",
+      "material.surface.stone"
+    ],
+    "atmosphere": [
+      "material_atmosphere.steam"
+    ],
+    "props_recurring": [
+      "ceramic bowl",
+      "fork",
+      "linen napkin"
+    ],
+    "clutter_level": "minimal",
+    "never": [
+      "material_atmosphere.smoke",
+      "material_atmosphere.film_grain"
+    ],
+    "meta": {
+      "claim_kind": "mixed",
+      "review_status": "pending",
+      "n_refs": 1
+    }
+  },
+  "assets": {
+    "families": [
+      {
+        "family_id": "food_macro",
+        "role": "detail",
+        "visual_spec": "Single dish, extreme close-up, side light from left, one subtle action (steam, pour), locked camera or slow push-in.",
+        "share_of_runtime": {
+          "min": 0.2,
+          "max": 0.35
+        },
+        "typical_duration_s": {
+          "min": 0.8,
+          "max": 2.5
+        }
+      },
+      {
+        "family_id": "picture_card",
+        "role": "insert",
+        "visual_spec": "Isolated object or cut-out on the background field, scale-pop entrance, reused with blur or recolor.",
+        "share_of_runtime": {
+          "min": 0.3,
+          "max": 0.45
+        },
+        "typical_duration_s": {
+          "min": 0.5,
+          "max": 1.2
+        }
+      },
+      {
+        "family_id": "person_talk",
+        "role": "person",
+        "visual_spec": "Head and shoulders, eye level, soft front-left key, warm background.",
+        "share_of_runtime": {
+          "min": 0.2,
+          "max": 0.35
+        },
+        "typical_duration_s": {
+          "min": 1.0,
+          "max": 4.0
+        }
+      }
+    ],
+    "meta": {
+      "claim_kind": "mixed",
+      "review_status": "pending",
+      "n_refs": 1
+    }
+  },
+  "typography": {
+    "family_class": "typography.family_class.neo_grotesque_sans",
+    "closest_family_candidates": [
+      "Inter",
+      "Helvetica Neue"
+    ],
+    "weight": [
+      600,
+      700
+    ],
+    "case": "sentence",
+    "size_rel_frame_h": {
+      "min": 0.027,
+      "max": 0.032
+    },
+    "placement": {
+      "zone": "lower_third_above_safe",
+      "x_align": "center",
+      "box": "none",
+      "text_color": "#2B2B2B",
+      "stroke": false,
+      "shadow": false
+    },
+    "lines": {
+      "max": 2,
+      "chars_per_line_p90": 21
+    },
+    "entrance": {
+      "cut_in": 0.7,
+      "blur_in": 0.3
+    },
+    "entrance_duration_ms": {
+      "min": 120,
+      "max": 200
+    },
+    "emphasis": {
+      "word_highlight": 0.8,
+      "word_reveal": 0.2
+    },
+    "caption_cadence": {
+      "cues_per_10s": {
+        "min": 6,
+        "max": 8
+      },
+      "cue_duration_s": {
+        "min": 0.9,
+        "max": 1.6
+      },
+      "lead_vs_speech_ms": {
+        "min": -80,
+        "max": 40
+      },
+      "words_per_cue": {
+        "min": 2,
+        "max": 5
+      },
+      "text_role": "emphasis"
+    },
+    "never": [
+      "typography.emphasis.typewriter",
+      "typography.family_class.serif"
+    ],
+    "meta": {
+      "claim_kind": "measured",
+      "review_status": "accepted",
+      "n_refs": 1
+    }
+  },
+  "animation": {
+    "easing": {
+      "ease_out": 0.7,
+      "ease_in_out": 0.3
+    },
+    "entrance_ms": {
+      "min": 120,
+      "max": 240
+    },
+    "hold_ms": {
+      "min": 600,
+      "max": 1800
+    },
+    "exit_ms": {
+      "min": 80,
+      "max": 160
+    },
+    "overshoot": "subtle",
+    "stagger_ms": {
+      "min": 80,
+      "max": 140
+    },
+    "anticipation": false,
+    "graphic_elements": [
+      "underline",
+      "card"
+    ],
+    "never": [
+      "graphic.motion.spring_motion"
+    ],
+    "meta": {
+      "claim_kind": "estimated",
+      "review_status": "pending",
+      "n_refs": 1
+    }
+  },
+  "montage": {
+    "transitions": {
+      "hard_cut": 0.92,
+      "fade": 0.05,
+      "cross_dissolve": 0.03
+    },
+    "editorial_transforms": {
+      "digital_zoom": 0.3,
+      "crop_animation": 0.2
+    },
+    "speed": {
+      "real_time": 1.0
+    },
+    "match_logic": [
+      "action",
+      "shape"
+    ],
+    "never": [
+      "montage.transition.wipe",
+      "montage.transition.mask_transition"
+    ],
+    "meta": {
+      "claim_kind": "measured",
+      "review_status": "accepted",
+      "n_refs": 1
+    }
+  },
+  "sound": {
+    "role": {
+      "voiceover": 0.95,
+      "score": 0.9,
+      "sound_effects": 0.3
+    },
+    "loudness_lufs": {
+      "min": -14,
+      "max": -13
+    },
+    "true_peak_dbtp_max": -1.5,
+    "music_energy": "medium",
+    "sfx_on_cuts": true,
+    "voice_treatment": "close, dry, light de-esser",
+    "meta": {
+      "claim_kind": "measured",
+      "review_status": "accepted",
+      "n_refs": 1
+    }
+  },
+  "narrative": {
+    "structure": [
+      "narrative.function.hook",
+      "narrative.function.claim",
+      "narrative.function.demonstration",
+      "narrative.function.contrast",
+      "narrative.function.cta"
+    ],
+    "beat_share_of_runtime": {
+      "hook": 0.06,
+      "claim": 0.14,
+      "demonstration": 0.5,
+      "contrast": 0.18,
+      "cta": 0.12
+    },
+    "hook_type": [
+      "narrative.hook_type.pattern_interrupt",
+      "narrative.hook_type.direct_question"
+    ],
+    "text_role": "emphasis",
+    "cta_treatment": "spoken plus one card, no urgency words",
+    "meta": {
+      "claim_kind": "interpreted",
+      "review_status": "pending",
+      "n_refs": 1
+    }
+  },
+  "continuity_rules": [
+    {
+      "rule_id": "cr_bg_delta_e",
+      "scope": "every_shot",
+      "region": "background",
+      "metric": "color.delta_e2000_vs_master",
+      "tolerance": "<= 6",
+      "severity": "fail",
+      "rationale": "Background field is the style's canvas."
+    },
+    {
+      "rule_id": "cr_light_side",
+      "scope": "every_shot",
+      "region": "frame",
+      "metric": "light.face_luma_asymmetry",
+      "tolerance": "in {key_screen_left, key_centred}",
+      "severity": "fail"
+    },
+    {
+      "rule_id": "cr_light_edge",
+      "scope": "every_shot",
+      "region": "frame",
+      "metric": "light.edge",
+      "tolerance": "== soft",
+      "severity": "warn"
+    },
+    {
+      "rule_id": "cr_adjacent_luma",
+      "scope": "adjacent_shots",
+      "region": "background",
+      "metric": "color.L_mean_delta",
+      "tolerance": "<= 8",
+      "severity": "warn"
+    },
+    {
+      "rule_id": "cr_caption_size",
+      "scope": "text_layers",
+      "metric": "typography.size_rel_frame_h",
+      "tolerance": "within 0.027-0.032",
+      "severity": "fail"
+    },
+    {
+      "rule_id": "cr_loudness",
+      "scope": "audio",
+      "metric": "sound.loudness_lufs",
+      "tolerance": "within -15..-13",
+      "severity": "fail"
+    }
+  ],
+  "never_global": [
+    "camera.movement.whip_pan",
+    "color.grade_family.teal_orange",
+    "typography.emphasis.typewriter"
+  ],
+  "exemplars": {
+    "hook": [
+      {
+        "ref": "ref_a1b2c3",
+        "shot": "s01",
+        "t": "0.0-1.8"
+      }
+    ],
+    "color_master": [
+      {
+        "ref": "ref_a1b2c3",
+        "shot": "s04",
+        "frame": 142
+      }
+    ],
+    "light_master": [
+      {
+        "ref": "ref_a1b2c3",
+        "shot": "s04",
+        "frame": 142
+      }
+    ],
+    "caption_style": [
+      {
+        "ref": "ref_a1b2c3",
+        "shot": "s07",
+        "t": "9.3-10.1"
+      }
+    ],
+    "camera_signature": [
+      {
+        "ref": "ref_a1b2c3",
+        "shot": "s09",
+        "t": "12.0-13.4"
+      }
+    ]
+  },
+  "provenance": {
+    "generated_at": "2026-11-01T00:00:00Z",
+    "iris_version": "0.0.0-example",
+    "vocabulary_version": "0.0.0-example",
+    "review_events_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "token_budget": {
+    "limit": 3500,
+    "measured": 0,
+    "tokenizer": "unmeasured-example"
+  }
+}

@@ -1,0 +1,19 @@
+# environment
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+# runtime state (never commit)
+secrets/
+db/
+artifacts/
+refs/
+styles/*/build_log.json
+checks/
+ledger/
+# generated fixtures (regenerate with tools/make_fixtures.sh)
+fixtures/synthetic/*.mp4
+fixtures/synthetic/*.png
+# os
+.DS_Store

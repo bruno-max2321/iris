@@ -1,0 +1,939 @@
+# Binding table: vocabulary term -> higgsfield-kling-3.0
+# relation: exact | approx | prompt_only | unsupported. A term absent from this file is unsupported here.
+target: higgsfield-kling-3.0
+surface: higgsfield_mcp
+model_id: kling3_0
+catalog: capabilities/mcp-higgsfield-video-2026-11-01.json
+generated_at: '2026-11-01'
+notes: 'kling3_0 exposes only duration, mode (std|pro|4k: quality tiers, not description terms) and sound. Rows
+  may override the model with kling_o3_flf or kling_o3_image_reference (Kling 3.0 Omni), which add multi_shots and
+  multi_prompt.'
+rows:
+- term_id: silence
+  target:
+    params:
+      sound: 'off'
+  relation: exact
+  notes: kling3_0 sound=off.
+  verified_on: '2026-11-01'
+- term_id: single_continuous_shot
+  target:
+    params:
+      multi_shots: false
+  relation: approx
+  model: kling_o3_flf
+  notes: Kling 3.0 Omni (Frames) single shot.
+  verified_on: '2026-11-01'
+- term_id: hard_cut
+  target:
+    params:
+      multi_shots: true
+  relation: approx
+  model: kling_o3_flf
+  notes: Kling 3.0 Omni multi-shot driven by multi_prompt.
+  verified_on: '2026-11-01'
+- term_id: morph_transition
+  target:
+    media_roles:
+    - start_image
+    - end_image
+    prompt: Morph seamlessly from the first frame into the last frame.
+  relation: approx
+  notes: Start/end frame workflow (Kling Turbo start/end frame guide).
+  verified_on: '2026-11-01'
+- term_id: static
+  target:
+    prompt: The camera stays completely still, locked off on a tripod.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: pan_left
+  target:
+    prompt: The camera pans slowly to the left from a fixed position.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: pan_right
+  target:
+    prompt: The camera pans slowly to the right from a fixed position.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: tilt_up
+  target:
+    prompt: The camera tilts up slowly from a fixed position.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: tilt_down
+  target:
+    prompt: The camera tilts down slowly from a fixed position.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: dolly_in
+  target:
+    prompt: The camera dollies in slowly toward the subject on a smooth track.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: dolly_out
+  target:
+    prompt: The camera dollies out slowly, moving back from the subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: dolly_left
+  target:
+    prompt: The camera trucks slowly to the left on a level path, parallel to the subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: dolly_right
+  target:
+    prompt: The camera trucks slowly to the right on a level path, parallel to the subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: zoom_in
+  target:
+    prompt: The lens zooms in slowly while the camera stays in place.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: zoom_out
+  target:
+    prompt: The lens zooms out slowly while the camera stays in place.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: crash_zoom_in
+  target:
+    prompt: A sudden crash zoom punches in on the subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: dolly_zoom
+  target:
+    prompt: 'A dolly zoom: the subject stays the same size while the background stretches away behind it.'
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: crane_up
+  target:
+    prompt: The camera cranes up smoothly, rising above the scene.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: crane_down
+  target:
+    prompt: The camera cranes down smoothly toward the subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: arc_left
+  target:
+    prompt: The camera arcs slowly to the left around the subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: arc_right
+  target:
+    prompt: The camera arcs slowly to the right around the subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: orbit_360
+  target:
+    prompt: The camera orbits a full 360 degrees around the stationary subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: tracking_shot
+  target:
+    prompt: A smooth tracking shot follows the subject at a constant distance.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: whip_pan
+  target:
+    prompt: A fast whip pan smears the frame with motion blur.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: apparent_push_in
+  target:
+    prompt: A slow push-in toward the subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: apparent_pull_out
+  target:
+    prompt: A slow pull-back that reveals the surroundings.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: apparent_lateral_travel
+  target:
+    prompt: The view drifts slowly sideways.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: apparent_vertical_travel
+  target:
+    prompt: The view drifts slowly upward.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: wide_shot
+  target:
+    prompt: Wide shot showing the subject within the full setting.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: full_shot
+  target:
+    prompt: Full shot, the whole subject visible head to toe.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: medium_shot
+  target:
+    prompt: Medium shot from the waist up.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: medium_close_up
+  target:
+    prompt: Medium close-up, chest and face.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: close_up
+  target:
+    prompt: Close-up on the subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: extreme_close_up
+  target:
+    prompt: Extreme close-up on a small detail.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: macro_shot
+  target:
+    prompt: Macro shot revealing fine surface texture and droplets.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: eye_level
+  target:
+    prompt: Eye-level camera, straight on.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: low_angle
+  target:
+    prompt: Low angle looking up at the subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: high_angle
+  target:
+    prompt: High angle looking down at the subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: top_down
+  target:
+    prompt: Top-down overhead flat lay, camera pointing straight down.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: dutch_angle
+  target:
+    prompt: Dutch angle with the horizon tilted.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: pov
+  target:
+    prompt: First-person POV shot, hands entering from the bottom of frame.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: over_the_shoulder
+  target:
+    prompt: Over-the-shoulder shot looking toward the subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: locked_off
+  target:
+    prompt: Locked-off tripod shot.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: handheld
+  target:
+    prompt: Handheld camera with subtle natural sway and micro-corrections.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: steadicam
+  target:
+    prompt: Smooth Steadicam move gliding through the space.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: robot_arm
+  target:
+    prompt: High-speed robotic camera arm move that stops precisely on the product.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: drone
+  target:
+    prompt: Aerial drone shot gliding above the scene.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: selfie
+  target:
+    prompt: Handheld selfie at arm's length, front-facing phone camera.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: virtual_camera
+  target:
+    prompt: Clean digital render with a perfectly stable virtual camera.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: subject_rotation
+  target:
+    prompt: The product rotates slowly in place on a turntable while the camera stays still.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: pour_shot
+  target:
+    prompt: Thick sauce pours slowly over the dish, catching the light.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: hand_interaction
+  target:
+    prompt: A hand enters from screen-right and lifts a portion with a fork.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: shallow_depth_of_field
+  target:
+    prompt: Shallow depth of field, the subject tack sharp against a creamy blurred background.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: deep_focus
+  target:
+    prompt: Deep focus, foreground and background both sharp.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: rack_focus
+  target:
+    prompt: Rack focus from the foreground subject to the background.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: wide_angle_lens
+  target:
+    prompt: Wide-angle lens look with exaggerated perspective.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: telephoto_lens
+  target:
+    prompt: Telephoto look with a compressed background.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: fisheye
+  target:
+    prompt: Fisheye lens look with curved edges.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: lens_flare
+  target:
+    prompt: Subtle lens flare from the bright backlight.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: halation
+  target:
+    prompt: Soft film halation around the highlights.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: vignetting
+  target:
+    prompt: Gentle vignette darkening the corners.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: motion_blur
+  target:
+    prompt: Natural motion blur on the moving elements.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: diffusion
+  target:
+    prompt: Soft diffusion filter with gentle highlight glow.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: front_light
+  target:
+    prompt: Soft frontal key light from near the camera.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: side_light
+  target:
+    prompt: Soft side light from camera-left raking across the surface.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: top_light
+  target:
+    prompt: Top light from directly above.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: backlight
+  target:
+    prompt: Strong backlight outlining the subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: soft_light
+  target:
+    prompt: Soft, diffused key light with gentle shadow transitions.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: hard_light
+  target:
+    prompt: Hard directional light with crisp shadows.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: flat_light
+  target:
+    prompt: Even, shadowless light.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: high_key
+  target:
+    prompt: High-key lighting, bright and airy.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: mid_key
+  target:
+    prompt: Balanced, naturally exposed lighting.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: low_key
+  target:
+    prompt: Low-key lighting with pools of light in darkness.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: soft_cross
+  target:
+    prompt: Soft cross lighting from two opposite sides.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: contre_jour
+  target:
+    prompt: Contre-jour, shooting into the low sun behind the subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: overhead_fall
+  target:
+    prompt: A single overhead light falling onto the subject, darkness around.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: window_light
+  target:
+    prompt: Soft window light from the side.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: practical_light
+  target:
+    prompt: Lit by warm practical lamps visible in the frame.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: silhouette_lighting
+  target:
+    prompt: The subject in silhouette against a bright background.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: rim_light
+  target:
+    prompt: A crisp rim light separating the subject from the background.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: naturalistic_clean
+  target:
+    prompt: Clean naturalistic colour grade with true-to-life colours.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: bleached_warm
+  target:
+    prompt: Sun-bleached warm grade with soft, faded colours.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: teal_orange
+  target:
+    prompt: Teal and orange colour grade.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: cold_steel
+  target:
+    prompt: Cold steel-blue grade with desaturated mids.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: bleach_bypass
+  target:
+    prompt: Bleach bypass look, desaturated and high contrast.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: black_and_white
+  target:
+    prompt: Classic black and white.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: hyper_neon
+  target:
+    prompt: Hyper-saturated neon night grade.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: filmic_print
+  target:
+    prompt: Filmic print grade with soft highlight roll-off.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: warm
+  target:
+    prompt: Warm colour temperature.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: neutral_balance
+  target:
+    prompt: Neutral white balance.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: cool
+  target:
+    prompt: Cool colour temperature.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: mixed_temperature
+  target:
+    prompt: Warm interior light mixed with cool daylight.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: muted
+  target:
+    prompt: Muted, desaturated colours.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: natural_saturation
+  target:
+    prompt: Natural, true-to-life saturation.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: saturated
+  target:
+    prompt: Vivid, saturated colours.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: low_contrast
+  target:
+    prompt: Low-contrast, soft tonal range.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: medium_contrast
+  target:
+    prompt: Natural contrast.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: high_contrast
+  target:
+    prompt: High contrast with deep blacks.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: crushed_blacks
+  target:
+    prompt: Crushed, inky blacks.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: lifted_blacks
+  target:
+    prompt: Lifted, faded blacks.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: centered_composition
+  target:
+    prompt: Subject centred in frame.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: rule_of_thirds
+  target:
+    prompt: Subject placed on the left third.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: negative_space
+  target:
+    prompt: Generous negative space above the subject for text.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: layered_depth
+  target:
+    prompt: Layered depth with a soft foreground element.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: chiaroscuro
+  target:
+    prompt: Dramatic chiaroscuro modelling the form in light and shadow.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: rimlight
+  target:
+    prompt: A bright rim separating the subject from the dark background.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: complementary
+  target:
+    prompt: Complementary colour contrast between subject and background.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: warmcool
+  target:
+    prompt: Warm subject set against a cool background.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: satblock
+  target:
+    prompt: Bold flat blocks of saturated colour meeting on hard edges.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: silhouette
+  target:
+    prompt: The subject as a crisp dark silhouette.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: dof
+  target:
+    prompt: Selective focus isolating the subject.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: texture
+  target:
+    prompt: Crisp crunchy texture against a smooth plain surface.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: isolation
+  target:
+    prompt: A single subject isolated on a clean, even background.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: popout
+  target:
+    prompt: One bright red tomato among green leaves.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: juxtaposition
+  target:
+    prompt: Two contrasting plates side by side.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: symmetry
+  target:
+    prompt: Perfectly symmetrical frontal composition.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: leadinglines
+  target:
+    prompt: Leading lines guiding the eye to the plate.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: framewithin
+  target:
+    prompt: The subject framed through a doorway.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: real_time
+  target:
+    prompt: Real-time motion.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: slow_motion
+  target:
+    prompt: Slow motion as the sauce splashes.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: fast_motion
+  target:
+    prompt: Sped-up fast motion.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: speed_ramp
+  target:
+    prompt: Speed ramp into slow motion at the moment of impact.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: timelapse
+  target:
+    prompt: Timelapse of the meal being prepared.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: reverse_playback
+  target:
+    prompt: The pour plays in reverse.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: steam
+  target:
+    prompt: Gentle steam rising from the hot dish.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: condensation
+  target:
+    prompt: Fresh condensation droplets on the cold glass.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: moisture
+  target:
+    prompt: Glistening, juicy surface moisture.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: atmospheric_haze
+  target:
+    prompt: Light atmospheric haze in the air.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: smoke
+  target:
+    prompt: Wisps of grill smoke.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: film_grain
+  target:
+    prompt: Fine 35mm film grain.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: glossy
+  target:
+    prompt: Glossy, polished surface reflections.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'
+- term_id: crispy_texture
+  target:
+    prompt: Crispy golden crust with fine texture.
+  relation: prompt_only
+  notes: No parameter controls this term on this model; express it in the prompt text. Phrase taken from vocabulary
+    prompt_en.
+  verified_on: '2026-11-01'

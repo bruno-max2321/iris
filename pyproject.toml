@@ -1,0 +1,59 @@
+[project]
+name = "iris-cli"
+version = "0.1.0"
+description = "Iris: deterministic visual-style analysis of reference videos, closed-vocabulary interpretation, human review, and a compact Style Bible contract."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "Proprietary" }
+dependencies = [
+  "pyyaml>=6.0.2",
+  "jsonschema>=4.23",
+  "pydantic>=2.9",
+]
+
+[project.optional-dependencies]
+# Stage dependencies are added per milestone and pinned in uv.lock on the Grok Bot VM.
+media = [
+  "av>=14.0",
+  "opencv-python-headless>=4.10",
+  "numpy>=2.0",
+  "scenedetect>=0.6.5",
+  "imagehash>=4.3",
+  "pyarrow>=17.0",
+]
+text = [
+  "paddlepaddle==3.3.1",
+  "paddleocr==3.7.0",
+  "rapidfuzz>=3.9",
+]
+audio = [
+  "faster-whisper>=1.2.1",
+  "librosa>=0.10",
+]
+people = [
+  "mediapipe>=0.10",
+]
+interpret = [
+  "anthropic>=0.40",
+]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.6",
+]
+
+[project.scripts]
+iris = "iris.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["iris*"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

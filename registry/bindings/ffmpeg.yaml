@@ -1,0 +1,389 @@
+# Binding table: vocabulary term -> ffmpeg
+# relation: exact | approx | prompt_only | unsupported. A term absent from this file is unsupported here.
+target: ffmpeg
+surface: ffmpeg_filtergraph
+capabilities: capabilities/ffmpeg-8.1-filters.json
+generated_at: '2026-11-01'
+notes: Filter names and xfade transitions were checked against the local ffmpeg 8.1 build; re-run tools/validate_vocabulary.py
+  with a capabilities file captured on the Grok Bot VM. Numeric values are starting points. Measurement filters
+  (ebur128, silencedetect) belong to the analysis pipeline, not to bindings. drawtext and subtitles are absent from
+  the authoring build (no libfreetype/libass); rows using them declare build_requires and the validator reports
+  them as warnings until the VM capture includes them.
+rows:
+- term_id: digital_zoom
+  target:
+    filter: zoompan=z='min(zoom+0.0015,1.3)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30
+    filters_used:
+    - zoompan
+  relation: exact
+  notes: Progressive post zoom; upsample first to limit softening.
+  verified_on: '2026-11-01'
+- term_id: punch_in
+  target:
+    filter: crop=iw/1.15:ih/1.15,scale=1080:1920
+    filters_used:
+    - crop
+    - scale
+  relation: exact
+  notes: Apply to the segment after the cut.
+  verified_on: '2026-11-01'
+- term_id: crop_animation
+  target:
+    filter: crop=w=iw*0.8:h=ih*0.8:x='(iw-ow)*t/3':y='(ih-oh)/2',scale=1080:1920
+    filters_used:
+    - crop
+    - scale
+  relation: exact
+  notes: Linear scan over 3 s.
+  verified_on: '2026-11-01'
+- term_id: added_shake
+  target:
+    filter: crop=w=iw-40:h=ih-40:x='20+12*sin(t*37)':y='20+12*cos(t*29)',scale=1080:1920
+    filters_used:
+    - crop
+    - scale
+  relation: approx
+  notes: Pseudo-random shake with overscan.
+  verified_on: '2026-11-01'
+- term_id: freeze_frame
+  target:
+    filter: tpad=stop_mode=clone:stop_duration=1
+    filters_used:
+    - tpad
+  relation: exact
+  notes: Freezes the last frame; for mid-shot freezes split with trim and concat.
+  verified_on: '2026-11-01'
+- term_id: slow_motion
+  target:
+    filter: setpts=2.0*PTS,minterpolate=fps=30:mi_mode=mci
+    filters_used:
+    - setpts
+    - minterpolate
+  relation: exact
+  notes: Motion interpolation may create artefacts; check defects.
+  verified_on: '2026-11-01'
+- term_id: fast_motion
+  target:
+    filter: setpts=0.5*PTS
+    filters_used:
+    - setpts
+  relation: exact
+  notes: Retime audio separately with atempo.
+  verified_on: '2026-11-01'
+- term_id: speed_ramp
+  target:
+    filter: setpts='if(lt(T,1),PTS,1+(PTS-1/TB)*2)'
+    filters_used:
+    - setpts
+  relation: approx
+  notes: Piecewise expression; validate timestamps after the ramp.
+  verified_on: '2026-11-01'
+- term_id: timelapse
+  target:
+    filter: setpts=PTS/10
+    filters_used:
+    - setpts
+  relation: approx
+  notes: Drop audio or replace with music.
+  verified_on: '2026-11-01'
+- term_id: reverse_playback
+  target:
+    filter: reverse
+    filters_used:
+    - reverse
+  relation: exact
+  notes: 'Buffers the whole clip in memory: trim first.'
+  verified_on: '2026-11-01'
+- term_id: hard_cut
+  target:
+    filter: concat=n=2:v=1:a=1
+    filters_used:
+    - concat
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: jump_cut
+  target:
+    filter: trim=start=0:end=2,setpts=PTS-STARTPTS
+    filters_used:
+    - trim
+    - setpts
+  relation: approx
+  notes: Trim and concat segments of the same take.
+  verified_on: '2026-11-01'
+- term_id: cross_dissolve
+  target:
+    filter: xfade=transition=fade:duration=0.5:offset=2.5
+    filters_used:
+    - xfade
+  relation: exact
+  notes: xfade 'fade' is a crossfade; 'dissolve' is a pixel-noise dissolve.
+  verified_on: '2026-11-01'
+- term_id: fade
+  target:
+    filter: xfade=transition=fadeblack:duration=0.5:offset=2.5
+    filters_used:
+    - xfade
+  relation: exact
+  when:
+    color: black
+  notes: Through black.
+  verified_on: '2026-11-01'
+- term_id: fade
+  target:
+    filter: xfade=transition=fadewhite:duration=0.3:offset=2.5
+    filters_used:
+    - xfade
+  relation: exact
+  when:
+    color: white
+  notes: Dip to white / flash.
+  verified_on: '2026-11-01'
+- term_id: wipe
+  target:
+    filter: xfade=transition=wipeleft:duration=0.4:offset=2.5
+    filters_used:
+    - xfade
+  relation: exact
+  when:
+    direction: left
+  notes: wiperight, wipeup, wipedown for other directions.
+  verified_on: '2026-11-01'
+- term_id: whip_transition
+  target:
+    filter: xfade=transition=hblur:duration=0.25:offset=2.5
+    filters_used:
+    - xfade
+  relation: approx
+  notes: Horizontal blur transition approximates a whip.
+  verified_on: '2026-11-01'
+- term_id: mask_transition
+  target:
+    filter: xfade=transition=circleopen:duration=0.4:offset=2.5
+    filters_used:
+    - xfade
+  relation: approx
+  notes: Graphic stand-in; a true object mask needs a matte and overlay.
+  verified_on: '2026-11-01'
+- term_id: black_and_white
+  target:
+    filter: hue=s=0
+    filters_used:
+    - hue
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: muted
+  target:
+    filter: eq=saturation=0.7
+    filters_used:
+    - eq
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: saturated
+  target:
+    filter: eq=saturation=1.3
+    filters_used:
+    - eq
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: warm
+  target:
+    filter: colortemperature=temperature=5000
+    filters_used:
+    - colortemperature
+  relation: approx
+  notes: Lower temperature value renders warmer.
+  verified_on: '2026-11-01'
+- term_id: cool
+  target:
+    filter: colortemperature=temperature=8000
+    filters_used:
+    - colortemperature
+  relation: approx
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: high_contrast
+  target:
+    filter: eq=contrast=1.25
+    filters_used:
+    - eq
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: low_contrast
+  target:
+    filter: eq=contrast=0.8
+    filters_used:
+    - eq
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: medium_contrast
+  target:
+    filter: curves=preset=medium_contrast
+    filters_used:
+    - curves
+  relation: approx
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: crushed_blacks
+  target:
+    filter: curves=master='0/0 0.12/0 1/1'
+    filters_used:
+    - curves
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: lifted_blacks
+  target:
+    filter: curves=master='0/0.07 1/1'
+    filters_used:
+    - curves
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: bleach_bypass
+  target:
+    filter: eq=saturation=0.5:contrast=1.3
+    filters_used:
+    - eq
+  relation: approx
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: teal_orange
+  target:
+    filter: colorbalance=rs=-0.1:bs=0.15:rh=0.1:bh=-0.1
+    filters_used:
+    - colorbalance
+  relation: approx
+  notes: Starting point; grade per region with masks.
+  verified_on: '2026-11-01'
+- term_id: filmic_print
+  target:
+    filter: lut3d=file=film_print.cube
+    filters_used:
+    - lut3d
+  relation: approx
+  notes: Requires an approved LUT file.
+  verified_on: '2026-11-01'
+- term_id: vignetting
+  target:
+    filter: vignette=angle=PI/5
+    filters_used:
+    - vignette
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: film_grain
+  target:
+    filter: noise=alls=10:allf=t
+    filters_used:
+    - noise
+  relation: exact
+  notes: Temporal noise.
+  verified_on: '2026-11-01'
+- term_id: motion_blur
+  target:
+    filter: tmix=frames=3
+    filters_used:
+    - tmix
+  relation: approx
+  notes: Frame blending, not true shutter blur.
+  verified_on: '2026-11-01'
+- term_id: diffusion
+  target:
+    filter: split[a][b];[b]gblur=sigma=12[bb];[a][bb]blend=all_mode=screen:all_opacity=0.25
+    filters_used:
+    - split
+    - gblur
+    - blend
+  relation: approx
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: halation
+  target:
+    filter: split[a][b];[b]curves=red='0/0 0.7/0 1/1',gblur=sigma=8[h];[a][h]blend=all_mode=screen:all_opacity=0.3
+    filters_used:
+    - split
+    - curves
+    - gblur
+    - blend
+  relation: approx
+  notes: Red-weighted highlight glow.
+  verified_on: '2026-11-01'
+- term_id: fisheye
+  target:
+    filter: lenscorrection=k1=0.3:k2=0.05
+    filters_used:
+    - lenscorrection
+  relation: approx
+  notes: Positive k values bulge; check sign on the target build.
+  verified_on: '2026-11-01'
+- term_id: split_screen
+  target:
+    filter: '[0:v][1:v]vstack=inputs=2'
+    filters_used:
+    - vstack
+  relation: exact
+  notes: hstack for side by side.
+  verified_on: '2026-11-01'
+- term_id: green_screen_composite
+  target:
+    filter: '[1:v]chromakey=0x00FF00:0.15:0.05[fg];[0:v][fg]overlay'
+    filters_used:
+    - chromakey
+    - overlay
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: cut_in
+  target:
+    filter: drawtext=fontfile=Inter-Bold.ttf:text='Title':fontsize=72:x=(w-tw)/2:y=h*0.2:enable='gte(t,1)'
+    filters_used:
+    - drawtext
+    build_requires:
+    - --enable-libfreetype
+  relation: exact
+  notes: Exact text and timing.
+  verified_on: '2026-11-01'
+- term_id: fade_in
+  target:
+    filter: drawtext=fontfile=Inter-Bold.ttf:text='Title':fontsize=72:x=(w-tw)/2:y=h*0.2:alpha='min(1,max(0,(t-1)/0.3))'
+    filters_used:
+    - drawtext
+    build_requires:
+    - --enable-libfreetype
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: phrase_cues
+  target:
+    filter: subtitles=captions.ass
+    filters_used:
+    - subtitles
+    build_requires:
+    - --enable-libass
+  relation: exact
+  notes: Captions rendered from an ASS/SRT file built from the transcript.
+  verified_on: '2026-11-01'
+- term_id: word_highlight
+  target:
+    filter: subtitles=captions_karaoke.ass
+    filters_used:
+    - subtitles
+    build_requires:
+    - --enable-libass
+  relation: approx
+  notes: ASS karaoke tags highlight the active word.
+  verified_on: '2026-11-01'
+- term_id: ducking
+  target:
+    filter: '[music][voice]sidechaincompress=threshold=0.05:ratio=8'
+    filters_used:
+    - sidechaincompress
+  relation: exact
+  notes: Voice as sidechain key.
+  verified_on: '2026-11-01'

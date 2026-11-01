@@ -1,0 +1,81 @@
+{
+  "schema_version": "0.1.0",
+  "note": "Expected ground truth for synthetic fixtures. Frame counts assume the generator in tools/make_fixtures.sh.",
+  "fixtures": {
+    "cfr_30.mp4": {
+      "fps": 30,
+      "frames": 180,
+      "duration_s": 6.0,
+      "cuts_s": [
+        2.0,
+        4.0
+      ],
+      "audio": true
+    },
+    "vfr_mixed.mp4": {
+      "vfr": true,
+      "frames": 228,
+      "duration_s": 6.0,
+      "segments": [
+        {
+          "fps": 24,
+          "frames": 48
+        },
+        {
+          "fps": 30,
+          "frames": 60
+        },
+        {
+          "fps": 60,
+          "frames": 120
+        }
+      ]
+    },
+    "flash_1frame.mp4": {
+      "fps": 30,
+      "frames": 180,
+      "events": [
+        {
+          "type": "flash",
+          "frame": 90,
+          "length_frames": 1
+        }
+      ]
+    },
+    "duplicate_frames.mp4": {
+      "fps": 36,
+      "source_fps": 30,
+      "frames": 144,
+      "duplicates": "every 5th source frame held once (fps=36 resample)"
+    },
+    "rotation_meta.mp4": {
+      "coded": [
+        1920,
+        1080
+      ],
+      "display": [
+        1080,
+        1920
+      ],
+      "rotate": 90
+    },
+    "silent.mp4": {
+      "audio": false,
+      "frames": 90
+    },
+    "truncated.mp4": {
+      "coverage": "partial"
+    },
+    "caption_1frame.mp4": {
+      "fps": 30,
+      "frames": 120,
+      "text_events": [
+        {
+          "frame": 60,
+          "length_frames": 1,
+          "text": "ONE FRAME"
+        }
+      ]
+    }
+  }
+}

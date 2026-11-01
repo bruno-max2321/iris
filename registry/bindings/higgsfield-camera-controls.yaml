@@ -1,0 +1,430 @@
+# Binding table: vocabulary term -> higgsfield-camera-controls
+# relation: exact | approx | prompt_only | unsupported. A term absent from this file is unsupported here.
+target: higgsfield-camera-controls
+surface: higgsfield_web_motion_presets
+catalog_url: https://higgsfield.ai/camera-controls
+generated_at: '2026-11-01'
+notes: One row per public preset (65). Presets are selected in the Higgsfield web Motion/Camera Controls UI; the
+  MCP catalog exposes preset_id only on higgsfield_preset and cinematic_studio_video_v2 without enumerated values,
+  so no MCP parameter is asserted here. term_id null means no vocabulary term matches. Mapping follows each preset's
+  page definition, never the English of its label. The four presets whose pages failed in the Codex research (Aerial
+  Pullback, Jib down, Rapid Zoom Out, Timelapse Glam) were retrieved on 2026-11-01.
+rows:
+- preset_label: General
+  motion_url: https://higgsfield.ai/motion/d2389a9a-91c2-4276-bc9c-c9e35e8fb85a
+  term_id: null
+  relation: unsupported
+  notes: Neutral natural camera behaviour; not necessarily locked. No single term.
+  verified_on: '2026-11-01'
+- preset_label: Eyes In
+  motion_url: https://higgsfield.ai/motion/3afdf962-2709-44a9-a41c-6565e6998529
+  term_id: apparent_push_in
+  relation: approx
+  notes: Slow approach toward the subject's eyes; mechanism not specified.
+  verified_on: '2026-11-01'
+- preset_label: Bullet Time
+  motion_url: https://higgsfield.ai/motion/bb341c21-9548-4efb-8a91-b6202167b344
+  term_id: slow_motion
+  relation: approx
+  also_terms:
+  - arc_left
+  notes: Slowed time combined with camera movement around the subject.
+  verified_on: '2026-11-01'
+- preset_label: Aerial Pullback
+  motion_url: https://higgsfield.ai/motion/a0bfa1b6-2dc7-4bbe-889f-fc04c27288ba
+  term_id: apparent_pull_out
+  relation: approx
+  also_terms:
+  - drone
+  - crane_up
+  notes: 'Page re-read 2026-11-01: the camera zooms upward while the subject shrinks against an expansive world;
+    mechanism (drone rise vs zoom) not specified.'
+  verified_on: '2026-11-01'
+- preset_label: Arc Left
+  motion_url: https://higgsfield.ai/motion/2a5d8f86-aef3-4b34-b5ee-fb2020daa131
+  term_id: arc_left
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: BTS
+  motion_url: https://higgsfield.ai/motion/b779cfda-9624-4f61-80bc-f5d0461f3959
+  term_id: apparent_pull_out
+  relation: approx
+  also_terms:
+  - reveal
+  notes: Pull-back revealing a behind-the-scenes crew.
+  verified_on: '2026-11-01'
+- preset_label: Buckle Up
+  motion_url: https://higgsfield.ai/motion/4ef72175-227a-418b-923d-2831dcdf7d4f
+  term_id: low_angle
+  relation: approx
+  notes: View from below through a transparent floor; do not read the label literally.
+  verified_on: '2026-11-01'
+- preset_label: Car Chasing
+  motion_url: https://higgsfield.ai/motion/a76f2e99-0a41-4fdf-934d-9c95b0ee85bf
+  term_id: tracking_shot
+  relation: approx
+  notes: Dynamic views following moving vehicles.
+  verified_on: '2026-11-01'
+- preset_label: Car Grip
+  motion_url: https://higgsfield.ai/motion/7c174c3f-7d11-451c-b7da-03be50f7d010
+  term_id: null
+  relation: unsupported
+  notes: Vehicle-mounted camera; no vehicle_mount term in v1.0.0.
+  verified_on: '2026-11-01'
+- preset_label: Crane Down
+  motion_url: https://higgsfield.ai/motion/494db3c2-2297-4cf7-bef7-cba0cebe73ee
+  term_id: crane_down
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Crane Over The Head
+  motion_url: https://higgsfield.ai/motion/f77584f2-7442-4128-91b5-095829b108c7
+  term_id: crane_up
+  relation: approx
+  also_terms:
+  - top_down
+  notes: Rise above the subject to reveal the surroundings.
+  verified_on: '2026-11-01'
+- preset_label: Crane Up
+  motion_url: https://higgsfield.ai/motion/45d7f47f-2c7b-4c5e-84b7-943758a39dcc
+  term_id: crane_up
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Crash Zoom In
+  motion_url: https://higgsfield.ai/motion/a2dddb76-03fa-429e-9905-577bffdf9d38
+  term_id: crash_zoom_in
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Crash Zoom Out
+  motion_url: https://higgsfield.ai/motion/3972c090-a448-4fd4-b8f0-cb71b4b523ee
+  term_id: zoom_out
+  relation: approx
+  notes: Very fast apparent zoom away; no crash_zoom_out term (use zoom_out with speed=fast).
+  verified_on: '2026-11-01'
+- preset_label: Dolly In
+  motion_url: https://higgsfield.ai/motion/1438937c-a220-4859-93f4-f373da3f73fb
+  term_id: dolly_in
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Dolly Left
+  motion_url: https://higgsfield.ai/motion/6d7fbb57-6008-4db4-a65c-56a10fc37969
+  term_id: dolly_left
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Dolly Out
+  motion_url: https://higgsfield.ai/motion/a787450c-b2d8-4321-967a-8c302da05949
+  term_id: dolly_out
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Dolly Right
+  motion_url: https://higgsfield.ai/motion/1431d4b2-14d2-4576-876e-c8cec2f5f838
+  term_id: dolly_right
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Dolly Zoom In
+  motion_url: https://higgsfield.ai/motion/114245a3-93fb-434a-9299-44ca9e4656a3
+  term_id: dolly_zoom
+  relation: exact
+  notes: Forward move with zoom out.
+  verified_on: '2026-11-01'
+- preset_label: Dolly Zoom Out
+  motion_url: https://higgsfield.ai/motion/e057dbd5-1734-4462-bb4c-7d64fe20795e
+  term_id: dolly_zoom
+  relation: exact
+  notes: Backward move with zoom in.
+  verified_on: '2026-11-01'
+- preset_label: Double Dolly
+  motion_url: https://higgsfield.ai/motion/e522bff4-da3b-4f7d-8c6e-f925b60979c5
+  term_id: tracking_shot
+  relation: approx
+  notes: Camera and subject move together while the background shifts.
+  verified_on: '2026-11-01'
+- preset_label: Dutch Angle
+  motion_url: https://higgsfield.ai/motion/28a18555-b8ed-4cac-aad6-40ecaaad9345
+  term_id: dutch_angle
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Eating Zoom
+  motion_url: https://higgsfield.ai/motion/f61ad61c-e2fc-4452-bcf2-91499c865241
+  term_id: zoom_in
+  relation: approx
+  notes: A zoom associated with the subject eating.
+  verified_on: '2026-11-01'
+- preset_label: Fisheye
+  motion_url: https://higgsfield.ai/motion/6c689fc3-e421-4ed5-892c-2092d1c60be0
+  term_id: fisheye
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Flying Cam Transition
+  motion_url: https://higgsfield.ai/motion/e43378b9-b20b-4158-a626-745bbbcacdbd
+  term_id: null
+  relation: unsupported
+  notes: 'Flying-camera transition through space; no single term (closest: drone + morph_transition).'
+  verified_on: '2026-11-01'
+- preset_label: Focus Change
+  motion_url: https://higgsfield.ai/motion/390e084a-4a80-410b-a808-77411828c61d
+  term_id: rack_focus
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: FPV Drone
+  motion_url: https://higgsfield.ai/motion/5eb82f94-2b98-4e4a-ab4b-ee6c872fb2c7
+  term_id: drone
+  relation: approx
+  notes: Fast first-person flight; drone is the support term.
+  verified_on: '2026-11-01'
+- preset_label: Glam
+  motion_url: https://higgsfield.ai/motion/ae4a319d-a06f-4b30-8b67-55a35a22f24a
+  term_id: arc_left
+  relation: approx
+  also_terms:
+  - slow_motion
+  notes: Camera-around-subject with slow-motion glamour look; direction not specified.
+  verified_on: '2026-11-01'
+- preset_label: Handheld
+  motion_url: https://higgsfield.ai/motion/cf529456-6478-4622-a572-052f0d8ae378
+  term_id: handheld
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Head Tracking
+  motion_url: https://higgsfield.ai/motion/fe520e06-7971-4f28-9e10-e45911c57bb6
+  term_id: tracking_shot
+  relation: approx
+  notes: Head stays anchored while the background moves.
+  verified_on: '2026-11-01'
+- preset_label: Hero Cam
+  motion_url: https://higgsfield.ai/motion/a8c54413-c991-416a-8ac8-32c6a42caa6c
+  term_id: orbit_360
+  relation: approx
+  notes: High-speed orbit around the subject; do not read the label literally.
+  verified_on: '2026-11-01'
+- preset_label: Hyperlapse
+  motion_url: https://higgsfield.ai/motion/f0f07997-34fe-4bef-84c1-ee9d4da94a1a
+  term_id: timelapse
+  relation: approx
+  notes: Accelerated time with camera travel.
+  verified_on: '2026-11-01'
+- preset_label: Incline
+  motion_url: https://higgsfield.ai/motion/b120f292-74e3-4878-817b-626e203f8a92
+  term_id: null
+  relation: unsupported
+  notes: Subject or world placed on a steep incline; not merely a dutch angle.
+  verified_on: '2026-11-01'
+- preset_label: Jib down
+  motion_url: https://higgsfield.ai/motion/4e2318ed-572e-4d5a-bcf9-7e70e4755a52
+  term_id: crane_down
+  relation: approx
+  notes: 'Page re-read 2026-11-01: camera descends toward the subject.'
+  verified_on: '2026-11-01'
+- preset_label: Jib up
+  motion_url: https://higgsfield.ai/motion/d6b43086-d5d1-415b-a239-016698b425d7
+  term_id: crane_up
+  relation: approx
+  notes: An upward camera rise.
+  verified_on: '2026-11-01'
+- preset_label: Lazy Susan
+  motion_url: https://higgsfield.ai/motion/025866ff-677c-4af2-92ef-52d6ec3b035e
+  term_id: orbit_360
+  relation: approx
+  notes: Camera rotates around a stationary subject (never subject_rotation).
+  verified_on: '2026-11-01'
+- preset_label: Low Shutter
+  motion_url: https://higgsfield.ai/motion/f7949a2f-2bcd-459a-96c0-80eb222abcdc
+  term_id: motion_blur
+  relation: approx
+  notes: Long-exposure look; not a frame-rate setting.
+  verified_on: '2026-11-01'
+- preset_label: Mouth In
+  motion_url: https://higgsfield.ai/motion/7351a8ad-9754-4844-94f1-00baf293d588
+  term_id: crash_zoom_in
+  relation: approx
+  notes: Rapid approach into the subject's mouth.
+  verified_on: '2026-11-01'
+- preset_label: Object POV
+  motion_url: https://higgsfield.ai/motion/ab14b29d-f23e-449e-a40e-ebdbb4f7437a
+  term_id: pov
+  relation: approx
+  notes: Viewpoint of an object.
+  verified_on: '2026-11-01'
+- preset_label: Overhead
+  motion_url: https://higgsfield.ai/motion/b6395b91-a356-4bc6-9cda-fc2793b3d706
+  term_id: top_down
+  relation: approx
+  notes: Above-subject treatment that can include tracking.
+  verified_on: '2026-11-01'
+- preset_label: Pan Left
+  motion_url: https://higgsfield.ai/motion/6f087874-24f3-4d48-9eb9-f4349ac6a105
+  term_id: pan_left
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Pan Right
+  motion_url: https://higgsfield.ai/motion/ce0b3d96-be4c-4b2d-962a-340dd386d910
+  term_id: pan_right
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Rapid Zoom In
+  motion_url: https://higgsfield.ai/motion/3dee792a-3fb1-40e5-8f46-3a1db42d64b1
+  term_id: crash_zoom_in
+  relation: approx
+  notes: Fast apparent zoom in; no quantified difference from Crash Zoom In.
+  verified_on: '2026-11-01'
+- preset_label: Rapid Zoom Out
+  motion_url: https://higgsfield.ai/motion/222b3cfc-5e24-44ee-b7f5-94deb2d2b514
+  term_id: zoom_out
+  relation: approx
+  also_terms:
+  - apparent_pull_out
+  notes: 'Page re-read 2026-11-01: quick pull-back zoom to reveal surroundings.'
+  verified_on: '2026-11-01'
+- preset_label: Road Rush
+  motion_url: https://higgsfield.ai/motion/c9c68a56-1f59-46d9-90f2-ee8535f0511d
+  term_id: null
+  relation: unsupported
+  notes: High-speed driving treatment with blur; closest terms tracking_shot + motion_blur.
+  verified_on: '2026-11-01'
+- preset_label: Robo Arm
+  motion_url: https://higgsfield.ai/motion/1bd4363a-6e5a-4c57-90a5-30f0733a769b
+  term_id: robot_arm
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Snorricam
+  motion_url: https://higgsfield.ai/motion/893cb65f-c528-40aa-83d8-c5aeb2bfe59f
+  term_id: null
+  relation: unsupported
+  notes: Performer-mounted camera; no snorricam term in v1.0.0 (alias candidate for a future camera.support term).
+  verified_on: '2026-11-01'
+- preset_label: Static
+  motion_url: https://higgsfield.ai/motion/c43e6d97-a55a-45d7-b5bc-b3a55d3a6e8e
+  term_id: static
+  relation: exact
+  also_terms:
+  - locked_off
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Super Dolly In
+  motion_url: https://higgsfield.ai/motion/6a6fb1b9-28ea-44c8-9be4-e5d8c6ab1f3a
+  term_id: dolly_in
+  relation: approx
+  notes: Stronger straight advance; no numeric strength documented.
+  verified_on: '2026-11-01'
+- preset_label: Super Dolly Out
+  motion_url: https://higgsfield.ai/motion/d66685ce-8c2b-4aeb-8d4a-195d474c7eca
+  term_id: dolly_out
+  relation: approx
+  notes: Stronger pullback; no numeric strength documented.
+  verified_on: '2026-11-01'
+- preset_label: Through Object In
+  motion_url: https://higgsfield.ai/motion/7fd00618-aa73-4fae-adb7-98ed16773eaa
+  term_id: dolly_in
+  relation: approx
+  also_terms:
+  - mask_transition
+  notes: Camera passes through an intervening object.
+  verified_on: '2026-11-01'
+- preset_label: Through Object Out
+  motion_url: https://higgsfield.ai/motion/510d88f9-d640-494c-b891-7446ca5cab40
+  term_id: dolly_out
+  relation: approx
+  also_terms:
+  - mask_transition
+  notes: Camera retreats through an intervening object.
+  verified_on: '2026-11-01'
+- preset_label: Tilt Down
+  motion_url: https://higgsfield.ai/motion/1958a932-8ffb-4f1a-a5cd-480858f6ae84
+  term_id: tilt_down
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Tilt up
+  motion_url: https://higgsfield.ai/motion/9f127dad-0db0-4e3d-a440-3cfbffca30b6
+  term_id: tilt_up
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Timelapse Glam
+  motion_url: https://higgsfield.ai/motion/4b2db33e-b163-484b-b33a-7b0a04d81ddf
+  term_id: timelapse
+  relation: approx
+  notes: 'Page re-read 2026-11-01: fast-forward makeup or glam routine; camera behaviour not described.'
+  verified_on: '2026-11-01'
+- preset_label: Timelapse Human
+  motion_url: https://higgsfield.ai/motion/b4ba822f-9171-4547-997e-c86de335385e
+  term_id: timelapse
+  relation: approx
+  notes: Central person still while surroundings accelerate.
+  verified_on: '2026-11-01'
+- preset_label: Timelapse Landscape
+  motion_url: https://higgsfield.ai/motion/d45f0a80-62b8-4651-bd62-0373a09b8f11
+  term_id: timelapse
+  relation: approx
+  notes: Environment changing through accelerated time.
+  verified_on: '2026-11-01'
+- preset_label: Whip Pan
+  motion_url: https://higgsfield.ai/motion/7a144766-cdd2-4b73-8a27-67b35f2d4ba2
+  term_id: whip_pan
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Wiggle
+  motion_url: https://higgsfield.ai/motion/cfbe9732-1b5a-4f59-9dbc-801f85f5c702
+  term_id: handheld
+  relation: approx
+  also_terms:
+  - added_shake
+  notes: Small shaking movement that may accompany a zoom or pan.
+  verified_on: '2026-11-01'
+- preset_label: YoYo Zoom
+  motion_url: https://higgsfield.ai/motion/702c6210-9798-4888-b7c9-e794c8fcaaef
+  term_id: zoom_in
+  relation: approx
+  also_terms:
+  - zoom_out
+  notes: Alternating inward and outward zooms.
+  verified_on: '2026-11-01'
+- preset_label: 360 Orbit
+  motion_url: https://higgsfield.ai/motion/d7c180bc-793c-4d29-83ba-c2d5e84e53d4
+  term_id: orbit_360
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: Zoom In
+  motion_url: https://higgsfield.ai/motion/a3a3db5d-d3c5-4d95-b429-235ae3d1ee82
+  term_id: apparent_push_in
+  relation: exact
+  also_terms:
+  - zoom_in
+  notes: Produces an apparent push-in; optical mechanics are not proven by the preset.
+  verified_on: '2026-11-01'
+- preset_label: Zoom Out
+  motion_url: https://higgsfield.ai/motion/f9e6792f-b385-4eca-87f6-f439e917a7aa
+  term_id: apparent_pull_out
+  relation: exact
+  also_terms:
+  - zoom_out
+  notes: Produces an apparent pull-out; optical mechanics are not proven.
+  verified_on: '2026-11-01'
+- preset_label: Arc Right
+  motion_url: https://higgsfield.ai/motion/0bdbf318-f918-4f9b-829a-74cab681d806
+  term_id: arc_right
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- preset_label: 3D Rotation
+  motion_url: https://higgsfield.ai/motion/6f06f47e-922e-4660-9fe9-754e4be69696
+  term_id: subject_rotation
+  relation: exact
+  notes: The product rotates in place; the camera does not orbit.
+  verified_on: '2026-11-01'

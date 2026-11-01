@@ -1,0 +1,1427 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iris.calorico.local/schemas/style_bible.schema.json",
+  "title": "Iris Style Bible",
+  "description": "The single, closed contract that Phase 1 (Iris) hands to every later phase. Aggregated over N approved references. Every value is either a measured range/distribution, an interpreted label accepted by a human reviewer, or absent. Term references must resolve to vocabulary.yaml; the Iris validator cross-checks them. Budget: the serialized JSON must stay under token_budget.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "style_id",
+    "status",
+    "language",
+    "built_from",
+    "coverage_summary",
+    "identity",
+    "concept",
+    "rhythm",
+    "camera",
+    "light",
+    "color",
+    "composition",
+    "environment",
+    "assets",
+    "typography",
+    "animation",
+    "montage",
+    "sound",
+    "narrative",
+    "continuity_rules",
+    "never_global",
+    "exemplars",
+    "provenance",
+    "token_budget"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "style_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*-v[0-9]+$",
+      "description": "e.g. kinetic-editorial-v1"
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "approved",
+        "deprecated"
+      ]
+    },
+    "language": {
+      "const": "en"
+    },
+    "built_from": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/ref_id"
+      },
+      "description": "Approved reference asset ids. status=approved requires >= 3."
+    },
+    "coverage_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decode",
+        "measurement",
+        "model_exposure"
+      ],
+      "properties": {
+        "decode": {
+          "enum": [
+            "full",
+            "partial"
+          ]
+        },
+        "measurement": {
+          "enum": [
+            "full",
+            "partial"
+          ]
+        },
+        "model_exposure": {
+          "enum": [
+            "economy",
+            "strict",
+            "none"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 300
+        }
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "one_line",
+        "iris_operations",
+        "signature_techniques",
+        "tone_words",
+        "meta"
+      ],
+      "properties": {
+        "one_line": {
+          "type": "string",
+          "maxLength": 240,
+          "description": "What makes the style recognizable in one sentence."
+        },
+        "iris_operations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "dominant"
+          ],
+          "properties": {
+            "dominant": {
+              "enum": [
+                "differentiate",
+                "group",
+                "sequence",
+                "infer"
+              ]
+            },
+            "secondary": {
+              "enum": [
+                "differentiate",
+                "group",
+                "sequence",
+                "infer"
+              ]
+            }
+          }
+        },
+        "signature_techniques": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 6,
+          "items": {
+            "$ref": "#/$defs/term_ref"
+          },
+          "description": "Iris technique ids ordered by frequency."
+        },
+        "tone_words": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 6,
+          "items": {
+            "type": "string",
+            "maxLength": 24
+          }
+        },
+        "meta": {
+          "$ref": "#/$defs/block_meta"
+        }
+      }
+    },
+    "concept": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "visual_concept",
+        "metaphor_language",
+        "subject_treatment",
+        "viewer_promise",
+        "meta"
+      ],
+      "properties": {
+        "visual_concept": {
+          "type": "string",
+          "maxLength": 400,
+          "description": "The organizing visual idea, stated so a stranger could storyboard from it."
+        },
+        "metaphor_language": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "description": "Recurring visual metaphors or devices (e.g. 'ingredients arrange themselves', 'text as physical object')."
+        },
+        "subject_treatment": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "person": {
+              "type": "string",
+              "maxLength": 160
+            },
+            "food": {
+              "type": "string",
+              "maxLength": 160
+            },
+            "product": {
+              "type": "string",
+              "maxLength": 160
+            },
+            "interface": {
+              "type": "string",
+              "maxLength": 160
+            },
+            "graphics": {
+              "type": "string",
+              "maxLength": 160
+            }
+          }
+        },
+        "viewer_promise": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "What the viewer is led to expect in the first two seconds."
+        },
+        "meta": {
+          "$ref": "#/$defs/block_meta"
+        }
+      }
+    },
+    "rhythm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "duration_s",
+        "hook",
+        "cut_rate_per_s",
+        "shot_length_s",
+        "speech_wpm",
+        "silence",
+        "music_relation",
+        "image_reuse",
+        "meta"
+      ],
+      "properties": {
+        "duration_s": {
+          "$ref": "#/$defs/quantiles"
+        },
+        "hook": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "window_s",
+            "cuts_in_hook",
+            "first_text_at_s"
+          ],
+          "properties": {
+            "window_s": {
+              "$ref": "#/$defs/range"
+            },
+            "cuts_in_hook": {
+              "$ref": "#/$defs/range"
+            },
+            "first_text_at_s": {
+              "$ref": "#/$defs/range"
+            },
+            "first_face_at_s": {
+              "$ref": "#/$defs/range"
+            }
+          }
+        },
+        "cut_rate_per_s": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "overall",
+            "hook",
+            "body",
+            "close"
+          ],
+          "properties": {
+            "overall": {
+              "$ref": "#/$defs/range"
+            },
+            "hook": {
+              "$ref": "#/$defs/range"
+            },
+            "body": {
+              "$ref": "#/$defs/range"
+            },
+            "close": {
+              "$ref": "#/$defs/range"
+            }
+          }
+        },
+        "shot_length_s": {
+          "$ref": "#/$defs/quantiles"
+        },
+        "speech_wpm": {
+          "$ref": "#/$defs/range"
+        },
+        "silence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "max_gap_s"
+          ],
+          "properties": {
+            "max_gap_s": {
+              "type": "number"
+            },
+            "pause_before_turn": {
+              "type": "boolean"
+            }
+          }
+        },
+        "music_relation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "term"
+          ],
+          "properties": {
+            "term": {
+              "$ref": "#/$defs/term_ref"
+            },
+            "share_of_cuts_on_beat": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "image_reuse": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "unique_pictures",
+            "reuse_factor"
+          ],
+          "properties": {
+            "unique_pictures": {
+              "$ref": "#/$defs/range"
+            },
+            "reuse_factor": {
+              "$ref": "#/$defs/range"
+            },
+            "variation_on_reuse": {
+              "type": "array",
+              "maxItems": 6,
+              "items": {
+                "enum": [
+                  "blur",
+                  "recolor",
+                  "scale",
+                  "crop",
+                  "flip",
+                  "grain",
+                  "none"
+                ]
+              },
+              "description": "Closed list of reuse variations; not vocabulary terms."
+            }
+          }
+        },
+        "meta": {
+          "$ref": "#/$defs/block_meta"
+        }
+      }
+    },
+    "camera": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "movement",
+        "shot_size",
+        "angle",
+        "support",
+        "never",
+        "meta"
+      ],
+      "properties": {
+        "movement": {
+          "$ref": "#/$defs/distribution"
+        },
+        "shot_size": {
+          "$ref": "#/$defs/distribution"
+        },
+        "angle": {
+          "$ref": "#/$defs/distribution"
+        },
+        "support": {
+          "$ref": "#/$defs/distribution"
+        },
+        "movement_dynamics": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "push_speed_pct_per_s": {
+              "$ref": "#/$defs/range"
+            },
+            "pan_speed_deg_per_s": {
+              "$ref": "#/$defs/range"
+            },
+            "easing": {
+              "$ref": "#/$defs/term_ref"
+            },
+            "settle_before_cut_s": {
+              "$ref": "#/$defs/range"
+            }
+          }
+        },
+        "optics": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "depth_of_field": {
+              "$ref": "#/$defs/term_ref"
+            },
+            "lens_look": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/term_ref"
+              }
+            },
+            "focus_changes": {
+              "$ref": "#/$defs/distribution"
+            }
+          }
+        },
+        "never": {
+          "$ref": "#/$defs/never"
+        },
+        "meta": {
+          "$ref": "#/$defs/block_meta"
+        }
+      }
+    },
+    "light": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "direction",
+        "edge",
+        "contrast_ratio",
+        "scheme",
+        "never",
+        "meta"
+      ],
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/term_ref"
+        },
+        "direction": {
+          "$ref": "#/$defs/distribution"
+        },
+        "edge": {
+          "$ref": "#/$defs/term_ref"
+        },
+        "contrast_ratio": {
+          "$ref": "#/$defs/range",
+          "description": "L* p95 / L* p5 on the subject region."
+        },
+        "scheme": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/term_ref"
+          }
+        },
+        "rim_or_separation": {
+          "enum": [
+            "none",
+            "subtle",
+            "strong"
+          ]
+        },
+        "contact_shadows": {
+          "enum": [
+            "absent",
+            "soft",
+            "hard"
+          ]
+        },
+        "practicals_visible": {
+          "type": "boolean"
+        },
+        "never": {
+          "$ref": "#/$defs/never"
+        },
+        "meta": {
+          "$ref": "#/$defs/block_meta"
+        }
+      }
+    },
+    "color": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "grade_family",
+        "regions",
+        "delta_e_between_shots",
+        "never",
+        "meta"
+      ],
+      "properties": {
+        "grade_family": {
+          "$ref": "#/$defs/term_ref"
+        },
+        "temperature": {
+          "$ref": "#/$defs/term_ref"
+        },
+        "regions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "background"
+          ],
+          "properties": {
+            "background": {
+              "$ref": "#/$defs/color_region"
+            },
+            "subject_food": {
+              "$ref": "#/$defs/color_region"
+            },
+            "subject_product": {
+              "$ref": "#/$defs/color_region"
+            },
+            "skin": {
+              "$ref": "#/$defs/color_region"
+            },
+            "interface": {
+              "$ref": "#/$defs/color_region"
+            },
+            "graphics": {
+              "$ref": "#/$defs/color_region"
+            }
+          }
+        },
+        "palette_roles": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "dominant": {
+              "$ref": "#/$defs/hex_list"
+            },
+            "secondary": {
+              "$ref": "#/$defs/hex_list"
+            },
+            "accent": {
+              "$ref": "#/$defs/hex_list"
+            },
+            "accent_share_of_frame": {
+              "$ref": "#/$defs/range"
+            }
+          }
+        },
+        "delta_e_between_shots": {
+          "$ref": "#/$defs/quantiles",
+          "description": "CIEDE2000 per comparable region, shot vs style master."
+        },
+        "never": {
+          "$ref": "#/$defs/never"
+        },
+        "meta": {
+          "$ref": "#/$defs/block_meta"
+        }
+      }
+    },
+    "composition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "techniques",
+        "subject_placement",
+        "negative_space",
+        "never",
+        "meta"
+      ],
+      "properties": {
+        "techniques": {
+          "$ref": "#/$defs/distribution",
+          "description": "Iris technique ids by share of shots."
+        },
+        "subject_placement": {
+          "$ref": "#/$defs/distribution",
+          "description": "thirds grid cells or center."
+        },
+        "negative_space": {
+          "$ref": "#/$defs/range",
+          "description": "Share of frame left empty, 0-1."
+        },
+        "text_safe_zone_respected": {
+          "type": "boolean"
+        },
+        "depth_layers": {
+          "$ref": "#/$defs/range"
+        },
+        "never": {
+          "$ref": "#/$defs/never"
+        },
+        "meta": {
+          "$ref": "#/$defs/block_meta"
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "settings",
+        "surfaces",
+        "atmosphere",
+        "never",
+        "meta"
+      ],
+      "properties": {
+        "settings": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "items": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "description": "Recurring places (e.g. 'kitchen counter, daylight', 'seamless off-white studio')."
+        },
+        "surfaces": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/term_ref"
+          },
+          "description": "Material vocabulary terms (wood, stone, matte, glossy...)."
+        },
+        "atmosphere": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "$ref": "#/$defs/term_ref"
+          },
+          "description": "steam, condensation, haze, grain, dust_motes..."
+        },
+        "props_recurring": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "string",
+            "maxLength": 60
+          }
+        },
+        "clutter_level": {
+          "enum": [
+            "minimal",
+            "moderate",
+            "dense"
+          ]
+        },
+        "never": {
+          "$ref": "#/$defs/never"
+        },
+        "meta": {
+          "$ref": "#/$defs/block_meta"
+        }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "families",
+        "meta"
+      ],
+      "properties": {
+        "families": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "family_id",
+              "role",
+              "visual_spec",
+              "share_of_runtime"
+            ],
+            "properties": {
+              "family_id": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+$"
+              },
+              "role": {
+                "enum": [
+                  "hero",
+                  "detail",
+                  "broll",
+                  "insert",
+                  "transition",
+                  "graphic",
+                  "interface",
+                  "person"
+                ]
+              },
+              "visual_spec": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "How this family looks in this style: framing, light, motion, duration."
+              },
+              "share_of_runtime": {
+                "$ref": "#/$defs/range"
+              },
+              "typical_duration_s": {
+                "$ref": "#/$defs/range"
+              },
+              "reference_images": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/evidence_id"
+                },
+                "description": "Approved stills (hashes) usable as references downstream."
+              }
+            }
+          }
+        },
+        "meta": {
+          "$ref": "#/$defs/block_meta"
+        }
+      }
+    },
+    "typography": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "family_class",
+        "weight",
+        "case",
+        "size_rel_frame_h",
+        "placement",
+        "lines",
+        "entrance",
+        "caption_cadence",
+        "never",
+        "meta"
+      ],
+      "properties": {
+        "family_class": {
+          "$ref": "#/$defs/term_ref"
+        },
+        "closest_family_candidates": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "description": "Candidates only; exact font identity is never claimed."
+        },
+        "weight": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "integer",
+            "multipleOf": 100,
+            "minimum": 100,
+            "maximum": 900
+          }
+        },
+        "case": {
+          "enum": [
+            "sentence",
+            "upper",
+            "lower",
+            "mixed"
+          ]
+        },
+        "size_rel_frame_h": {
+          "$ref": "#/$defs/range",
+          "description": "Cap height / frame height."
+        },
+        "placement": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "zone"
+          ],
+          "properties": {
+            "zone": {
+              "enum": [
+                "upper_third",
+                "center",
+                "lower_third",
+                "lower_third_above_safe",
+                "follows_subject"
+              ]
+            },
+            "x_align": {
+              "enum": [
+                "left",
+                "center",
+                "right"
+              ]
+            },
+            "box": {
+              "enum": [
+                "none",
+                "solid",
+                "pill",
+                "outline"
+              ]
+            },
+            "box_color": {
+              "$ref": "#/$defs/hex"
+            },
+            "text_color": {
+              "$ref": "#/$defs/hex"
+            },
+            "stroke": {
+              "type": "boolean"
+            },
+            "shadow": {
+              "type": "boolean"
+            }
+          }
+        },
+        "lines": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "max"
+          ],
+          "properties": {
+            "max": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4
+            },
+            "chars_per_line_p90": {
+              "type": "integer"
+            }
+          }
+        },
+        "entrance": {
+          "$ref": "#/$defs/distribution"
+        },
+        "entrance_duration_ms": {
+          "$ref": "#/$defs/range"
+        },
+        "emphasis": {
+          "$ref": "#/$defs/distribution",
+          "description": "word_highlight, word_reveal, color_pop..."
+        },
+        "caption_cadence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cues_per_10s",
+            "cue_duration_s",
+            "lead_vs_speech_ms"
+          ],
+          "properties": {
+            "cues_per_10s": {
+              "$ref": "#/$defs/range"
+            },
+            "cue_duration_s": {
+              "$ref": "#/$defs/range"
+            },
+            "lead_vs_speech_ms": {
+              "$ref": "#/$defs/range"
+            },
+            "words_per_cue": {
+              "$ref": "#/$defs/range"
+            },
+            "text_role": {
+              "enum": [
+                "transcript",
+                "emphasis",
+                "headline_only",
+                "mixed"
+              ]
+            }
+          }
+        },
+        "never": {
+          "$ref": "#/$defs/never"
+        },
+        "meta": {
+          "$ref": "#/$defs/block_meta"
+        }
+      }
+    },
+    "animation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "easing",
+        "entrance_ms",
+        "hold_ms",
+        "exit_ms",
+        "never",
+        "meta"
+      ],
+      "properties": {
+        "easing": {
+          "$ref": "#/$defs/distribution"
+        },
+        "entrance_ms": {
+          "$ref": "#/$defs/range"
+        },
+        "hold_ms": {
+          "$ref": "#/$defs/range"
+        },
+        "exit_ms": {
+          "$ref": "#/$defs/range"
+        },
+        "overshoot": {
+          "enum": [
+            "none",
+            "subtle",
+            "pronounced"
+          ]
+        },
+        "stagger_ms": {
+          "$ref": "#/$defs/range"
+        },
+        "anticipation": {
+          "type": "boolean"
+        },
+        "graphic_elements": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "description": "cards, underline, progress bar, arrows, counters..."
+        },
+        "never": {
+          "$ref": "#/$defs/never"
+        },
+        "meta": {
+          "$ref": "#/$defs/block_meta"
+        }
+      }
+    },
+    "montage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transitions",
+        "editorial_transforms",
+        "never",
+        "meta"
+      ],
+      "properties": {
+        "transitions": {
+          "$ref": "#/$defs/distribution"
+        },
+        "editorial_transforms": {
+          "$ref": "#/$defs/distribution"
+        },
+        "speed": {
+          "$ref": "#/$defs/distribution",
+          "description": "real_time, slow_motion, speed_ramp, freeze_frame shares."
+        },
+        "match_logic": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "enum": [
+              "action",
+              "shape",
+              "light",
+              "sound",
+              "none"
+            ]
+          }
+        },
+        "never": {
+          "$ref": "#/$defs/never"
+        },
+        "meta": {
+          "$ref": "#/$defs/block_meta"
+        }
+      }
+    },
+    "sound": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "loudness_lufs",
+        "meta"
+      ],
+      "properties": {
+        "role": {
+          "$ref": "#/$defs/distribution",
+          "description": "Share of runtime per sound.role term (voiceover, score, sound_effects, ambience, dialogue, silence)."
+        },
+        "loudness_lufs": {
+          "$ref": "#/$defs/range"
+        },
+        "true_peak_dbtp_max": {
+          "type": "number"
+        },
+        "music_energy": {
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "sfx_on_cuts": {
+          "type": "boolean"
+        },
+        "voice_treatment": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "never": {
+          "$ref": "#/$defs/never"
+        },
+        "meta": {
+          "$ref": "#/$defs/block_meta"
+        }
+      }
+    },
+    "narrative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "structure",
+        "hook_type",
+        "text_role",
+        "meta"
+      ],
+      "properties": {
+        "structure": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/term_ref"
+          },
+          "description": "Ordered narrative.function terms."
+        },
+        "beat_share_of_runtime": {
+          "$ref": "#/$defs/distribution"
+        },
+        "hook_type": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/term_ref"
+          }
+        },
+        "text_role": {
+          "enum": [
+            "transcript",
+            "emphasis",
+            "headline_only",
+            "mixed"
+          ]
+        },
+        "cta_treatment": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "meta": {
+          "$ref": "#/$defs/block_meta"
+        }
+      }
+    },
+    "continuity_rules": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 20,
+      "description": "Hard rules every clip in a production must satisfy. This is what `iris check` enforces and what later phases obey literally.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rule_id",
+          "scope",
+          "metric",
+          "tolerance",
+          "severity"
+        ],
+        "properties": {
+          "rule_id": {
+            "type": "string",
+            "pattern": "^cr_[a-z0-9_]+$"
+          },
+          "scope": {
+            "enum": [
+              "every_shot",
+              "adjacent_shots",
+              "sequence",
+              "text_layers",
+              "audio"
+            ]
+          },
+          "region": {
+            "enum": [
+              "background",
+              "subject_food",
+              "subject_product",
+              "skin",
+              "interface",
+              "graphics",
+              "frame"
+            ]
+          },
+          "metric": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "A measurement key from the evidence layer (e.g. color.delta_e2000_vs_master, light.direction, typography.size_rel_frame_h)."
+          },
+          "tolerance": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "e.g. '<= 6', 'in {left, front}', 'within 0.027-0.032'"
+          },
+          "severity": {
+            "enum": [
+              "fail",
+              "warn"
+            ]
+          },
+          "rationale": {
+            "type": "string",
+            "maxLength": 160
+          }
+        }
+      }
+    },
+    "never_global": {
+      "$ref": "#/$defs/never",
+      "description": "Style-level prohibitions that cut across blocks."
+    },
+    "exemplars": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hook",
+        "color_master",
+        "caption_style",
+        "camera_signature"
+      ],
+      "properties": {
+        "hook": {
+          "$ref": "#/$defs/exemplar_list"
+        },
+        "color_master": {
+          "$ref": "#/$defs/exemplar_list"
+        },
+        "light_master": {
+          "$ref": "#/$defs/exemplar_list"
+        },
+        "caption_style": {
+          "$ref": "#/$defs/exemplar_list"
+        },
+        "camera_signature": {
+          "$ref": "#/$defs/exemplar_list"
+        },
+        "transition_signature": {
+          "$ref": "#/$defs/exemplar_list"
+        },
+        "asset_hero": {
+          "$ref": "#/$defs/exemplar_list"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generated_at",
+        "iris_version",
+        "vocabulary_version",
+        "review_events_sha256"
+      ],
+      "properties": {
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "iris_version": {
+          "type": "string"
+        },
+        "vocabulary_version": {
+          "type": "string"
+        },
+        "review_events_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "approved_by": {
+          "type": "string"
+        },
+        "approved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "token_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "limit",
+        "measured",
+        "tokenizer"
+      ],
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "const": 3500
+        },
+        "measured": {
+          "type": "integer"
+        },
+        "tokenizer": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "ref_id": {
+      "type": "string",
+      "pattern": "^ref_[a-z0-9]{4,}$"
+    },
+    "evidence_id": {
+      "type": "string",
+      "pattern": "^[a-z]+(\\.[a-z0-9_]+)+$|^sha256:[a-f0-9]{64}$"
+    },
+    "term_ref": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$",
+      "description": "Must resolve to a term id in vocabulary.yaml (dimension.term or bare Iris technique id)."
+    },
+    "hex": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$"
+    },
+    "hex_list": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "$ref": "#/$defs/hex"
+      }
+    },
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min",
+        "max"
+      ],
+      "properties": {
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "typical": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string",
+          "maxLength": 16
+        }
+      }
+    },
+    "quantiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "p25",
+        "p50",
+        "p75"
+      ],
+      "properties": {
+        "min": {
+          "type": "number"
+        },
+        "p25": {
+          "type": "number"
+        },
+        "p50": {
+          "type": "number"
+        },
+        "p75": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string",
+          "maxLength": 16
+        }
+      }
+    },
+    "distribution": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 8,
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "description": "Share by duration or by count; keys are vocabulary term ids; values should sum to ~1."
+    },
+    "never": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "$ref": "#/$defs/term_ref"
+      }
+    },
+    "exemplar": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref",
+        "shot"
+      ],
+      "properties": {
+        "ref": {
+          "$ref": "#/$defs/ref_id"
+        },
+        "shot": {
+          "type": "string",
+          "pattern": "^s[0-9]{2,3}$"
+        },
+        "t": {
+          "type": "string",
+          "pattern": "^[0-9]+(\\.[0-9]+)?-[0-9]+(\\.[0-9]+)?$"
+        },
+        "frame": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "exemplar_list": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "$ref": "#/$defs/exemplar"
+      }
+    },
+    "block_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim_kind",
+        "review_status",
+        "n_refs"
+      ],
+      "properties": {
+        "claim_kind": {
+          "enum": [
+            "measured",
+            "estimated",
+            "interpreted",
+            "mixed"
+          ]
+        },
+        "review_status": {
+          "enum": [
+            "pending",
+            "accepted",
+            "corrected"
+          ]
+        },
+        "n_refs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 200
+        }
+      }
+    },
+    "color_region": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "L",
+        "saturation"
+      ],
+      "properties": {
+        "L": {
+          "$ref": "#/$defs/range"
+        },
+        "a": {
+          "$ref": "#/$defs/range"
+        },
+        "b": {
+          "$ref": "#/$defs/range"
+        },
+        "saturation": {
+          "enum": [
+            "low",
+            "medium",
+            "medium_high",
+            "high"
+          ]
+        },
+        "dominant_hue_deg": {
+          "$ref": "#/$defs/range"
+        },
+        "palette": {
+          "$ref": "#/$defs/hex_list"
+        },
+        "share_of_frame": {
+          "$ref": "#/$defs/range"
+        }
+      }
+    }
+  }
+}

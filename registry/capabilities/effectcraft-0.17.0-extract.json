@@ -1,0 +1,7320 @@
+{
+ "version": "0.17.0",
+ "source": "EffectCraft-Process-Package/Reference (local capture cited as L01/L02/L06 by GUIA_PROFESIONAL_AE_EFFECTCRAFT.md)",
+ "captured": "2026-10-30",
+ "mcp_tools": {
+  "list_commands": {
+   "params": [
+    "enabled_only",
+    "filter",
+    "schemas"
+   ],
+   "enums": {}
+  },
+  "describe_command": {
+   "params": [
+    "command",
+    "id"
+   ],
+   "enums": {}
+  },
+  "execute_command": {
+   "params": [
+    "command",
+    "id",
+    "params"
+   ],
+   "enums": {}
+  },
+  "run_script": {
+   "params": [
+    "code",
+    "name"
+   ],
+   "enums": {}
+  },
+  "get_project": {
+   "params": [],
+   "enums": {}
+  },
+  "get_comp": {
+   "params": [
+    "comp"
+   ],
+   "enums": {}
+  },
+  "get_layer": {
+   "params": [
+    "comp",
+    "depth",
+    "flat",
+    "layer",
+    "time"
+   ],
+   "enums": {}
+  },
+  "get_property": {
+   "params": [
+    "comp",
+    "layer",
+    "path",
+    "time"
+   ],
+   "enums": {}
+  },
+  "set_property": {
+   "params": [
+    "comp",
+    "expression",
+    "layer",
+    "path",
+    "time",
+    "timeBase",
+    "value"
+   ],
+   "enums": {
+    "timeBase": [
+     "layer",
+     "comp"
+    ]
+   }
+  },
+  "add_keyframe": {
+   "params": [
+    "comp",
+    "interpolation",
+    "keys",
+    "layer",
+    "path",
+    "time",
+    "timeBase",
+    "value"
+   ],
+   "enums": {
+    "interpolation": [
+     "linear",
+     "bezier",
+     "hold",
+     "easyEase",
+     "easyEaseIn",
+     "easyEaseOut"
+    ],
+    "timeBase": [
+     "layer",
+     "comp"
+    ]
+   }
+  },
+  "add_effect": {
+   "params": [
+    "comp",
+    "effect",
+    "layer",
+    "values"
+   ],
+   "enums": {}
+  },
+  "list_effects": {
+   "params": [
+    "filter"
+   ],
+   "enums": {}
+  },
+  "list_fonts": {
+   "params": [
+    "query",
+    "rescan",
+    "variable"
+   ],
+   "enums": {}
+  },
+  "get_state": {
+   "params": [],
+   "enums": {}
+  },
+  "render_frame": {
+   "params": [
+    "comp",
+    "inline",
+    "max_side",
+    "path",
+    "time",
+    "transparent"
+   ],
+   "enums": {}
+  },
+  "open_project": {
+   "params": [
+    "demo",
+    "new",
+    "path"
+   ],
+   "enums": {}
+  },
+  "save_project": {
+   "params": [
+    "path"
+   ],
+   "enums": {}
+  },
+  "undo": {
+   "params": [
+    "steps"
+   ],
+   "enums": {}
+  },
+  "redo": {
+   "params": [
+    "steps"
+   ],
+   "enums": {}
+  },
+  "history": {
+   "params": [
+    "goto"
+   ],
+   "enums": {}
+  },
+  "script_ui": {
+   "params": [
+    "action",
+    "result",
+    "value",
+    "widget",
+    "window"
+   ],
+   "enums": {
+    "action": [
+     "list",
+     "get",
+     "click",
+     "set",
+     "close"
+    ]
+   }
+  },
+  "batch": {
+   "params": [
+    "atomic",
+    "label",
+    "steps"
+   ],
+   "enums": {}
+  },
+  "command_list": {
+   "params": [
+    "enabled_only",
+    "filter",
+    "schemas"
+   ],
+   "enums": {}
+  },
+  "command_run": {
+   "params": [
+    "id",
+    "params"
+   ],
+   "enums": {}
+  },
+  "render_preview": {
+   "params": [
+    "comp",
+    "max_side",
+    "time",
+    "transparent"
+   ],
+   "enums": {}
+  },
+  "command_batch": {
+   "params": [
+    "steps",
+    "stop_on_error"
+   ],
+   "enums": {}
+  },
+  "doc_inspect": {
+   "params": [],
+   "enums": {}
+  }
+ },
+ "engine_commands": {
+  "file.newProject": [],
+  "file.openDemoProject": [],
+  "file.open": [
+   "path"
+  ],
+  "file.save": [
+   "path"
+  ],
+  "file.saveAs": [
+   "path"
+  ],
+  "file.incrementAndSave": [],
+  "file.revert": [],
+  "file.import": [
+   "addToComp",
+   "alphabetical",
+   "background",
+   "drag",
+   "frameRate",
+   "importAs",
+   "layer",
+   "page",
+   "paths",
+   "sequence"
+  ],
+  "file.projectSettings": [
+   "bitDepth",
+   "blendLinear",
+   "colorEngine",
+   "frameStart",
+   "hdr",
+   "linearize",
+   "outputSpace",
+   "renderer",
+   "timeDisplay",
+   "workingGamma",
+   "workingSpace"
+  ],
+  "file.cycleBitDepth": [],
+  "render.backend": [
+   "backend"
+  ],
+  "roto.models": [],
+  "roto.model.select": [
+   "id",
+   "wait"
+  ],
+  "roto.model.install": [
+   "id",
+   "path",
+   "wait"
+  ],
+  "roto.model.download": [
+   "id",
+   "wait"
+  ],
+  "roto.model.remove": [
+   "id"
+  ],
+  "face.models": [],
+  "face.model.select": [
+   "id",
+   "wait"
+  ],
+  "face.model.install": [
+   "id",
+   "path",
+   "wait"
+  ],
+  "face.model.download": [
+   "id",
+   "wait"
+  ],
+  "face.model.remove": [
+   "id"
+  ],
+  "edit.undo": [],
+  "edit.redo": [],
+  "edit.cut": [
+   "layers"
+  ],
+  "edit.copy": [
+   "layers"
+  ],
+  "edit.copyWithPropertyLinks": [
+   "layers"
+  ],
+  "edit.copyWithRelativePropertyLinks": [
+   "layers"
+  ],
+  "edit.copyExpressionOnly": [],
+  "edit.paste": [],
+  "edit.pasteSvg": [
+   "comp",
+   "name",
+   "svg"
+  ],
+  "edit.pasteReversedKeyframes": [
+   "layers",
+   "path",
+   "prop",
+   "time"
+  ],
+  "edit.clear": [
+   "layers"
+  ],
+  "edit.duplicate": [
+   "layers"
+  ],
+  "edit.splitLayer": [
+   "layers"
+  ],
+  "edit.liftWorkArea": [
+   "layers"
+  ],
+  "edit.extractWorkArea": [
+   "layers"
+  ],
+  "edit.selectAll": [],
+  "edit.deselectAll": [],
+  "edit.label": [
+   "keys",
+   "label",
+   "layers",
+   "target"
+  ],
+  "edit.selectLabelGroup": [],
+  "edit.purgeUndo": [],
+  "edit.purge": [
+   "what"
+  ],
+  "cache.diskStats": [],
+  "edit.editOriginal": [],
+  "edit.history.list": [],
+  "edit.history.goto": [
+   "id",
+   "index",
+   "steps"
+  ],
+  "comp.new": [
+   "adaptiveSampleLimit",
+   "anchor",
+   "background",
+   "duration",
+   "frameRate",
+   "height",
+   "motionBlurSamples",
+   "name",
+   "open",
+   "pixelAspect",
+   "preserveFrameRate",
+   "preserveResolution",
+   "renderer",
+   "shutterAngle",
+   "shutterPhase",
+   "startTime",
+   "startTimecode",
+   "width"
+  ],
+  "comp.settings": [
+   "adaptiveSampleLimit",
+   "anchor",
+   "background",
+   "comp",
+   "duration",
+   "frameRate",
+   "height",
+   "motionBlurSamples",
+   "name",
+   "pixelAspect",
+   "preserveFrameRate",
+   "preserveResolution",
+   "renderer",
+   "shutterAngle",
+   "shutterPhase",
+   "startTime",
+   "startTimecode",
+   "width"
+  ],
+  "comp.setPosterTime": [],
+  "comp.trimToWorkArea": [
+   "comp"
+  ],
+  "comp.open": [
+   "comp"
+  ],
+  "comp.close": [
+   "comp"
+  ],
+  "comp.workArea": [
+   "end",
+   "set",
+   "start"
+  ],
+  "comp.setSwitch": [
+   "switch",
+   "value"
+  ],
+  "comp.addMarker": [
+   "comment",
+   "time"
+  ],
+  "layer.newText": [
+   "allCaps",
+   "applyFill",
+   "applyStroke",
+   "baseline",
+   "baselineShift",
+   "box",
+   "composer",
+   "direction",
+   "edit",
+   "fauxBold",
+   "fauxItalic",
+   "fill",
+   "font",
+   "hScale",
+   "hangingPunctuation",
+   "indentFirst",
+   "indentLeft",
+   "indentRight",
+   "justify",
+   "kerning",
+   "leading",
+   "ligatures",
+   "name",
+   "position",
+   "size",
+   "smallCaps",
+   "spaceAfter",
+   "spaceBefore",
+   "stroke",
+   "strokeOverFill",
+   "strokeWidth",
+   "style",
+   "subscript",
+   "superscript",
+   "text",
+   "tracking",
+   "tsume",
+   "vScale",
+   "vertical"
+  ],
+  "layer.newSolid": [
+   "color",
+   "height",
+   "name",
+   "pixelAspect",
+   "width"
+  ],
+  "layer.newNull": [
+   "name"
+  ],
+  "layer.newShape": [
+   "fill",
+   "fillBlend",
+   "fillOpacity",
+   "fillType",
+   "kind",
+   "name",
+   "position",
+   "size",
+   "stroke",
+   "strokeBlend",
+   "strokeOpacity",
+   "strokeType",
+   "strokeWidth"
+  ],
+  "layer.newAdjustment": [
+   "name"
+  ],
+  "layer.settings": [
+   "affectAll",
+   "color",
+   "height",
+   "layer",
+   "name",
+   "pixelAspect",
+   "width"
+  ],
+  "layer.addItem": [
+   "duration",
+   "index",
+   "item",
+   "position",
+   "time"
+  ],
+  "layer.replaceSource": [
+   "comp",
+   "fixExpressions",
+   "item",
+   "layer",
+   "layers"
+  ],
+  "layer.select": [
+   "add",
+   "layers",
+   "toggle"
+  ],
+  "layer.selectNext": [
+   "add"
+  ],
+  "layer.selectPrevious": [
+   "add"
+  ],
+  "layer.extendSelectionNext": [],
+  "layer.extendSelectionPrevious": [],
+  "layer.setSwitch": [
+   "layers",
+   "merge",
+   "others",
+   "switch",
+   "value"
+  ],
+  "layer.rename": [
+   "layer",
+   "name"
+  ],
+  "layer.setComment": [
+   "comment",
+   "layers"
+  ],
+  "layer.setBlendMode": [
+   "layers",
+   "mode",
+   "step"
+  ],
+  "layer.setTrackMatte": [
+   "kind",
+   "layer",
+   "matte"
+  ],
+  "layer.setParent": [
+   "compensate",
+   "layers",
+   "parent"
+  ],
+  "layer.timing": [
+   "delta",
+   "in",
+   "inDelta",
+   "layers",
+   "merge",
+   "op",
+   "out",
+   "outDelta",
+   "start"
+  ],
+  "layer.moveInToStart": [
+   "layers"
+  ],
+  "layer.moveOutToEnd": [
+   "layers"
+  ],
+  "layer.moveEarlier": [
+   "layers"
+  ],
+  "layer.moveLater": [
+   "layers"
+  ],
+  "layer.moveEarlier10": [
+   "layers"
+  ],
+  "layer.moveLater10": [
+   "layers"
+  ],
+  "layer.slip": [
+   "delta",
+   "frames",
+   "layers",
+   "merge"
+  ],
+  "layer.slipBack": [
+   "layers"
+  ],
+  "layer.slipForward": [
+   "layers"
+  ],
+  "layer.arrange": [
+   "above",
+   "index",
+   "layers",
+   "to"
+  ],
+  "layer.precompose": [
+   "adjustDuration",
+   "layers",
+   "mode",
+   "name",
+   "open"
+  ],
+  "layer.addMask": [
+   "layer",
+   "mode",
+   "rect",
+   "shape"
+  ],
+  "layer.setMask": [
+   "inverted",
+   "layer",
+   "mask",
+   "mode"
+  ],
+  "layer.addShapeItem": [
+   "group",
+   "kind",
+   "layer"
+  ],
+  "layer.setText": [
+   "allCaps",
+   "allSmallCaps",
+   "applyFill",
+   "applyStroke",
+   "baseline",
+   "baselineShift",
+   "box",
+   "composer",
+   "contextualAlternates",
+   "direction",
+   "discretionaryLigatures",
+   "fauxBold",
+   "fauxItalic",
+   "figureStyle",
+   "figureWidth",
+   "figures",
+   "fill",
+   "font",
+   "fractions",
+   "hScale",
+   "hangingPunctuation",
+   "indentFirst",
+   "indentLeft",
+   "indentRight",
+   "justify",
+   "kerning",
+   "layer",
+   "leading",
+   "ligatures",
+   "ordinals",
+   "range",
+   "size",
+   "smallCaps",
+   "spaceAfter",
+   "spaceBefore",
+   "ss01",
+   "ss02",
+   "ss03",
+   "ss04",
+   "ss05",
+   "ss06",
+   "ss07",
+   "ss08",
+   "ss09",
+   "ss10",
+   "ss11",
+   "ss12",
+   "ss13",
+   "ss14",
+   "ss15",
+   "ss16",
+   "ss17",
+   "ss18",
+   "ss19",
+   "ss20",
+   "stroke",
+   "strokeOverFill",
+   "strokeWidth",
+   "style",
+   "stylisticAlternates",
+   "stylisticSets",
+   "subscript",
+   "superscript",
+   "swash",
+   "text",
+   "titling",
+   "tracking",
+   "tsume",
+   "vScale",
+   "variations",
+   "vertical"
+  ],
+  "layer.transform": [
+   "layers",
+   "op"
+  ],
+  "layer.style.convertToEditable": [
+   "layers"
+  ],
+  "layer.style.showAll": [
+   "layers"
+  ],
+  "layer.style.removeAll": [
+   "layers"
+  ],
+  "layer.style.dropShadow": [
+   "layers"
+  ],
+  "layer.style.innerShadow": [
+   "layers"
+  ],
+  "layer.style.outerGlow": [
+   "layers"
+  ],
+  "layer.style.innerGlow": [
+   "layers"
+  ],
+  "layer.style.bevelEmboss": [
+   "layers"
+  ],
+  "layer.style.satin": [
+   "layers"
+  ],
+  "layer.style.colorOverlay": [
+   "layers"
+  ],
+  "layer.style.gradientOverlay": [
+   "layers"
+  ],
+  "layer.style.stroke": [
+   "layers"
+  ],
+  "layer.style.add": [
+   "layers",
+   "style"
+  ],
+  "layer.style.remove": [
+   "layer",
+   "style"
+  ],
+  "layer.style.toggle": [
+   "layer",
+   "style",
+   "value"
+  ],
+  "layer.style.globalLight": [
+   "altitude",
+   "angle",
+   "comp",
+   "time"
+  ],
+  "layer.style.list": [
+   "layer"
+  ],
+  "layer.autoOrient": [
+   "layers",
+   "mode"
+  ],
+  "layer.newLight": [
+   "castsShadows",
+   "color",
+   "coneAngle",
+   "coneFeather",
+   "falloff",
+   "falloffDistance",
+   "intensity",
+   "kind",
+   "name",
+   "poi",
+   "position",
+   "radius",
+   "shadowDarkness",
+   "shadowDiffusion"
+  ],
+  "layer.newCamera": [
+   "angleOfView",
+   "aperture",
+   "blurLevel",
+   "dof",
+   "fStop",
+   "focalLength",
+   "focusDistance",
+   "lockToZoom",
+   "name",
+   "poi",
+   "position",
+   "preset",
+   "type",
+   "zoom"
+  ],
+  "layer.cameraSettings": [
+   "angleOfView",
+   "aperture",
+   "blurLevel",
+   "dof",
+   "fStop",
+   "focalLength",
+   "focusDistance",
+   "layer",
+   "name",
+   "poi",
+   "position",
+   "preset",
+   "type",
+   "zoom"
+  ],
+  "layer.lightSettings": [
+   "castsShadows",
+   "color",
+   "coneAngle",
+   "coneFeather",
+   "falloff",
+   "falloffDistance",
+   "intensity",
+   "kind",
+   "layer",
+   "name",
+   "poi",
+   "position",
+   "radius",
+   "shadowDarkness",
+   "shadowDiffusion"
+  ],
+  "view.set3DView": [
+   "comp",
+   "view"
+  ],
+  "view.setPaneView": [
+   "comp",
+   "pane",
+   "view"
+  ],
+  "view.3d.activeCamera": [
+   "comp"
+  ],
+  "view.3d.default": [
+   "comp"
+  ],
+  "view.3d.front": [
+   "comp"
+  ],
+  "view.3d.left": [
+   "comp"
+  ],
+  "view.3d.top": [
+   "comp"
+  ],
+  "view.3d.back": [
+   "comp"
+  ],
+  "view.3d.right": [
+   "comp"
+  ],
+  "view.3d.bottom": [
+   "comp"
+  ],
+  "view.3d.custom1": [
+   "comp"
+  ],
+  "view.3d.custom2": [
+   "comp"
+  ],
+  "view.3d.custom3": [
+   "comp"
+  ],
+  "view.3d.last": [
+   "comp"
+  ],
+  "view.lookAtSelected": [
+   "comp",
+   "layers"
+  ],
+  "view.lookAtAll": [
+   "comp"
+  ],
+  "camera.fromView": [
+   "comp"
+  ],
+  "view.reset3DView": [
+   "comp"
+  ],
+  "view.set3DViewCamera": [
+   "eye",
+   "poi",
+   "view",
+   "zoom"
+  ],
+  "camera.orbit": [
+   "dx",
+   "dy",
+   "layer",
+   "merge",
+   "pitch",
+   "yaw"
+  ],
+  "camera.pan": [
+   "dx",
+   "dy",
+   "layer",
+   "merge"
+  ],
+  "camera.dolly": [
+   "amount",
+   "layer",
+   "merge"
+  ],
+  "view.get3D": [
+   "comp"
+  ],
+  "layer.newModel": [
+   "index",
+   "item",
+   "name",
+   "path",
+   "position",
+   "time"
+  ],
+  "layer.new3dPrimitive": [
+   "acceptsLights",
+   "acceptsShadows",
+   "baseColor",
+   "castsShadows",
+   "depth",
+   "emissive",
+   "height",
+   "kind",
+   "metallic",
+   "name",
+   "position",
+   "radius",
+   "rings",
+   "roughness",
+   "segments",
+   "tubeRadius",
+   "width"
+  ],
+  "layer.newPrimitive": [
+   "acceptsLights",
+   "acceptsShadows",
+   "baseColor",
+   "castsShadows",
+   "depth",
+   "emissive",
+   "height",
+   "kind",
+   "metallic",
+   "name",
+   "position",
+   "radius",
+   "rings",
+   "roughness",
+   "segments",
+   "tubeRadius",
+   "width"
+  ],
+  "comp.renderer": [
+   "renderer",
+   "value"
+  ],
+  "layer.environment": [
+   "layers",
+   "on"
+  ],
+  "material.set": [
+   "acceptsLights",
+   "acceptsShadows",
+   "ambient",
+   "appearsInReflections",
+   "baseColor",
+   "castsShadows",
+   "diffuse",
+   "emissive",
+   "layers",
+   "lightTransmission",
+   "metal",
+   "metallic",
+   "roughness",
+   "specularIntensity",
+   "specularShininess",
+   "time"
+  ],
+  "material.revealSource": [
+   "layer"
+  ],
+  "material.reset": [
+   "layers"
+  ],
+  "material.duplicateAssign": [
+   "layers"
+  ],
+  "camera.stereoRig": [
+   "comp",
+   "configuration",
+   "convergence",
+   "convergenceOf",
+   "sceneDepth",
+   "view3d",
+   "zOffset"
+  ],
+  "camera.orbitNull": [
+   "comp",
+   "layer"
+  ],
+  "camera.fromModel": [
+   "comp",
+   "layers"
+  ],
+  "light.fromModel": [
+   "comp",
+   "layers"
+  ],
+  "light.controlWithCamera": [
+   "camera",
+   "comp",
+   "layers",
+   "on"
+  ],
+  "light.environmentBackground": [
+   "comp",
+   "layer"
+  ],
+  "layer.addTextAnimator": [
+   "layer",
+   "name",
+   "properties"
+  ],
+  "layer.addTextAnimatorProperty": [
+   "animator",
+   "layer",
+   "property"
+  ],
+  "layer.addTextSelector": [
+   "animator",
+   "kind",
+   "layer"
+  ],
+  "layer.enablePerChar3D": [
+   "enabled",
+   "layer",
+   "toggle"
+  ],
+  "layer.applyTextPreset": [
+   "layer",
+   "preset"
+  ],
+  "text.animatorFontAxes": [
+   "animator",
+   "axis",
+   "layer"
+  ],
+  "text.presets": [],
+  "text.animatorProperties": [],
+  "text.edit": [
+   "caret",
+   "created",
+   "layer",
+   "select"
+  ],
+  "text.endEdit": [],
+  "text.fontFeatures": [
+   "font",
+   "layer",
+   "style"
+  ],
+  "text.fonts": [
+   "query",
+   "rescan",
+   "variable"
+  ],
+  "text.setSelection": [
+   "end",
+   "layer",
+   "start"
+  ],
+  "text.moveCaret": [
+   "extend",
+   "to"
+  ],
+  "text.insert": [
+   "layer",
+   "merge",
+   "range",
+   "text"
+  ],
+  "text.delete": [
+   "direction",
+   "layer",
+   "merge",
+   "range",
+   "word"
+  ],
+  "edit.pasteTextMatchFormatting": [
+   "text"
+  ],
+  "edit.pasteTextFormattingOnly": [
+   "layer"
+  ],
+  "layer.timeStretch": [
+   "duration",
+   "hold",
+   "layers",
+   "op",
+   "percent"
+  ],
+  "layer.stretchInToTime": [
+   "layers"
+  ],
+  "layer.stretchOutToTime": [
+   "layers"
+  ],
+  "layer.timeReverse": [
+   "layers"
+  ],
+  "layer.enableTimeRemap": [
+   "layers",
+   "value"
+  ],
+  "layer.freezeFrame": [
+   "layers"
+  ],
+  "layer.freezeOnLastFrame": [
+   "layers"
+  ],
+  "prop.get": [
+   "layer",
+   "path",
+   "prop",
+   "time"
+  ],
+  "prop.set": [
+   "dims",
+   "layer",
+   "merge",
+   "offset",
+   "path",
+   "prop",
+   "proportional",
+   "selected",
+   "time",
+   "timeBase",
+   "value"
+  ],
+  "prop.toggleAnimation": [
+   "layer",
+   "merge",
+   "path",
+   "prop",
+   "selected",
+   "value"
+  ],
+  "prop.addKey": [
+   "layer",
+   "path",
+   "prop",
+   "time",
+   "timeBase",
+   "value"
+  ],
+  "prop.toggleKey": [
+   "layer",
+   "path",
+   "prop",
+   "selected"
+  ],
+  "keys.toggleTransform": [
+   "layers",
+   "prop"
+  ],
+  "prop.setExpression": [
+   "enabled",
+   "expression",
+   "layer",
+   "path",
+   "prop"
+  ],
+  "prop.reset": [
+   "default",
+   "layer",
+   "path",
+   "prop"
+  ],
+  "prop.select": [
+   "add",
+   "layer",
+   "path",
+   "prop",
+   "selectKeys"
+  ],
+  "prop.deselect": [
+   "layer",
+   "path",
+   "prop"
+  ],
+  "prop.convertExpressionToKeyframes": [
+   "layer",
+   "path",
+   "prop"
+  ],
+  "keys.select": [
+   "add",
+   "keys",
+   "selectProperties",
+   "timeBase",
+   "toggle"
+  ],
+  "keys.move": [
+   "delta",
+   "merge"
+  ],
+  "keys.delete": [],
+  "keys.easyEase": [
+   "which"
+  ],
+  "keys.easyEaseIn": [],
+  "keys.easyEaseOut": [],
+  "keys.toggleHold": [],
+  "keys.interpolation": [
+   "autoBezier",
+   "continuous",
+   "in",
+   "interpolation",
+   "out",
+   "roving",
+   "spatial"
+  ],
+  "keys.velocity": [
+   "continuous",
+   "inInfluence",
+   "inSpeed",
+   "outInfluence",
+   "outSpeed"
+  ],
+  "prop.renameGroup": [
+   "layer",
+   "name",
+   "prop"
+  ],
+  "prop.setGroupEnabled": [
+   "layer",
+   "prop",
+   "value"
+  ],
+  "prop.removeGroup": [
+   "layer",
+   "prop"
+  ],
+  "prop.duplicateGroup": [
+   "layer",
+   "prop"
+  ],
+  "prop.moveGroup": [
+   "index",
+   "layer",
+   "prop"
+  ],
+  "project.select": [
+   "add",
+   "items"
+  ],
+  "project.rename": [
+   "item",
+   "name"
+  ],
+  "project.move": [
+   "folder",
+   "items"
+  ],
+  "project.setLabel": [
+   "items",
+   "label"
+  ],
+  "project.setComment": [
+   "comment",
+   "items"
+  ],
+  "project.delete": [
+   "items"
+  ],
+  "project.usage": [
+   "items"
+  ],
+  "project.usedIn": [
+   "item"
+  ],
+  "project.duplicate": [
+   "items"
+  ],
+  "keys.copy": [],
+  "keys.paste": [
+   "layers",
+   "path",
+   "prop",
+   "time"
+  ],
+  "keys.selectAll": [
+   "layers",
+   "visible"
+  ],
+  "keys.nudge": [
+   "frames",
+   "merge"
+  ],
+  "keys.nudgeForward": [],
+  "keys.nudgeBackward": [],
+  "keys.nudgeForward10": [],
+  "keys.nudgeBackward10": [],
+  "keys.set": [
+   "layer",
+   "merge",
+   "newTime",
+   "path",
+   "prop",
+   "time",
+   "timeBase",
+   "value"
+  ],
+  "keys.selectEqual": [],
+  "keys.selectPrevious": [],
+  "keys.selectFollowing": [],
+  "keys.setEase": [
+   "dim",
+   "influence",
+   "layer",
+   "merge",
+   "path",
+   "prop",
+   "side",
+   "speed",
+   "time"
+  ],
+  "keys.timeReverse": [],
+  "keys.info": [
+   "keys"
+  ],
+  "keys.wiggle": [
+   "apply",
+   "dimension",
+   "dimensions",
+   "frequency",
+   "magnitude",
+   "noise",
+   "seed"
+  ],
+  "keys.smooth": [
+   "tolerance"
+  ],
+  "motion.sketch": [
+   "captureSpeed",
+   "layer",
+   "points",
+   "smoothing",
+   "start"
+  ],
+  "prop.separateDimensions": [
+   "layer",
+   "value"
+  ],
+  "prop.pickWhip": [
+   "expression",
+   "layer",
+   "path",
+   "prop",
+   "range",
+   "target"
+  ],
+  "markers.list": [
+   "layer"
+  ],
+  "markers.nested": [
+   "comp",
+   "layer"
+  ],
+  "markers.set": [
+   "at",
+   "chapter",
+   "comment",
+   "cuePoint",
+   "duration",
+   "frameTarget",
+   "index",
+   "label",
+   "layer",
+   "new",
+   "protected",
+   "time",
+   "url"
+  ],
+  "markers.delete": [
+   "at",
+   "index",
+   "layer"
+  ],
+  "markers.convert": [
+   "at",
+   "index",
+   "layer",
+   "toLayer"
+  ],
+  "layer.updateMarkersFromSource": [
+   "layers"
+  ],
+  "mask.new": [
+   "closed",
+   "inTangents",
+   "layer",
+   "mode",
+   "outTangents",
+   "vertices"
+  ],
+  "mask.addVertex": [
+   "in",
+   "index",
+   "layer",
+   "mask",
+   "out",
+   "point"
+  ],
+  "mask.setVertex": [
+   "in",
+   "index",
+   "layer",
+   "mask",
+   "merge",
+   "out",
+   "point"
+  ],
+  "mask.setClosed": [
+   "closed",
+   "layer",
+   "mask"
+  ],
+  "mask.selectVertices": [
+   "add",
+   "toggle",
+   "vertices"
+  ],
+  "mask.moveVertices": [
+   "delta",
+   "merge",
+   "vertices"
+  ],
+  "mask.deleteVertices": [
+   "vertices"
+  ],
+  "mask.convertVertex": [
+   "index",
+   "layer",
+   "mask",
+   "smooth"
+  ],
+  "mask.insertVertex": [
+   "layer",
+   "mask",
+   "segment",
+   "t"
+  ],
+  "mask.featherPoint.add": [
+   "layer",
+   "mask",
+   "point",
+   "radius",
+   "segment",
+   "t",
+   "tension"
+  ],
+  "mask.featherPoint.set": [
+   "index",
+   "layer",
+   "mask",
+   "merge",
+   "point",
+   "radius",
+   "segment",
+   "t",
+   "tension",
+   "toward"
+  ],
+  "mask.featherPoint.remove": [
+   "all",
+   "index",
+   "layer",
+   "mask"
+  ],
+  "mask.featherPoint.list": [
+   "layer",
+   "mask"
+  ],
+  "mask.remove": [
+   "layer",
+   "mask"
+  ],
+  "mask.removeAll": [
+   "layer"
+  ],
+  "path.rotoBezier": [
+   "layer",
+   "mask",
+   "value"
+  ],
+  "path.convertToBezier": [
+   "layer",
+   "mask"
+  ],
+  "path.groupShapes": [
+   "items",
+   "layer"
+  ],
+  "path.ungroupShapes": [
+   "items",
+   "layer"
+  ],
+  "path.setFirstVertex": [
+   "index",
+   "layer",
+   "mask"
+  ],
+  "path.freeTransform": [
+   "anchor",
+   "layer",
+   "mask",
+   "offset",
+   "rotation",
+   "scale"
+  ],
+  "layer.mask.motionBlur": [
+   "layer",
+   "mask",
+   "mode"
+  ],
+  "layer.mask.featherFalloff": [
+   "layer",
+   "mask",
+   "mode"
+  ],
+  "layer.mask.hideLocked": [
+   "value"
+  ],
+  "effect.apply": [
+   "effect",
+   "layers"
+  ],
+  "layer.channels": [
+   "layer"
+  ],
+  "effect.pickColor": [
+   "average",
+   "effect",
+   "layer",
+   "param",
+   "time",
+   "x",
+   "y"
+  ],
+  "effect.pickCryptomatte": [
+   "effect",
+   "layer",
+   "mode",
+   "scale",
+   "time",
+   "x",
+   "y"
+  ],
+  "effect.cryptomatteAt": [
+   "effect",
+   "layer",
+   "scale",
+   "time",
+   "x",
+   "y"
+  ],
+  "effect.applyLast": [
+   "layers"
+  ],
+  "effect.removeAll": [
+   "layers"
+  ],
+  "effect.remove": [
+   "effect",
+   "layer"
+  ],
+  "effect.toggle": [
+   "effect",
+   "layer",
+   "value"
+  ],
+  "effect.setLabel": [
+   "effect",
+   "label",
+   "layer"
+  ],
+  "effect.reorder": [
+   "effect",
+   "index",
+   "layer"
+  ],
+  "effect.duplicate": [
+   "effect",
+   "layer"
+  ],
+  "effect.copy": [
+   "effect",
+   "effects",
+   "layer"
+  ],
+  "effect.paste": [
+   "layers"
+  ],
+  "effect.reset": [
+   "effect",
+   "layer"
+  ],
+  "effect.swapTintColors": [
+   "comp",
+   "effect",
+   "layer"
+  ],
+  "effect.list": [
+   "filter"
+  ],
+  "effect.warning": [
+   "effect",
+   "layer",
+   "time"
+  ],
+  "effect.plugins.list": [],
+  "effect.plugins.load": [
+   "folder",
+   "path"
+  ],
+  "time.set": [
+   "frame",
+   "time",
+   "timecode"
+  ],
+  "time.nextFrame": [],
+  "time.previousFrame": [],
+  "time.forward10": [],
+  "time.back10": [],
+  "time.step": [
+   "frames"
+  ],
+  "time.start": [],
+  "time.end": [],
+  "time.workAreaStart": [],
+  "time.workAreaEnd": [],
+  "time.previousInOut": [],
+  "time.nextInOut": [],
+  "time.layerIn": [],
+  "time.layerOut": [],
+  "time.nextKey": [
+   "visible"
+  ],
+  "time.previousKey": [
+   "visible"
+  ],
+  "time.go": [
+   "prop",
+   "to",
+   "visible"
+  ],
+  "comp.workAreaToSelection": [
+   "comp",
+   "layers"
+  ],
+  "comp.activateRecent": [
+   "comp"
+  ],
+  "keys.deselectAll": [],
+  "layer.mask.selectNext": [
+   "layer"
+  ],
+  "layer.mask.selectPrevious": [
+   "layer"
+  ],
+  "layer.castsShadows": [
+   "layers",
+   "value"
+  ],
+  "renderQueue.add": [
+   "audio",
+   "audioBitrate",
+   "audioChannels",
+   "audioFormat",
+   "bitrate",
+   "channels",
+   "color",
+   "colorDepth",
+   "comp",
+   "crop",
+   "duration",
+   "effects",
+   "end",
+   "fieldRender",
+   "format",
+   "frameBlending",
+   "frameRate",
+   "guideLayers",
+   "includeProjectLink",
+   "keyframeInterval",
+   "level",
+   "log",
+   "loop",
+   "motionBlur",
+   "opusApplication",
+   "output",
+   "profile",
+   "proresProfile",
+   "proxyUse",
+   "pulldown",
+   "quality",
+   "rateControl",
+   "resize",
+   "resolution",
+   "sampleRate",
+   "skipExisting",
+   "solo",
+   "start",
+   "storageOverflow",
+   "template",
+   "timeSpan",
+   "webmBitrate",
+   "webmCodec"
+  ],
+  "renderQueue.remove": [
+   "index",
+   "item"
+  ],
+  "renderQueue.setRender": [
+   "index",
+   "item",
+   "render"
+  ],
+  "renderQueue.setRenderSettings": [
+   "colorDepth",
+   "duration",
+   "effects",
+   "end",
+   "fieldRender",
+   "frameBlending",
+   "frameRate",
+   "guideLayers",
+   "index",
+   "item",
+   "motionBlur",
+   "proxyUse",
+   "pulldown",
+   "quality",
+   "resolution",
+   "skipExisting",
+   "solo",
+   "start",
+   "storageOverflow",
+   "template",
+   "timeSpan"
+  ],
+  "renderQueue.setOutputModule": [
+   "audio",
+   "audioBitrate",
+   "audioChannels",
+   "audioFormat",
+   "bitrate",
+   "channels",
+   "color",
+   "crop",
+   "cropBottom",
+   "cropLeft",
+   "cropRight",
+   "cropTop",
+   "format",
+   "includeProjectLink",
+   "index",
+   "item",
+   "keyframeInterval",
+   "level",
+   "loop",
+   "module",
+   "opusApplication",
+   "output",
+   "postRenderAction",
+   "profile",
+   "proresProfile",
+   "quality",
+   "rateControl",
+   "resize",
+   "resizeHeight",
+   "resizeWidth",
+   "sampleRate",
+   "template",
+   "webmBitrate",
+   "webmCodec"
+  ],
+  "renderQueue.setOutput": [
+   "index",
+   "item",
+   "module",
+   "path"
+  ],
+  "render.addOutputModule": [
+   "audio",
+   "bitrate",
+   "channels",
+   "format",
+   "index",
+   "item",
+   "output",
+   "proresProfile",
+   "quality"
+  ],
+  "render.preRender": [
+   "comp",
+   "format",
+   "output"
+  ],
+  "render.saveCurrentPreview": [
+   "comp",
+   "path"
+  ],
+  "renderQueue.move": [
+   "index",
+   "item",
+   "to"
+  ],
+  "renderQueue.duplicate": [
+   "index",
+   "item"
+  ],
+  "renderQueue.render": [
+   "wait"
+  ],
+  "renderQueue.stop": [],
+  "renderQueue.list": [],
+  "renderQueue.templates": [],
+  "renderQueue.saveTemplate": [
+   "from",
+   "index",
+   "item",
+   "kind",
+   "module",
+   "name",
+   "params"
+  ],
+  "renderQueue.deleteTemplate": [
+   "kind",
+   "name"
+  ],
+  "renderQueue.setTemplateDefault": [
+   "kind",
+   "name",
+   "slot"
+  ],
+  "renderQueue.applyTemplate": [
+   "index",
+   "item",
+   "module",
+   "outputModule",
+   "renderSettings"
+  ],
+  "renderQueue.setLog": [
+   "index",
+   "item",
+   "log"
+  ],
+  "renderQueue.setNotify": [
+   "notify"
+  ],
+  "renderQueue.setOverflowFolders": [
+   "folders"
+  ],
+  "renderQueue.formats": [],
+  "help.docs": [
+   "page"
+  ],
+  "help.discord": [],
+  "help.website": [],
+  "help.appPage": [],
+  "help.github": [],
+  "help.onlineTutorials": [],
+  "help.inAppTutorials": [],
+  "help.reportIssue": [],
+  "help.sibling": [
+   "app",
+   "kind"
+  ],
+  "command.list": [
+   "enabledOnly",
+   "filter",
+   "schemas"
+  ],
+  "command.describe": [
+   "command"
+  ],
+  "app.capabilities": [],
+  "project.summary": [],
+  "comp.info": [
+   "comp"
+  ],
+  "layer.tree": [
+   "comp",
+   "depth",
+   "layer",
+   "time"
+  ],
+  "editor.state": [],
+  "engine.batch": [
+   "atomic",
+   "label",
+   "steps"
+  ],
+  "layer.quality": [
+   "layers",
+   "quality"
+  ],
+  "layer.sampling": [
+   "layers",
+   "sampling",
+   "toggle"
+  ],
+  "layer.frameBlending": [
+   "layers",
+   "mode"
+  ],
+  "layer.hideOtherVideo": [
+   "layers"
+  ],
+  "layer.showAllVideo": [
+   "comp"
+  ],
+  "layer.unlockAll": [
+   "comp"
+  ],
+  "layer.expressions": [
+   "enabled",
+   "layers"
+  ],
+  "layer.setTransform": [
+   "layers",
+   "prop",
+   "value"
+  ],
+  "layer.centerAnchor": [
+   "layers"
+  ],
+  "layer.mask.shape": [
+   "layer",
+   "mask",
+   "rect",
+   "shape"
+  ],
+  "layer.mask.set": [
+   "field",
+   "layer",
+   "mask",
+   "value"
+  ],
+  "layer.mask.reset": [
+   "layer",
+   "mask"
+  ],
+  "layer.mask.remove": [
+   "layer",
+   "mask"
+  ],
+  "layer.mask.removeAll": [
+   "layers"
+  ],
+  "layer.mask.mode": [
+   "layer",
+   "mask",
+   "mode"
+  ],
+  "layer.mask.invert": [
+   "layer",
+   "mask",
+   "value"
+  ],
+  "layer.mask.lock": [
+   "layer",
+   "mask",
+   "value"
+  ],
+  "layer.mask.unlockAll": [
+   "layers"
+  ],
+  "layer.mask.lockOthers": [
+   "layer",
+   "mask"
+  ],
+  "layer.addMarker": [
+   "comment",
+   "layers",
+   "time"
+  ],
+  "layer.markersLock": [
+   "layers",
+   "value"
+  ],
+  "layer.deleteAllMarkers": [
+   "layers"
+  ],
+  "layer.trackMatte": [
+   "layers",
+   "op"
+  ],
+  "layer.openSource": [
+   "layer"
+  ],
+  "layer.revealInFinder": [
+   "layer"
+  ],
+  "layer.revealSource": [
+   "layers"
+  ],
+  "comp.revealInProject": [
+   "comp"
+  ],
+  "layer.revealExpressionErrors": [
+   "comp"
+  ],
+  "layer.sequence": [
+   "duration",
+   "layers",
+   "overlap",
+   "transition"
+  ],
+  "layer.create": [
+   "layers",
+   "op"
+  ],
+  "anim.savePreset": [
+   "name",
+   "path"
+  ],
+  "anim.applyPreset": [
+   "layers",
+   "path",
+   "preset"
+  ],
+  "anim.addKeyframe": [],
+  "keys.exponentialScale": [],
+  "text.addSelector": [
+   "animator",
+   "kind",
+   "layer"
+  ],
+  "text.removeAllAnimators": [
+   "layers"
+  ],
+  "anim.reveal": [
+   "kind"
+  ],
+  "anim.applyBuiltinPreset": [
+   "layers",
+   "preset"
+  ],
+  "anim.builtinPresets": [
+   "category"
+  ],
+  "view.addGuide": [
+   "orientation",
+   "percent",
+   "position"
+  ],
+  "view.addPercentGuide": [
+   "orientation",
+   "position"
+  ],
+  "view.convertGuides": [
+   "comp",
+   "index",
+   "to"
+  ],
+  "view.clearGuides": [
+   "comp"
+  ],
+  "view.importGuides": [
+   "path"
+  ],
+  "view.exportGuides": [
+   "path"
+  ],
+  "view.res.full": [
+   "comp"
+  ],
+  "view.res.half": [
+   "comp"
+  ],
+  "view.res.third": [
+   "comp"
+  ],
+  "view.res.quarter": [
+   "comp"
+  ],
+  "view.res.custom": [
+   "comp",
+   "factor"
+  ],
+  "view.res.auto": [
+   "comp"
+  ],
+  "view.layout": [
+   "views"
+  ],
+  "view.shareViewOptions": [
+   "value"
+  ],
+  "view.extendedViewer": [
+   "value"
+  ],
+  "view.setRegionOfInterest": [
+   "rect"
+  ],
+  "view.snapping": [
+   "value"
+  ],
+  "view.snappingOptions": [
+   "collapsedFeatures",
+   "edgesExtended",
+   "toggle"
+  ],
+  "view.displayColorManagement": [
+   "value"
+  ],
+  "view.simulateOutput": [
+   "preserveRgb",
+   "profile",
+   "space"
+  ],
+  "view.customRgb": [
+   "apply",
+   "from",
+   "gamma",
+   "icc",
+   "name",
+   "preserveRgb",
+   "red",
+   "reload",
+   "reset",
+   "srgbCurve"
+  ],
+  "view.splitLockedViewer": [
+   "comp",
+   "view"
+  ],
+  "view.closeLockedViewer": [],
+  "view.displayColor": [],
+  "view.channel": [
+   "channel",
+   "colorized",
+   "toggle"
+  ],
+  "view.exposure": [
+   "delta",
+   "stops"
+  ],
+  "view.resetExposure": [],
+  "view.takeSnapshot": [
+   "comp",
+   "scale"
+  ],
+  "view.showSnapshot": [
+   "value"
+  ],
+  "view.fastPreviewMode": [
+   "mode"
+  ],
+  "view.fastPreviews.off": [],
+  "view.fastPreviews.adaptive": [],
+  "view.fastPreviews.draft": [],
+  "view.fastPreviews.fastDraft": [],
+  "view.fastPreviews.wireframe": [],
+  "view.channel.red": [],
+  "view.channel.green": [],
+  "view.channel.blue": [],
+  "view.channel.alpha": [],
+  "view.channel.redColorized": [],
+  "view.channel.greenColorized": [],
+  "view.channel.blueColorized": [],
+  "view.channel.rgbStraight": [],
+  "view.moveGuide": [
+   "comp",
+   "index",
+   "merge",
+   "position"
+  ],
+  "view.removeGuide": [
+   "comp",
+   "index"
+  ],
+  "shape.newPath": [
+   "closed",
+   "fill",
+   "fillBlend",
+   "fillOpacity",
+   "fillType",
+   "inTangents",
+   "layer",
+   "name",
+   "outTangents",
+   "space",
+   "stroke",
+   "strokeBlend",
+   "strokeOpacity",
+   "strokeType",
+   "strokeWidth",
+   "vertices"
+  ],
+  "shape.fillStroke": [
+   "fill",
+   "fillType",
+   "layers",
+   "merge",
+   "stroke",
+   "strokeType",
+   "strokeWidth"
+  ],
+  "shape.dashes.add": [
+   "layer",
+   "prop"
+  ],
+  "shape.dashes.remove": [
+   "layer",
+   "prop"
+  ],
+  "shape.stroke.taper": [
+   "endEase",
+   "endLength",
+   "endWidth",
+   "layer",
+   "prop",
+   "startEase",
+   "startLength",
+   "startWidth",
+   "units"
+  ],
+  "shape.stroke.wave": [
+   "amount",
+   "cycles",
+   "layer",
+   "phase",
+   "prop",
+   "units",
+   "wavelength"
+  ],
+  "shape.newShape": [
+   "fill",
+   "fillBlend",
+   "fillOpacity",
+   "fillType",
+   "kind",
+   "layer",
+   "name",
+   "position",
+   "size",
+   "space",
+   "stroke",
+   "strokeBlend",
+   "strokeOpacity",
+   "strokeType",
+   "strokeWidth"
+  ],
+  "shape.toolOptions": [
+   "createsMask",
+   "fill",
+   "fillBlend",
+   "fillOpacity",
+   "fillType",
+   "reset",
+   "stroke",
+   "strokeBlend",
+   "strokeOpacity",
+   "strokeType",
+   "strokeWidth"
+  ],
+  "camera.linkFocusToPoi": [
+   "camera",
+   "comp"
+  ],
+  "camera.linkFocusToLayer": [
+   "camera",
+   "comp",
+   "layer"
+  ],
+  "camera.setFocusToLayer": [
+   "camera",
+   "comp",
+   "layer"
+  ],
+  "keys.setLabel": [
+   "label"
+  ],
+  "keys.selectLabelGroup": [
+   "scope",
+   "visible"
+  ],
+  "keys.transform": [
+   "dim",
+   "dims",
+   "fromStart",
+   "merge",
+   "timeAnchor",
+   "timeOffset",
+   "timeScale",
+   "valueAnchor",
+   "valueOffset",
+   "valueScale"
+  ],
+  "keys.setSpatialTangents": [
+   "break",
+   "in",
+   "layer",
+   "merge",
+   "out",
+   "path",
+   "prop",
+   "time"
+  ],
+  "layer.quickOffset": [
+   "delta",
+   "fromStart",
+   "layers",
+   "merge"
+  ],
+  "keys.quickOffset": [
+   "delta",
+   "fromStart",
+   "merge"
+  ],
+  "project.newFolder": [
+   "name",
+   "parent"
+  ],
+  "file.close": [
+   "comp"
+  ],
+  "file.closeProject": [],
+  "file.saveCopy": [
+   "path"
+  ],
+  "file.importMultiple": [
+   "paths"
+  ],
+  "file.importPlaceholder": [
+   "duration",
+   "frameRate",
+   "height",
+   "name",
+   "width"
+  ],
+  "file.importSolid": [
+   "color",
+   "height",
+   "name",
+   "width"
+  ],
+  "file.newCompFromSelection": [
+   "addToRenderQueue",
+   "dimensionsFrom",
+   "duration",
+   "overlap",
+   "overlapDuration",
+   "sequence",
+   "single",
+   "transition"
+  ],
+  "file.collectFiles": [
+   "folder"
+  ],
+  "file.consolidateFootage": [],
+  "file.removeUnusedFootage": [],
+  "file.reduceProject": [],
+  "file.findMissing": [
+   "what"
+  ],
+  "footage.check": [
+   "items",
+   "wait"
+  ],
+  "footage.reloadChanged": [],
+  "file.runScript": [
+   "name",
+   "path",
+   "steps"
+  ],
+  "script.run": [
+   "code",
+   "console",
+   "name"
+  ],
+  "file.interpretFootage": [
+   "alpha",
+   "colorProfile",
+   "fields",
+   "frameRate",
+   "guessAlpha",
+   "invertAlpha",
+   "items",
+   "linearLight",
+   "loop",
+   "matteColor",
+   "overrideStart",
+   "pixelAspect",
+   "preserveRgb",
+   "startTimecode"
+  ],
+  "file.rememberInterpretation": [
+   "item"
+  ],
+  "file.applyInterpretation": [
+   "items"
+  ],
+  "file.replaceFootage": [
+   "alphabetical",
+   "item",
+   "path",
+   "sequence"
+  ],
+  "file.replaceWithPlaceholder": [
+   "duration",
+   "frameRate",
+   "height",
+   "item",
+   "width"
+  ],
+  "file.replaceWithSolid": [
+   "color",
+   "height",
+   "item",
+   "width"
+  ],
+  "file.reloadFootage": [
+   "items"
+  ],
+  "file.revealInFinder": [
+   "item"
+  ],
+  "file.relinkFootage": [
+   "dryRun",
+   "folder",
+   "wait"
+  ],
+  "footage.relink": [
+   "item",
+   "path"
+  ],
+  "footage.missing": [],
+  "file.exportLottie": [
+   "comp",
+   "includeExpressions",
+   "path",
+   "textAsShapes"
+  ],
+  "file.importLottie": [
+   "path"
+  ],
+  "file.importProject": [
+   "path"
+  ],
+  "file.importTimeline": [
+   "edlFrameRate",
+   "format",
+   "path"
+  ],
+  "file.exportTimeline": [
+   "comp",
+   "format",
+   "path",
+   "precomps",
+   "prerender"
+  ],
+  "file.timelineFormats": [],
+  "comp.cropToRegionOfInterest": [
+   "comp"
+  ],
+  "comp.cropToLayerBounds": [
+   "layers"
+  ],
+  "comp.saveFrameAs": [
+   "path",
+   "queue",
+   "scale",
+   "time"
+  ],
+  "comp.copyFrame": [
+   "comp",
+   "scale",
+   "time"
+  ],
+  "comp.savePreset": [
+   "frameRate",
+   "height",
+   "name",
+   "pixelAspect",
+   "width"
+  ],
+  "comp.deletePreset": [
+   "name"
+  ],
+  "comp.presets": [],
+  "comp.responsiveTime": [
+   "op"
+  ],
+  "comp.saveFrameAsPsd": [
+   "comp",
+   "path",
+   "scale",
+   "time"
+  ],
+  "comp.saveFrameAsExr": [
+   "comp",
+   "path",
+   "scale",
+   "time"
+  ],
+  "file.watchFolder": [
+   "folder",
+   "stop"
+  ],
+  "file.watchFolder.poll": [
+   "folder"
+  ],
+  "file.importVanishingPoint": [],
+  "paths.pointsFollowNulls": [
+   "layer",
+   "path",
+   "pins",
+   "prop"
+  ],
+  "paths.nullsFollowPoints": [
+   "layer",
+   "path",
+   "pins",
+   "prop"
+  ],
+  "paths.tracePath": [
+   "layer",
+   "loop",
+   "path",
+   "prop"
+  ],
+  "comp.vr.environments": [],
+  "comp.vr.setView": [
+   "comp",
+   "orientation",
+   "pan",
+   "roll",
+   "tilt"
+  ],
+  "app.about": [],
+  "layer.style.options": [
+   "layer",
+   "style"
+  ],
+  "app.settings": [
+   "page"
+  ],
+  "app.gpuInfo": [],
+  "app.hide": [],
+  "app.hideOthers": [],
+  "app.showAll": [],
+  "app.quit": [],
+  "app.commandPalette": [
+   "query"
+  ],
+  "app.keyboardShortcuts": [],
+  "app.templates": [
+   "kind"
+  ],
+  "app.find": [
+   "query"
+  ],
+  "effects.copyPresetsFolderPath": [],
+  "playback.toggle": [
+   "shortcut"
+  ],
+  "playback.cacheWhenIdle": [
+   "value"
+  ],
+  "playback.audio": [
+   "value"
+  ],
+  "playback.scrubAudio": [
+   "time"
+  ],
+  "view.zoomIn": [],
+  "view.zoomOut": [],
+  "view.rulers": [
+   "value"
+  ],
+  "view.panelBackground": [
+   "color",
+   "pick"
+  ],
+  "view.guides": [
+   "value"
+  ],
+  "view.snapToGuides": [
+   "value"
+  ],
+  "view.lockGuides": [
+   "value"
+  ],
+  "view.grid": [
+   "value"
+  ],
+  "view.snapToGrid": [
+   "value"
+  ],
+  "view.options": [],
+  "view.layerControls": [
+   "value"
+  ],
+  "view.fullScreen": [],
+  "view.newViewer": [],
+  "window.panel": [
+   "panel"
+  ],
+  "window.workspace": [
+   "name"
+  ],
+  "window.saveWorkspace": [],
+  "window.saveWorkspaceAs": [
+   "name"
+  ],
+  "window.editWorkspaces": [
+   "delete",
+   "name",
+   "rename"
+  ],
+  "window.resetWorkspace": [],
+  "comp.flowchart": [],
+  "comp.miniFlowchart": [],
+  "layer.openLayer": [
+   "layer"
+  ],
+  "effect.manage": [],
+  "anim.browsePresets": [],
+  "project.deleteWithoutConfirmation": [],
+  "prop.editGradient": [
+   "comp",
+   "layer",
+   "path",
+   "prop"
+  ],
+  "track.motion": [
+   "layer"
+  ],
+  "track.stabilize": [
+   "layer"
+  ],
+  "track.new": [
+   "kind",
+   "layer",
+   "position",
+   "rotation",
+   "scale",
+   "target"
+  ],
+  "track.property": [
+   "layer",
+   "source"
+  ],
+  "track.select": [
+   "layer",
+   "tracker"
+  ],
+  "track.setType": [
+   "kind",
+   "layer",
+   "position",
+   "rotation",
+   "scale",
+   "tracker"
+  ],
+  "track.setTarget": [
+   "layer",
+   "target",
+   "tracker"
+  ],
+  "track.options": [
+   "action",
+   "adaptEveryFrame",
+   "blur",
+   "channel",
+   "enhance",
+   "layer",
+   "name",
+   "subpixel",
+   "threshold",
+   "trackShape",
+   "tracker"
+  ],
+  "track.setPoint": [
+   "attachOffset",
+   "center",
+   "featureSize",
+   "layer",
+   "move",
+   "point",
+   "searchOffset",
+   "searchSize",
+   "time",
+   "tracker"
+  ],
+  "track.analyze": [
+   "direction",
+   "end",
+   "layer",
+   "start",
+   "tracker",
+   "wait"
+  ],
+  "track.stop": [],
+  "track.apply": [
+   "dimensions",
+   "layer",
+   "tracker"
+  ],
+  "track.reset": [
+   "layer",
+   "tracker"
+  ],
+  "track.delete": [
+   "layer",
+   "tracker"
+  ],
+  "track.editTargetDialog": [],
+  "track.optionsDialog": [],
+  "track.status": [
+   "layer",
+   "tracker"
+  ],
+  "track.mask": [
+   "direction",
+   "end",
+   "layer",
+   "mask",
+   "method",
+   "start",
+   "wait"
+  ],
+  "track.maskMethod": [
+   "method"
+  ],
+  "track.extractFaceMeasurements": [
+   "layer"
+  ],
+  "mask.interpolate": [
+   "addVertices",
+   "addVerticesUnit",
+   "bendingResistance",
+   "firstVerticesMatch",
+   "keyframeFields",
+   "keyframeRate",
+   "layer",
+   "linearVertexPaths",
+   "mask",
+   "matchingMethod",
+   "oneToOne",
+   "quality",
+   "times"
+  ],
+  "mask.interpolationOptions": [
+   "addVertices",
+   "addVerticesUnit",
+   "bendingResistance",
+   "firstVerticesMatch",
+   "keyframeFields",
+   "keyframeRate",
+   "linearVertexPaths",
+   "matchingMethod",
+   "oneToOne",
+   "quality"
+  ],
+  "track.warpStabilizer": [
+   "layer",
+   "wait"
+  ],
+  "warp.analyze": [
+   "effect",
+   "layer",
+   "wait"
+  ],
+  "warp.cancel": [],
+  "warp.status": [
+   "effect",
+   "layer"
+  ],
+  "track.camera": [
+   "aov",
+   "detailed",
+   "layer",
+   "lensDistortion",
+   "shotType",
+   "solveMethod",
+   "undistort",
+   "wait"
+  ],
+  "camera.analyze": [
+   "effect",
+   "layer",
+   "wait"
+  ],
+  "camera.cancel": [],
+  "camera.solveStatus": [
+   "effect",
+   "layer"
+  ],
+  "camera.points": [
+   "effect",
+   "layer",
+   "time"
+  ],
+  "camera.selectPoints": [
+   "add",
+   "points",
+   "toggle"
+  ],
+  "camera.createFromSolve": [
+   "effect",
+   "kind",
+   "layer",
+   "multiple",
+   "points",
+   "target"
+  ],
+  "camera.create": [
+   "effect",
+   "layer"
+  ],
+  "camera.setGroundPlane": [
+   "effect",
+   "layer",
+   "points"
+  ],
+  "camera.deletePoints": [
+   "effect",
+   "layer",
+   "points",
+   "wait"
+  ],
+  "roto.stroke": [
+   "effect",
+   "frame",
+   "kind",
+   "layer",
+   "points",
+   "radius"
+  ],
+  "roto.propagate": [
+   "direction",
+   "effect",
+   "layer",
+   "to",
+   "wait"
+  ],
+  "roto.span": [
+   "effect",
+   "end",
+   "layer",
+   "start"
+  ],
+  "roto.freeze": [
+   "effect",
+   "layer",
+   "wait"
+  ],
+  "roto.unfreeze": [
+   "effect",
+   "layer"
+  ],
+  "roto.clearStrokes": [
+   "effect",
+   "frame",
+   "kind",
+   "layer"
+  ],
+  "roto.cancel": [],
+  "roto.options": [
+   "autoPropagate",
+   "boundaryColor",
+   "diameter",
+   "overlayColor",
+   "overlayOpacity",
+   "refineDiameter",
+   "view"
+  ],
+  "objectMatte.apply": [
+   "after",
+   "before",
+   "box",
+   "effect",
+   "frame",
+   "layer",
+   "point",
+   "track"
+  ],
+  "objectMatte.propagate": [
+   "direction",
+   "effect",
+   "layer",
+   "wait"
+  ],
+  "objectMatte.freeze": [
+   "effect",
+   "layer",
+   "wait"
+  ],
+  "objectMatte.unfreeze": [
+   "effect",
+   "layer"
+  ],
+  "objectMatte.status": [
+   "effect",
+   "layer"
+  ],
+  "roto.status": [
+   "compareTo",
+   "compute",
+   "effect",
+   "frame",
+   "layer",
+   "matte"
+  ],
+  "paint.stroke": [
+   "angle",
+   "channels",
+   "clonePosition",
+   "cloneSource",
+   "cloneTime",
+   "cloneTimeShift",
+   "color",
+   "customFrames",
+   "diameter",
+   "duration",
+   "durationMode",
+   "eraseMode",
+   "flow",
+   "flowPressure",
+   "frame",
+   "hardness",
+   "kind",
+   "layer",
+   "lockSourceTime",
+   "minSize",
+   "mode",
+   "opacity",
+   "opacityPressure",
+   "points",
+   "roundness",
+   "sizePressure",
+   "spacing",
+   "time"
+  ],
+  "paint.options": [
+   "aligned",
+   "angle",
+   "background",
+   "channels",
+   "cloneOffset",
+   "clonePoint",
+   "clonePreset",
+   "cloneSource",
+   "cloneTime",
+   "cloneTimeShift",
+   "color",
+   "customFrames",
+   "diameter",
+   "durationMode",
+   "eraseMode",
+   "flow",
+   "flowPressure",
+   "hardness",
+   "lockSourceTime",
+   "minSize",
+   "mode",
+   "opacity",
+   "opacityPressure",
+   "overlayDifference",
+   "overlayOpacity",
+   "preset",
+   "reset",
+   "roundness",
+   "showOverlay",
+   "sizePressure",
+   "spacing"
+  ],
+  "paint.brushPreset": [
+   "preset"
+  ],
+  "paint.setCloneSource": [
+   "layer",
+   "point"
+  ],
+  "paint.removeStroke": [
+   "layer",
+   "stroke"
+  ],
+  "paint.presets": [],
+  "puppet.addPin": [
+   "density",
+   "expansion",
+   "frame",
+   "kind",
+   "layer",
+   "mesh",
+   "newMesh",
+   "position",
+   "time",
+   "triangles"
+  ],
+  "puppet.movePin": [
+   "frame",
+   "layer",
+   "merge",
+   "pin",
+   "position",
+   "time"
+  ],
+  "puppet.setPin": [
+   "amount",
+   "extent",
+   "frame",
+   "inFront",
+   "layer",
+   "merge",
+   "pin",
+   "position",
+   "rotation",
+   "scale",
+   "time"
+  ],
+  "puppet.removePin": [
+   "layer",
+   "pin",
+   "pins"
+  ],
+  "puppet.selectPins": [
+   "add",
+   "layer",
+   "pins",
+   "toggle"
+  ],
+  "puppet.mesh": [
+   "density",
+   "expansion",
+   "layer",
+   "merge",
+   "mesh",
+   "showMesh",
+   "time",
+   "triangles"
+  ],
+  "puppet.info": [
+   "frame",
+   "layer",
+   "time"
+  ],
+  "puppet.recordPin": [
+   "layer",
+   "pin",
+   "pins",
+   "samples",
+   "smoothing",
+   "speed",
+   "start"
+  ],
+  "puppet.follow": [
+   "amount",
+   "cascade",
+   "delay",
+   "layer",
+   "leader",
+   "pins"
+  ],
+  "puppet.recordOptions": [
+   "showMesh",
+   "smoothing",
+   "speed",
+   "useDraftDeformation"
+  ],
+  "liquify.stroke": [
+   "cloneOffset",
+   "effect",
+   "frame",
+   "jitter",
+   "layer",
+   "points",
+   "pressure",
+   "size",
+   "time",
+   "tool"
+  ],
+  "liquify.clear": [
+   "effect",
+   "layer"
+  ],
+  "prefs.get": [
+   "key"
+  ],
+  "prefs.set": [
+   "key",
+   "value",
+   "values"
+  ],
+  "prefs.reset": [
+   "page"
+  ],
+  "prefs.open": [
+   "page"
+  ],
+  "prefs.pages": [],
+  "shortcuts.list": [
+   "assigned",
+   "keys",
+   "query"
+  ],
+  "shortcuts.set": [
+   "command",
+   "keys",
+   "params"
+  ],
+  "shortcuts.reset": [
+   "command",
+   "params"
+  ],
+  "shortcuts.preset": [
+   "from",
+   "name",
+   "newName",
+   "op"
+  ],
+  "shortcuts.export": [
+   "path",
+   "preset"
+  ],
+  "shortcuts.import": [
+   "name",
+   "path",
+   "preset"
+  ],
+  "shortcuts.conflicts": [],
+  "file.openRecent": [
+   "index",
+   "path"
+  ],
+  "file.clearRecent": [],
+  "file.autoSave": [],
+  "file.recoveryInfo": [],
+  "edit.history": [
+   "redo",
+   "steps"
+  ],
+  "file.importRecent": [
+   "index",
+   "path"
+  ],
+  "file.clearRecentFootage": [],
+  "anim.applyRecentPreset": [
+   "index",
+   "layers",
+   "path"
+  ],
+  "anim.clearRecentPresets": [],
+  "file.saveCopyAsXml": [
+   "path"
+  ],
+  "file.replaceWithLayeredComp": [
+   "item"
+  ],
+  "file.replaceWithPrecomp": [
+   "item"
+  ],
+  "file.executeFile": [
+   "confirmed",
+   "path"
+  ],
+  "view.assign3dShortcut": [
+   "comp",
+   "slot"
+  ],
+  "window.assignWorkspaceShortcut": [
+   "slot",
+   "workspace"
+  ],
+  "help.enableLogging": [
+   "on"
+  ],
+  "help.revealLogFile": [],
+  "help.systemReport": [
+   "quiet"
+  ],
+  "comp.vr.createEnvironment": [
+   "comp",
+   "position",
+   "size"
+  ],
+  "comp.vr.extractCubemap": [
+   "comp",
+   "faceSize"
+  ],
+  "help.systemInfo": [],
+  "keys.audioToKeyframes": [
+   "comp"
+  ],
+  "keys.rpfCameraImport": [
+   "comp",
+   "path"
+  ],
+  "essential.setPrimary": [
+   "comp"
+  ],
+  "essential.setName": [
+   "comp",
+   "name"
+  ],
+  "essential.addProperty": [
+   "as",
+   "comp",
+   "group",
+   "index",
+   "layer",
+   "mirror",
+   "name",
+   "path",
+   "prop"
+  ],
+  "essential.addMirror": [
+   "comp",
+   "control",
+   "group",
+   "index",
+   "name"
+  ],
+  "essential.linkProperty": [
+   "comp",
+   "control",
+   "layer",
+   "path",
+   "prop"
+  ],
+  "essential.unlinkProperty": [
+   "comp",
+   "control",
+   "layer",
+   "path",
+   "prop"
+  ],
+  "essential.addMedia": [
+   "group",
+   "layer",
+   "name"
+  ],
+  "essential.addGroup": [
+   "comp",
+   "index",
+   "name"
+  ],
+  "essential.addComment": [
+   "comp",
+   "group",
+   "text"
+  ],
+  "essential.rename": [
+   "comp",
+   "control",
+   "name"
+  ],
+  "essential.remove": [
+   "comp",
+   "control"
+  ],
+  "essential.move": [
+   "comp",
+   "control",
+   "group",
+   "index"
+  ],
+  "essential.soloSupported": [
+   "on"
+  ],
+  "essential.exportTemplate": [
+   "comp",
+   "name",
+   "path"
+  ],
+  "essential.importTemplate": [
+   "addToComp",
+   "comp",
+   "path"
+  ],
+  "essential.set": [
+   "control",
+   "item",
+   "layer",
+   "value"
+  ],
+  "essential.pushToComp": [
+   "control",
+   "layer"
+  ],
+  "essential.revert": [
+   "control",
+   "layer"
+  ],
+  "effect.editDropdown": [
+   "items",
+   "layer",
+   "path",
+   "prop"
+  ],
+  "essential.list": [
+   "comp",
+   "supported"
+  ],
+  "essential.canAdd": [
+   "as",
+   "layer",
+   "path",
+   "prop"
+  ],
+  "comp.openInEssentialGraphics": [
+   "comp"
+  ],
+  "essential.instance": [
+   "layer"
+  ],
+  "essential.templateInfo": [
+   "path"
+  ],
+  "expr.errors": [
+   "comp",
+   "time"
+  ],
+  "expr.languageMenu": [],
+  "file.createProxy": [
+   "comp",
+   "item",
+   "kind",
+   "output",
+   "path",
+   "resolution"
+  ],
+  "file.setProxy": [
+   "item",
+   "items",
+   "path"
+  ],
+  "file.setProxyNone": [
+   "item",
+   "items"
+  ],
+  "file.useProxy": [
+   "item",
+   "items",
+   "on"
+  ],
+  "file.interpretProxy": [
+   "alpha",
+   "colorProfile",
+   "fields",
+   "frameRate",
+   "invertAlpha",
+   "item",
+   "items",
+   "linearLight",
+   "loop",
+   "matteColor",
+   "pixelAspect"
+  ],
+  "file.installScript": [
+   "path"
+  ],
+  "file.installScriptUIPanel": [
+   "path"
+  ],
+  "file.uninstallScript": [
+   "name"
+  ],
+  "file.scripts.list": [],
+  "window.scriptPanel": [
+   "name"
+  ],
+  "window.restoreScriptPanels": [],
+  "script.settings.get": [
+   "key",
+   "section"
+  ],
+  "script.settings.save": [
+   "key",
+   "section",
+   "value"
+  ],
+  "script.runTasks": [],
+  "scriptui.list": [],
+  "scriptui.get": [
+   "window"
+  ],
+  "scriptui.click": [
+   "widget",
+   "window"
+  ],
+  "scriptui.set": [
+   "changing",
+   "value",
+   "widget",
+   "window"
+  ],
+  "scriptui.mouse": [
+   "altKey",
+   "button",
+   "ctrlKey",
+   "detail",
+   "metaKey",
+   "screenX",
+   "screenY",
+   "shiftKey",
+   "type",
+   "widget",
+   "window",
+   "x",
+   "y"
+  ],
+  "scriptui.close": [
+   "result",
+   "window"
+  ],
+  "jobs.list": [],
+  "jobs.cancel": [
+   "job"
+  ],
+  "jobs.wait": [],
+  "mediaBrowser.list": [
+   "importableOnly",
+   "path"
+  ],
+  "mediaBrowser.go": [
+   "importableOnly",
+   "path"
+  ],
+  "mediaBrowser.addFavorite": [
+   "path"
+  ],
+  "mediaBrowser.removeFavorite": [
+   "path"
+  ],
+  "mediaBrowser.import": [
+   "addToComp",
+   "index",
+   "paths",
+   "position",
+   "sequence",
+   "time"
+  ],
+  "mediaBrowser.action": [
+   "action"
+  ],
+  "mediaBrowser.fileInfo": [
+   "path"
+  ],
+  "item.metadata": [
+   "item"
+  ],
+  "project.setProjectComment": [
+   "comment"
+  ],
+  "scopes.analyze": [
+   "clamp",
+   "comp",
+   "float",
+   "frame",
+   "scope",
+   "size",
+   "standard",
+   "time"
+  ],
+  "footage.open": [
+   "item"
+  ],
+  "footage.info": [],
+  "footage.setTime": [
+   "frame",
+   "time"
+  ],
+  "footage.setIn": [
+   "frame",
+   "time"
+  ],
+  "footage.setOut": [
+   "frame",
+   "time"
+  ],
+  "footage.clearInOut": [],
+  "footage.overlayEdit": [
+   "at",
+   "comp",
+   "in",
+   "item",
+   "out"
+  ],
+  "footage.rippleInsertEdit": [
+   "at",
+   "comp",
+   "in",
+   "item",
+   "out"
+  ],
+  "layer.autoTrace": [
+   "applyToNewLayer",
+   "blur",
+   "channel",
+   "cornerRoundness",
+   "invert",
+   "layer",
+   "minimumArea",
+   "threshold",
+   "timeSpan",
+   "tolerance"
+  ],
+  "layer.sceneEditDetection": [
+   "layer",
+   "mode",
+   "threshold",
+   "wait"
+  ],
+  "layer.alignVideoToData": [
+   "data",
+   "dataStart",
+   "key",
+   "layer",
+   "videoStart"
+  ],
+  "layer.nudge": [
+   "layers",
+   "merge",
+   "x",
+   "y"
+  ],
+  "layer.align": [
+   "edge",
+   "layers",
+   "to"
+  ],
+  "layer.distribute": [
+   "layers",
+   "mode"
+  ],
+  "contentFill.set": [
+   "alphaExpansion",
+   "lightingCorrection",
+   "method",
+   "range",
+   "referenceLayer",
+   "referenceTime"
+  ],
+  "contentFill.generate": [
+   "alphaExpansion",
+   "layer",
+   "lightingCorrection",
+   "method",
+   "outputDir",
+   "range",
+   "referenceLayer",
+   "referenceTime",
+   "wait"
+  ],
+  "layer.newContentAwareFill": [
+   "alphaExpansion",
+   "layer",
+   "lightingCorrection",
+   "method",
+   "outputDir",
+   "range",
+   "referenceLayer",
+   "referenceTime",
+   "wait"
+  ],
+  "storage.info": [],
+  "storage.persist": [],
+  "storage.clear": [
+   "what"
+  ],
+  "learn.list": [],
+  "learn.state": [],
+  "learn.start": [
+   "id"
+  ],
+  "learn.step": [
+   "action",
+   "index"
+  ],
+  "learn.stop": [],
+  "templates.list": [
+   "thumbnails"
+  ],
+  "templates.thumbnail": [
+   "id"
+  ],
+  "templates.create": [
+   "footageDir",
+   "id",
+   "path",
+   "projectPath"
+  ],
+  "templates.saveAs": [
+   "category",
+   "description",
+   "embedFootage",
+   "embedLimitMB",
+   "name",
+   "overwrite"
+  ],
+  "templates.delete": [
+   "id"
+  ],
+  "file.newFromTemplate": [],
+  "playback.settings.get": [
+   "shortcut"
+  ],
+  "playback.settings.set": [
+   "cacheBeforePlayback",
+   "current",
+   "customResolution",
+   "frameRate",
+   "fullScreen",
+   "includeAudio",
+   "includeLayerControls",
+   "includeOverlays",
+   "includeVideo",
+   "loop",
+   "moveTimeToPreviewTime",
+   "playCachedFrames",
+   "playFrom",
+   "postRoll",
+   "preRoll",
+   "range",
+   "reset",
+   "resolution",
+   "shortcut",
+   "skip",
+   "values"
+  ]
+ },
+ "effects": {
+  "ec.3d.channelextract": [
+   "channel",
+   "blackPoint",
+   "whitePoint",
+   "clampOutput",
+   "invertDepthMap",
+   "antialias"
+  ],
+  "ec.3d.cryptomatte": [
+   "layer",
+   "selection",
+   "display",
+   "matteOnly"
+  ],
+  "ec.3d.depthmatte": [
+   "depth",
+   "feather",
+   "invert"
+  ],
+  "ec.3d.depthoffield": [
+   "focalPlane",
+   "maximumRadius",
+   "focalPlaneThickness",
+   "focalBias"
+  ],
+  "ec.3d.extractor": [
+   "red",
+   "green",
+   "blue",
+   "alpha",
+   "blackPoint",
+   "whitePoint",
+   "unMult",
+   "clip"
+  ],
+  "ec.3d.fog3d": [
+   "fogColor",
+   "fogStartDepth",
+   "fogEndDepth",
+   "fogOpacity",
+   "scatteringDensity",
+   "foggyBackground",
+   "gradientLayer",
+   "layerContribution"
+  ],
+  "ec.3d.idmatte": [
+   "auxChannel",
+   "idSelection",
+   "feather",
+   "invert",
+   "useCoverage"
+  ],
+  "ec.3d.identifier": [
+   "channelType",
+   "display",
+   "id"
+  ],
+  "ec.audio.backwards": [
+   "swapChannels"
+  ],
+  "ec.audio.basstreble": [
+   "bass",
+   "treble"
+  ],
+  "ec.audio.compressor": [
+   "threshold",
+   "ratio",
+   "knee",
+   "attack",
+   "release",
+   "autoRelease",
+   "makeupGain",
+   "outputLimit"
+  ],
+  "ec.audio.delay": [
+   "delayTime",
+   "delayAmount",
+   "feedback",
+   "dryOut",
+   "wetOut"
+  ],
+  "ec.audio.distortion": [
+   "distortionType",
+   "drive",
+   "gain",
+   "mix",
+   "volume",
+   "bitDepth",
+   "downsample"
+  ],
+  "ec.audio.flangechorus": [
+   "voiceSeparationTime",
+   "voices",
+   "modulationRate",
+   "modulationDepth",
+   "voicePhaseChange",
+   "invertPhase",
+   "stereoVoices",
+   "dryOut",
+   "wetOut"
+  ],
+  "ec.audio.gate": [
+   "threshold",
+   "attack",
+   "hold",
+   "release"
+  ],
+  "ec.audio.highlowpass": [
+   "filterOptions",
+   "cutoffFrequency",
+   "dryOut",
+   "wetOut"
+  ],
+  "ec.audio.modulator": [
+   "modulationType",
+   "modulationRate",
+   "modulationDepth",
+   "amplitudeModulation"
+  ],
+  "ec.audio.parametriceq": [
+   "band1Enable",
+   "band1Frequency",
+   "band1Bandwidth",
+   "band1BoostCut",
+   "band2Enable",
+   "band2Frequency",
+   "band2Bandwidth",
+   "band2BoostCut",
+   "band3Enable",
+   "band3Frequency",
+   "band3Bandwidth",
+   "band3BoostCut"
+  ],
+  "ec.audio.reverb": [
+   "reverbTime",
+   "diffusion",
+   "decay",
+   "brightness",
+   "dryOut",
+   "wetOut"
+  ],
+  "ec.audio.stereomixer": [
+   "leftLevel",
+   "rightLevel",
+   "leftPan",
+   "rightPan",
+   "invertPhase"
+  ],
+  "ec.audio.tone": [
+   "waveformOptions",
+   "frequency1",
+   "frequency2",
+   "frequency3",
+   "frequency4",
+   "frequency5",
+   "level"
+  ],
+  "ec.blur.bilateral": [
+   "radius",
+   "threshold",
+   "colorize"
+  ],
+  "ec.blur.cccross": [
+   "radiusX",
+   "radiusY",
+   "transferMode"
+  ],
+  "ec.blur.ccradial": [
+   "type",
+   "amount",
+   "quality",
+   "center"
+  ],
+  "ec.blur.ccradialfast": [
+   "center",
+   "amount",
+   "zoom"
+  ],
+  "ec.blur.ccvector": [
+   "type",
+   "amount",
+   "angleOffset",
+   "mapSoftness"
+  ],
+  "ec.blur.cameralens": [
+   "blurRadius",
+   "irisProperties/irisShape",
+   "irisProperties/irisRoundness",
+   "irisProperties/irisAspectRatio",
+   "irisProperties/irisRotation",
+   "irisProperties/diffractionFringe",
+   "blurMap/blurMapLayer",
+   "blurMap/channel",
+   "blurMap/placement",
+   "blurMap/blurFocalDistance",
+   "blurMap/invertBlurMap",
+   "highlight/specularBrightness",
+   "highlight/specularThreshold",
+   "highlight/highlightSaturation",
+   "repeatEdge",
+   "useLinear"
+  ],
+  "ec.blur.camerashakedeblur": [
+   "blurDuration",
+   "deblurMethod",
+   "strength",
+   "shakeSensitivity",
+   "searchRange",
+   "patchSize",
+   "threshold",
+   "showBlurryFrames"
+  ],
+  "ec.blur.channel": [
+   "redBlurriness",
+   "greenBlurriness",
+   "blueBlurriness",
+   "alphaBlurriness",
+   "repeatEdge",
+   "dimensions"
+  ],
+  "ec.blur.compound": [
+   "blurLayer",
+   "maximumBlur",
+   "stretchMapToFit",
+   "invertBlur"
+  ],
+  "ec.blur.directional": [
+   "direction",
+   "length"
+  ],
+  "ec.blur.fastbox": [
+   "radius",
+   "iterations",
+   "dimensions",
+   "repeatEdge"
+  ],
+  "ec.blur.gaussian": [
+   "blurriness",
+   "dimensions",
+   "repeatEdge"
+  ],
+  "ec.blur.radial": [
+   "amount",
+   "center",
+   "type",
+   "antialiasing"
+  ],
+  "ec.blur.sharpen": [
+   "amount"
+  ],
+  "ec.blur.smart": [
+   "radius",
+   "threshold",
+   "mode"
+  ],
+  "ec.blur.unsharp": [
+   "amount",
+   "radius",
+   "threshold"
+  ],
+  "ec.channel.arithmetic": [
+   "operator",
+   "redValue",
+   "greenValue",
+   "blueValue",
+   "clip"
+  ],
+  "ec.channel.blend": [
+   "blendWithLayer",
+   "mode",
+   "blendWithOriginal",
+   "ifLayerSizesDiffer"
+  ],
+  "ec.channel.cccomposite": [
+   "opacity",
+   "compositeOriginal",
+   "rgbOnly"
+  ],
+  "ec.channel.calculations": [
+   "inputChannel",
+   "invertInput",
+   "secondLayer",
+   "secondLayerChannel",
+   "secondLayerOpacity",
+   "invertSecondLayer",
+   "stretchSecondLayerToFit",
+   "blendingMode",
+   "preserveTransparency"
+  ],
+  "ec.channel.combiner": [
+   "useSecondLayer",
+   "sourceLayer",
+   "from",
+   "to",
+   "invert",
+   "solidAlpha"
+  ],
+  "ec.channel.compoundarithmetic": [
+   "secondSource",
+   "operator",
+   "operateOnChannels",
+   "overflowBehavior",
+   "stretchSecondSourceToFit",
+   "blendWithOriginal"
+  ],
+  "ec.channel.invert": [
+   "channel",
+   "blend"
+  ],
+  "ec.channel.minimax": [
+   "operation",
+   "radius",
+   "channel",
+   "direction",
+   "dontShrinkEdges"
+  ],
+  "ec.channel.removecolormatting": [
+   "backgroundColor",
+   "clipHdr"
+  ],
+  "ec.channel.setchannels": [
+   "sourceLayer1",
+   "setRedTo",
+   "sourceLayer2",
+   "setGreenTo",
+   "sourceLayer3",
+   "setBlueTo",
+   "sourceLayer4",
+   "setAlphaTo",
+   "stretchLayersToFit"
+  ],
+  "ec.channel.setmatte": [
+   "takeMatteFromLayer",
+   "takeMatteFrom",
+   "invertMatte",
+   "stretchMatteToFit",
+   "compositeMatteWithOriginal",
+   "premultiplyMatteLayer"
+  ],
+  "ec.channel.shiftchannels": [
+   "takeAlphaFrom",
+   "takeRedFrom",
+   "takeGreenFrom",
+   "takeBlueFrom"
+  ],
+  "ec.channel.solidcomposite": [
+   "sourceOpacity",
+   "color",
+   "opacity",
+   "blendingMode"
+  ],
+  "ec.color.autocolor": [
+   "temporalSmoothing",
+   "sceneDetect",
+   "blackClip",
+   "whiteClip",
+   "snapNeutralMidtones",
+   "blend"
+  ],
+  "ec.color.autocontrast": [
+   "temporalSmoothing",
+   "sceneDetect",
+   "blackClip",
+   "whiteClip",
+   "blend"
+  ],
+  "ec.color.autolevels": [
+   "temporalSmoothing",
+   "sceneDetect",
+   "blackClip",
+   "whiteClip",
+   "blend"
+  ],
+  "ec.color.blackwhite": [
+   "reds",
+   "yellows",
+   "greens",
+   "cyans",
+   "blues",
+   "magentas",
+   "tint",
+   "tintColor"
+  ],
+  "ec.color.brightnesscontrast": [
+   "brightness",
+   "contrast",
+   "useLegacy"
+  ],
+  "ec.color.broadcast": [
+   "locale",
+   "howToMakeSafe",
+   "maxSignal"
+  ],
+  "ec.color.cccolorneutralizer": [
+   "shadowsUnbalance",
+   "shadowsBalance",
+   "midtonesUnbalance",
+   "midtonesBalance",
+   "highlightsUnbalance",
+   "highlightsBalance",
+   "pinning",
+   "blendWOriginal",
+   "darks",
+   "brights",
+   "contrast"
+  ],
+  "ec.color.cccoloroffset": [
+   "redPhase",
+   "greenPhase",
+   "bluePhase",
+   "overflow"
+  ],
+  "ec.color.cckernel": [
+   "k1",
+   "k2",
+   "k3",
+   "k4",
+   "k5",
+   "k6",
+   "k7",
+   "k8",
+   "k9",
+   "scale",
+   "offset",
+   "absolute"
+  ],
+  "ec.color.cctoner": [
+   "tones",
+   "highlights",
+   "brights",
+   "midtones",
+   "darktones",
+   "shadows",
+   "blend"
+  ],
+  "ec.color.changecolor": [
+   "view",
+   "hueTransform",
+   "lightnessTransform",
+   "saturationTransform",
+   "colorToChange",
+   "matchingTolerance",
+   "matchingSoftness",
+   "matchColors",
+   "invertColorCorrectionMask"
+  ],
+  "ec.color.changetocolor": [
+   "from",
+   "to",
+   "change",
+   "changeBy",
+   "toleranceGroup/hue",
+   "toleranceGroup/lightness",
+   "toleranceGroup/saturation",
+   "softness",
+   "viewCorrectionMatte"
+  ],
+  "ec.color.channelmixer": [
+   "rr",
+   "rg",
+   "rb",
+   "rc",
+   "gr",
+   "gg",
+   "gb",
+   "gc",
+   "br",
+   "bg",
+   "bb",
+   "bc",
+   "monochrome"
+  ],
+  "ec.color.colorbalance": [
+   "shadowRed",
+   "shadowGreen",
+   "shadowBlue",
+   "midRed",
+   "midGreen",
+   "midBlue",
+   "hiRed",
+   "hiGreen",
+   "hiBlue",
+   "preserveLuminosity"
+  ],
+  "ec.color.colorbalancehls": [
+   "hue",
+   "lightness",
+   "saturation"
+  ],
+  "ec.color.colorlink": [
+   "sourceLayer",
+   "sourceLayerSource",
+   "sampleSource",
+   "clip",
+   "stencilOriginalAlpha",
+   "opacity",
+   "blendingMode"
+  ],
+  "ec.color.colorstabilizer": [
+   "referenceFrame",
+   "stabilize",
+   "blackPoint",
+   "midPoint",
+   "whitePoint",
+   "sampleSize"
+  ],
+  "ec.color.colorama": [
+   "inputPhase/mode",
+   "inputPhase/addPhase",
+   "inputPhase/addPhaseFrom",
+   "inputPhase/addMode",
+   "inputPhase/phaseShift",
+   "outputCycle/usePresetPalette",
+   "outputCycle/palette",
+   "outputCycle/cycles",
+   "outputCycle/interpolatePalette",
+   "modify/modify",
+   "modify/modifyAlpha",
+   "modify/changeEmptyPixels",
+   "pixelSelection/matchingColor",
+   "pixelSelection/matchingTolerance",
+   "pixelSelection/matchingSoftness",
+   "pixelSelection/matchingMode",
+   "masking/maskLayer",
+   "masking/maskingMode",
+   "masking/compositeOverLayer",
+   "blend"
+  ],
+  "ec.color.curves": [
+   "channel",
+   "rgb",
+   "red",
+   "green",
+   "blue",
+   "alpha"
+  ],
+  "ec.color.equalize": [
+   "style",
+   "amount"
+  ],
+  "ec.color.exposure": [
+   "channels",
+   "master/exposure",
+   "master/offset",
+   "master/gamma",
+   "red/redExposure",
+   "red/redOffset",
+   "red/redGamma",
+   "green/greenExposure",
+   "green/greenOffset",
+   "green/greenGamma",
+   "blue/blueExposure",
+   "blue/blueOffset",
+   "blue/blueGamma",
+   "bypassLinearLight"
+  ],
+  "ec.color.gammapedestalgain": [
+   "blackStretch",
+   "redGamma",
+   "redPedestal",
+   "redGain",
+   "greenGamma",
+   "greenPedestal",
+   "greenGain",
+   "blueGamma",
+   "bluePedestal",
+   "blueGain"
+  ],
+  "ec.color.huesaturation": [
+   "channelControl",
+   "hue",
+   "saturation",
+   "lightness",
+   "redsHue",
+   "redsSaturation",
+   "redsLightness",
+   "redsRangeStart",
+   "redsRangeEnd",
+   "redsStartFalloff",
+   "redsEndFalloff",
+   "yellowsHue",
+   "yellowsSaturation",
+   "yellowsLightness",
+   "yellowsRangeStart",
+   "yellowsRangeEnd",
+   "yellowsStartFalloff",
+   "yellowsEndFalloff",
+   "greensHue",
+   "greensSaturation",
+   "greensLightness",
+   "greensRangeStart",
+   "greensRangeEnd",
+   "greensStartFalloff",
+   "greensEndFalloff",
+   "cyansHue",
+   "cyansSaturation",
+   "cyansLightness",
+   "cyansRangeStart",
+   "cyansRangeEnd",
+   "cyansStartFalloff",
+   "cyansEndFalloff",
+   "bluesHue",
+   "bluesSaturation",
+   "bluesLightness",
+   "bluesRangeStart",
+   "bluesRangeEnd",
+   "bluesStartFalloff",
+   "bluesEndFalloff",
+   "magentasHue",
+   "magentasSaturation",
+   "magentasLightness",
+   "magentasRangeStart",
+   "magentasRangeEnd",
+   "magentasStartFalloff",
+   "magentasEndFalloff",
+   "colorize",
+   "colorizeHue",
+   "colorizeSaturation",
+   "colorizeLightness"
+  ],
+  "ec.color.leavecolor": [
+   "amount",
+   "color",
+   "tolerance",
+   "edgeSoftness",
+   "matchColors"
+  ],
+  "ec.color.levels": [
+   "channel",
+   "inBlack",
+   "inWhite",
+   "gamma",
+   "outBlack",
+   "outWhite",
+   "clipToOutputBlack",
+   "clipToOutputWhite",
+   "noClip",
+   "redInBlack",
+   "redInWhite",
+   "redGamma",
+   "redOutBlack",
+   "redOutWhite",
+   "redClipToOutputBlack",
+   "redClipToOutputWhite",
+   "greenInBlack",
+   "greenInWhite",
+   "greenGamma",
+   "greenOutBlack",
+   "greenOutWhite",
+   "greenClipToOutputBlack",
+   "greenClipToOutputWhite",
+   "blueInBlack",
+   "blueInWhite",
+   "blueGamma",
+   "blueOutBlack",
+   "blueOutWhite",
+   "blueClipToOutputBlack",
+   "blueClipToOutputWhite",
+   "alphaInBlack",
+   "alphaInWhite",
+   "alphaGamma",
+   "alphaOutBlack",
+   "alphaOutWhite",
+   "alphaClipToOutputBlack",
+   "alphaClipToOutputWhite"
+  ],
+  "ec.color.levelsic": [
+   "rgb/rgbInBlack",
+   "rgb/rgbInWhite",
+   "rgb/rgbGamma",
+   "rgb/rgbOutBlack",
+   "rgb/rgbOutWhite",
+   "red/redInBlack",
+   "red/redInWhite",
+   "red/redGamma",
+   "red/redOutBlack",
+   "red/redOutWhite",
+   "green/greenInBlack",
+   "green/greenInWhite",
+   "green/greenGamma",
+   "green/greenOutBlack",
+   "green/greenOutWhite",
+   "blue/blueInBlack",
+   "blue/blueInWhite",
+   "blue/blueGamma",
+   "blue/blueOutBlack",
+   "blue/blueOutWhite",
+   "alpha/alphaInBlack",
+   "alpha/alphaInWhite",
+   "alpha/alphaGamma",
+   "alpha/alphaOutBlack",
+   "alpha/alphaOutWhite",
+   "clipToOutputBlack",
+   "clipToOutputWhite"
+  ],
+  "ec.color.lumetri": [
+   "highDynamicRange",
+   "basicCorrection/inputLut",
+   "basicCorrection/inputLutFile",
+   "basicCorrection/whiteBalance/temperature",
+   "basicCorrection/whiteBalance/tint",
+   "basicCorrection/tone/exposure",
+   "basicCorrection/tone/contrast",
+   "basicCorrection/tone/highlights",
+   "basicCorrection/tone/shadows",
+   "basicCorrection/tone/whites",
+   "basicCorrection/tone/blacks",
+   "basicCorrection/tone/hdrWhite",
+   "basicCorrection/tone/hdrSpecular",
+   "basicCorrection/saturation",
+   "creative/look",
+   "creative/lookFile",
+   "creative/lookIntensity",
+   "creative/adjustments/fadedFilm",
+   "creative/adjustments/sharpen",
+   "creative/adjustments/vibrance",
+   "creative/adjustments/creativeSaturation",
+   "creative/adjustments/shadowTint",
+   "creative/adjustments/highlightTint",
+   "creative/adjustments/tintBalance",
+   "curves/curveMasterShadows",
+   "curves/curveMasterMidtones",
+   "curves/curveMasterHighlights",
+   "curves/curveRedShadows",
+   "curves/curveRedMidtones",
+   "curves/curveRedHighlights",
+   "curves/curveGreenShadows",
+   "curves/curveGreenMidtones",
+   "curves/curveGreenHighlights",
+   "curves/curveBlueShadows",
+   "curves/curveBlueMidtones",
+   "curves/curveBlueHighlights",
+   "curves/rgbCurves/master",
+   "curves/rgbCurves/red",
+   "curves/rgbCurves/green",
+   "curves/rgbCurves/blue",
+   "curves/hueSaturationCurves/hueVsSat",
+   "curves/hueSaturationCurves/hueVsHue",
+   "curves/hueSaturationCurves/hueVsLuma",
+   "curves/hueSaturationCurves/lumaVsSat",
+   "curves/hueSaturationCurves/satVsSat",
+   "colorWheels/shadowsWheel",
+   "colorWheels/midtonesWheel",
+   "colorWheels/highlightsWheel",
+   "hslSecondary/key/hueEnabled",
+   "hslSecondary/key/hueCenter",
+   "hslSecondary/key/hueRange",
+   "hslSecondary/key/hueSoftness",
+   "hslSecondary/key/saturationEnabled",
+   "hslSecondary/key/saturationLow",
+   "hslSecondary/key/saturationHigh",
+   "hslSecondary/key/saturationSoftness",
+   "hslSecondary/key/lightnessEnabled",
+   "hslSecondary/key/lightnessLow",
+   "hslSecondary/key/lightnessHigh",
+   "hslSecondary/key/lightnessSoftness",
+   "hslSecondary/key/showMask",
+   "hslSecondary/key/maskStyle",
+   "hslSecondary/key/invertMask",
+   "hslSecondary/refine/denoise",
+   "hslSecondary/refine/blur",
+   "hslSecondary/correction/correctionWheel",
+   "hslSecondary/correction/temperature",
+   "hslSecondary/correction/tint",
+   "hslSecondary/correction/contrast",
+   "hslSecondary/correction/sharpen",
+   "hslSecondary/correction/saturation",
+   "vignette/vignetteAmount",
+   "vignette/vignetteMidpoint",
+   "vignette/vignetteRoundness",
+   "vignette/vignetteFeather"
+  ],
+  "ec.color.ociocdl": [
+   "slopeRed",
+   "slopeGreen",
+   "slopeBlue",
+   "offsetRed",
+   "offsetGreen",
+   "offsetBlue",
+   "powerRed",
+   "powerGreen",
+   "powerBlue",
+   "saturation",
+   "style",
+   "direction"
+  ],
+  "ec.color.ociocolorspace": [
+   "config",
+   "configFile",
+   "source",
+   "sourceName",
+   "destination",
+   "destinationName",
+   "direction"
+  ],
+  "ec.color.ociodisplay": [
+   "config",
+   "configFile",
+   "source",
+   "sourceName",
+   "display",
+   "displayName",
+   "view",
+   "viewName",
+   "direction"
+  ],
+  "ec.color.ociofile": [
+   "file",
+   "cccId",
+   "interpolation",
+   "direction"
+  ],
+  "ec.color.ociolook": [
+   "config",
+   "source",
+   "destination",
+   "look",
+   "looks",
+   "direction"
+  ],
+  "ec.color.psarbitrarymap": [
+   "phase",
+   "applyPhaseMapToAlpha",
+   "map"
+  ],
+  "ec.color.photofilter": [
+   "filter",
+   "color",
+   "density",
+   "preserveLuminosity"
+  ],
+  "ec.color.selectivecolor": [
+   "method",
+   "colors",
+   "details/reds/redsCyan",
+   "details/reds/redsMagenta",
+   "details/reds/redsYellow",
+   "details/reds/redsBlack",
+   "details/yellows/yellowsCyan",
+   "details/yellows/yellowsMagenta",
+   "details/yellows/yellowsYellow",
+   "details/yellows/yellowsBlack",
+   "details/greens/greensCyan",
+   "details/greens/greensMagenta",
+   "details/greens/greensYellow",
+   "details/greens/greensBlack",
+   "details/cyans/cyansCyan",
+   "details/cyans/cyansMagenta",
+   "details/cyans/cyansYellow",
+   "details/cyans/cyansBlack",
+   "details/blues/bluesCyan",
+   "details/blues/bluesMagenta",
+   "details/blues/bluesYellow",
+   "details/blues/bluesBlack",
+   "details/magentas/magentasCyan",
+   "details/magentas/magentasMagenta",
+   "details/magentas/magentasYellow",
+   "details/magentas/magentasBlack",
+   "details/whites/whitesCyan",
+   "details/whites/whitesMagenta",
+   "details/whites/whitesYellow",
+   "details/whites/whitesBlack",
+   "details/neutrals/neutralsCyan",
+   "details/neutrals/neutralsMagenta",
+   "details/neutrals/neutralsYellow",
+   "details/neutrals/neutralsBlack",
+   "details/blacks/blacksCyan",
+   "details/blacks/blacksMagenta",
+   "details/blacks/blacksYellow",
+   "details/blacks/blacksBlack"
+  ],
+  "ec.color.shadowhighlight": [
+   "autoAmounts",
+   "shadowAmount",
+   "highlightAmount",
+   "temporalSmoothing",
+   "sceneDetect",
+   "moreOptions/shadowTonalWidth",
+   "moreOptions/shadowRadius",
+   "moreOptions/highlightTonalWidth",
+   "moreOptions/highlightRadius",
+   "moreOptions/colorCorrection",
+   "moreOptions/midtoneContrast",
+   "moreOptions/blackClip",
+   "moreOptions/whiteClip",
+   "blend"
+  ],
+  "ec.color.tint": [
+   "black",
+   "white",
+   "amount"
+  ],
+  "ec.color.tritone": [
+   "highlights",
+   "midtones",
+   "shadows",
+   "blend"
+  ],
+  "ec.color.vibrance": [
+   "vibrance",
+   "saturation"
+  ],
+  "ec.color.videolimiter": [
+   "clipLevel",
+   "clipMethod",
+   "compressionBeforeClipping",
+   "gamutWarning",
+   "gamutWarningColor"
+  ],
+  "ec.distort.bezierwarp": [
+   "topLeftVertex",
+   "topLeftTangent",
+   "topRightTangent",
+   "rightTopVertex",
+   "rightTopTangent",
+   "rightBottomTangent",
+   "bottomRightVertex",
+   "bottomRightTangent",
+   "bottomLeftTangent",
+   "leftBottomVertex",
+   "leftBottomTangent",
+   "leftTopTangent",
+   "quality"
+  ],
+  "ec.distort.bulge": [
+   "hradius",
+   "vradius",
+   "center",
+   "height",
+   "taperRadius",
+   "pinAllEdges"
+  ],
+  "ec.distort.ccbendit": [
+   "bend",
+   "start",
+   "end",
+   "renderPrestart"
+  ],
+  "ec.distort.ccbender": [
+   "amount",
+   "style",
+   "adjustToDistance",
+   "top",
+   "base"
+  ],
+  "ec.distort.ccblobbylize": [
+   "blobLayer",
+   "property",
+   "softness",
+   "cutAway",
+   "lightIntensity",
+   "lightColor",
+   "lightType",
+   "lightHeight",
+   "lightPosition",
+   "lightDirection",
+   "ambient",
+   "diffuse",
+   "specular",
+   "roughness",
+   "metal"
+  ],
+  "ec.distort.ccflomotion": [
+   "knot1",
+   "amount1",
+   "knot2",
+   "amount2",
+   "tileEdges",
+   "antialiasing",
+   "falloff"
+  ],
+  "ec.distort.ccgriddler": [
+   "horizontalScale",
+   "verticalScale",
+   "tileSize",
+   "rotation",
+   "cutTiles"
+  ],
+  "ec.distort.cclens": [
+   "center",
+   "size",
+   "convergence"
+  ],
+  "ec.distort.ccpageturn": [
+   "foldPosition",
+   "foldDirection",
+   "foldRadius",
+   "lightDirection",
+   "render",
+   "backPageOpacity",
+   "paperColor"
+  ],
+  "ec.distort.ccpowerpin": [
+   "topLeft",
+   "topRight",
+   "bottomLeft",
+   "bottomRight",
+   "perspective",
+   "unstretch",
+   "expandTop",
+   "expandLeft",
+   "expandRight",
+   "expandBottom"
+  ],
+  "ec.distort.ccripplepulse": [
+   "center",
+   "pulseLevel",
+   "timeSpan",
+   "amplitude",
+   "renderBump"
+  ],
+  "ec.distort.ccslant": [
+   "slant",
+   "stretching",
+   "height",
+   "floor"
+  ],
+  "ec.distort.ccsmear": [
+   "from",
+   "to",
+   "reach",
+   "radius"
+  ],
+  "ec.distort.ccsplit": [
+   "pointA",
+   "pointB",
+   "split"
+  ],
+  "ec.distort.ccsplit2": [
+   "pointA",
+   "pointB",
+   "split1",
+   "split2"
+  ],
+  "ec.distort.cctiler": [
+   "scale",
+   "center",
+   "blendWithOriginal"
+  ],
+  "ec.distort.cornerpin": [
+   "ul",
+   "ur",
+   "ll",
+   "lr"
+  ],
+  "ec.distort.upscale": [
+   "scale",
+   "reduceNoise",
+   "detail",
+   "alpha"
+  ],
+  "ec.distort.displacementmap": [
+   "displacementMapLayer",
+   "displacementMapLayerSource",
+   "useForHorizontal",
+   "maxHorizontal",
+   "useForVertical",
+   "maxVertical",
+   "displacementMapBehavior",
+   "wrapPixelsAround",
+   "expandOutput"
+  ],
+  "ec.distort.liquify": [
+   "tool",
+   "brushSize",
+   "brushPressure",
+   "freezeAreaMask",
+   "turbulentJitter",
+   "cloneOffset",
+   "reconstructionMode",
+   "viewFreezeAreaMask",
+   "viewMesh",
+   "meshSize",
+   "meshColor",
+   "distortionMesh",
+   "distortionMeshOffset",
+   "distortionPercentage",
+   "distortionDisplayQuality"
+  ],
+  "ec.distort.magnify": [
+   "shape",
+   "center",
+   "magnification",
+   "link",
+   "size",
+   "feather",
+   "opacity",
+   "scaling",
+   "blendingMode",
+   "resizeLayer"
+  ],
+  "ec.distort.meshwarp": [
+   "rows",
+   "columns",
+   "quality",
+   "mesh"
+  ],
+  "ec.distort.mirror": [
+   "center",
+   "angle"
+  ],
+  "ec.distort.offset": [
+   "shift",
+   "blend"
+  ],
+  "ec.distort.opticscompensation": [
+   "fieldOfView",
+   "reverseLensDistortion",
+   "fovOrientation",
+   "viewCenter",
+   "optimalPixels",
+   "resize"
+  ],
+  "ec.distort.polar": [
+   "interpolation",
+   "conversion"
+  ],
+  "ec.distort.puppet": [
+   "refinement"
+  ],
+  "ec.distort.reshape": [
+   "sourceMask",
+   "destinationMask",
+   "boundaryMask",
+   "percent",
+   "elasticity",
+   "interpolation",
+   "correspondencePoints"
+  ],
+  "ec.distort.ripple": [
+   "radius",
+   "center",
+   "conversion",
+   "speed",
+   "waveWidth",
+   "waveHeight",
+   "phase"
+  ],
+  "ec.distort.rollingshutterrepair": [
+   "rollingShutterRate",
+   "scanDirection",
+   "advanced/method",
+   "advanced/detailedAnalysis",
+   "advanced/pixelMotionDetail"
+  ],
+  "ec.distort.smear": [
+   "sourceMask",
+   "boundaryMask",
+   "maskOffset",
+   "maskRotation",
+   "maskScale",
+   "percent",
+   "elasticity",
+   "interpolation"
+  ],
+  "ec.distort.spherize": [
+   "radius",
+   "center"
+  ],
+  "ec.distort.transform": [
+   "anchor",
+   "position",
+   "uniform",
+   "scaleHeight",
+   "scaleWidth",
+   "skew",
+   "skewAxis",
+   "rotation",
+   "opacity",
+   "useCompositionShutterAngle",
+   "shutterAngle",
+   "sampling"
+  ],
+  "ec.distort.turbulentdisplace": [
+   "displacement",
+   "amount",
+   "size",
+   "offset",
+   "complexity",
+   "evolution",
+   "evolutionOptions/cycleEvolution",
+   "evolutionOptions/cycle",
+   "evolutionOptions/randomSeed",
+   "pinning",
+   "resizeLayer"
+  ],
+  "ec.distort.twirl": [
+   "angle",
+   "radius",
+   "center"
+  ],
+  "ec.distort.twirllegacy": [
+   "angle",
+   "radius",
+   "center"
+  ],
+  "ec.distort.warp": [
+   "warpStyle",
+   "warpAxis",
+   "bend",
+   "horizontalDistortion",
+   "verticalDistortion"
+  ],
+  "ec.distort.warpstabilizer": [
+   "stabilization/result",
+   "stabilization/smoothness",
+   "stabilization/method",
+   "stabilization/preserveScale",
+   "borders/framing",
+   "borders/autoScale/maximumScale",
+   "borders/autoScale/actionSafeMargin",
+   "borders/additionalScale",
+   "advanced/detailedAnalysis",
+   "advanced/rollingShutterRipple",
+   "advanced/cropLessSmoothMore",
+   "advanced/synthesizeInputRange",
+   "advanced/synthesizeEdgeFeather",
+   "advanced/edgeCropping/left",
+   "advanced/edgeCropping/top",
+   "advanced/edgeCropping/right",
+   "advanced/edgeCropping/bottom",
+   "advanced/hideWarningBanner",
+   "advanced/showTrackPoints",
+   "advanced/trackPointSize",
+   "analysis",
+   "analysisKey"
+  ],
+  "ec.distort.wavewarp": [
+   "waveType",
+   "height",
+   "width",
+   "direction",
+   "speed",
+   "pinning",
+   "phase"
+  ],
+  "ec.control.point3d": [
+   "point"
+  ],
+  "ec.control.angle": [
+   "angle"
+  ],
+  "ec.control.checkbox": [
+   "checkbox"
+  ],
+  "ec.control.color": [
+   "color"
+  ],
+  "ec.control.dropdown": [
+   "menu"
+  ],
+  "ec.control.layer": [
+   "layer"
+  ],
+  "ec.control.point": [
+   "point"
+  ],
+  "ec.control.slider": [
+   "slider"
+  ],
+  "ec.control.stereo3d": [
+   "configuration",
+   "sceneDepth",
+   "convergence",
+   "convergenceOf",
+   "zOffset"
+  ],
+  "ec.generate.fourcolor": [
+   "positionsColors/point1",
+   "positionsColors/color1",
+   "positionsColors/point2",
+   "positionsColors/color2",
+   "positionsColors/point3",
+   "positionsColors/color3",
+   "positionsColors/point4",
+   "positionsColors/color4",
+   "blend",
+   "jitter",
+   "opacity",
+   "blendingMode"
+  ],
+  "ec.generate.advancedlightning": [
+   "lightningType",
+   "origin",
+   "direction",
+   "conductivityState",
+   "coreSettings/coreRadius",
+   "coreSettings/coreOpacity",
+   "coreSettings/coreColor",
+   "glowSettings/glowRadius",
+   "glowSettings/glowOpacity",
+   "glowSettings/glowColor",
+   "turbulence",
+   "forking",
+   "decay",
+   "decayMainCore",
+   "alphaObstacle",
+   "compositeOnOriginal",
+   "expertSettings/complexity",
+   "expertSettings/minForkDistance",
+   "expertSettings/terminationThreshold",
+   "expertSettings/mainCoreCollisionOnly",
+   "expertSettings/fractalType",
+   "expertSettings/coreDrain",
+   "expertSettings/forkStrength",
+   "expertSettings/forkVariation"
+  ],
+  "ec.generate.audiospectrum": [
+   "audioLayer",
+   "startPoint",
+   "endPoint",
+   "path",
+   "usePolarPath",
+   "startFrequency",
+   "endFrequency",
+   "frequencyBands",
+   "maximumHeight",
+   "audioDuration",
+   "audioOffset",
+   "thickness",
+   "softness",
+   "insideColor",
+   "outsideColor",
+   "blendOverlappingColors",
+   "hueInterpolation",
+   "dynamicHuePhase",
+   "colorSymmetry",
+   "displayOptions",
+   "sideOptions",
+   "durationAveraging",
+   "compositeOnOriginal"
+  ],
+  "ec.generate.audiowaveform": [
+   "audioLayer",
+   "startPoint",
+   "endPoint",
+   "path",
+   "usePolarPath",
+   "displayedSamples",
+   "maximumHeight",
+   "audioDuration",
+   "audioOffset",
+   "thickness",
+   "softness",
+   "randomSeed",
+   "insideColor",
+   "outsideColor",
+   "waveformOptions",
+   "displayOptions",
+   "compositeOnOriginal"
+  ],
+  "ec.generate.beam": [
+   "startPoint",
+   "endPoint",
+   "length",
+   "time",
+   "startThickness",
+   "endThickness",
+   "softness",
+   "insideColor",
+   "outsideColor",
+   "perspective3d",
+   "compositeOnOriginal"
+  ],
+  "ec.generate.ccgluegun": [
+   "brushPosition",
+   "strokeWidth",
+   "density",
+   "timeSpan",
+   "reflection",
+   "strength",
+   "style"
+  ],
+  "ec.generate.cclightburst": [
+   "center",
+   "intensity",
+   "rayLength",
+   "burst",
+   "setColor",
+   "color"
+  ],
+  "ec.generate.cclightrays": [
+   "intensity",
+   "center",
+   "radius",
+   "warpSoftness",
+   "shape",
+   "colorFromSource",
+   "color",
+   "transferMode"
+  ],
+  "ec.generate.cclightsweep": [
+   "center",
+   "direction",
+   "shape",
+   "width",
+   "sweepIntensity",
+   "edgeIntensity",
+   "edgeThickness",
+   "lightColor",
+   "lightReceptionMode"
+  ],
+  "ec.generate.ccthreads": [
+   "width",
+   "height",
+   "overlaps",
+   "direction",
+   "center",
+   "coverage",
+   "shadowing",
+   "texture"
+  ],
+  "ec.generate.cellpattern": [
+   "cellPattern",
+   "invert",
+   "contrast",
+   "overflow",
+   "disperse",
+   "size",
+   "offset",
+   "tilingOptions/enableTiling",
+   "tilingOptions/cellsHorizontal",
+   "tilingOptions/cellsVertical",
+   "evolution",
+   "evolutionOptions/cycleEvolution",
+   "evolutionOptions/cycle",
+   "evolutionOptions/randomSeed"
+  ],
+  "ec.generate.checkerboard": [
+   "anchor",
+   "sizeFrom",
+   "corner",
+   "width",
+   "height",
+   "feather/featherWidth",
+   "feather/featherHeight",
+   "color",
+   "opacity",
+   "blendingMode"
+  ],
+  "ec.generate.circle": [
+   "center",
+   "radius",
+   "edge",
+   "edgeRadius",
+   "thickness",
+   "feather/feather",
+   "feather/featherInner",
+   "invert",
+   "color",
+   "opacity",
+   "blendingMode"
+  ],
+  "ec.generate.ellipse": [
+   "center",
+   "width",
+   "height",
+   "thickness",
+   "softness",
+   "insideColor",
+   "outsideColor",
+   "compositeOnOriginal"
+  ],
+  "ec.generate.eyedropperfill": [
+   "samplePoint",
+   "sampleRadius",
+   "averagePixelColors",
+   "maintainOriginalAlpha",
+   "blendWithOriginal"
+  ],
+  "ec.generate.fill": [
+   "fillMask",
+   "allMasks",
+   "color",
+   "invert",
+   "horizontalFeather",
+   "verticalFeather",
+   "opacity"
+  ],
+  "ec.generate.fractal": [
+   "setChoice",
+   "equation",
+   "mandelbrot/mandelbrotX",
+   "mandelbrot/mandelbrotY",
+   "mandelbrot/mandelbrotMagnification",
+   "mandelbrot/mandelbrotEscapeLimit",
+   "julia/juliaX",
+   "julia/juliaY",
+   "julia/juliaMagnification",
+   "julia/juliaEscapeLimit",
+   "postInversionOffset/postInversionX",
+   "postInversionOffset/postInversionY",
+   "fractalColor/overlay",
+   "fractalColor/transparency",
+   "fractalColor/palette",
+   "fractalColor/hue",
+   "fractalColor/cycleSteps",
+   "fractalColor/cycleOffset",
+   "fractalColor/edgeHighlight",
+   "highQualitySettings/samplingMethod",
+   "highQualitySettings/samplingFactor"
+  ],
+  "ec.generate.gradientramp": [
+   "start",
+   "startColor",
+   "end",
+   "endColor",
+   "shape",
+   "scatter",
+   "blend"
+  ],
+  "ec.generate.grid": [
+   "anchor",
+   "sizeFrom",
+   "corner",
+   "width",
+   "height",
+   "border",
+   "feather/featherWidth",
+   "feather/featherHeight",
+   "invertGrid",
+   "color",
+   "opacity",
+   "blendingMode"
+  ],
+  "ec.generate.lensflare": [
+   "flareCenter",
+   "flareBrightness",
+   "lensType",
+   "blendWithOriginal"
+  ],
+  "ec.generate.paintbucket": [
+   "fillPoint",
+   "fillSelector",
+   "tolerance",
+   "viewThreshold",
+   "stroke",
+   "featherSoftness",
+   "spreadRadius",
+   "strokeWidth",
+   "color",
+   "opacity",
+   "blendingMode"
+  ],
+  "ec.generate.radiowaves": [
+   "producerPoint",
+   "parametersAreSetAt",
+   "renderQuality",
+   "waveType",
+   "polygon/sides",
+   "polygon/star",
+   "polygon/starDepth",
+   "imageContour/sourceLayer",
+   "imageContour/sourceCenter",
+   "imageContour/valueChannel",
+   "imageContour/invertInput",
+   "imageContour/valueThreshold",
+   "imageContour/preBlur",
+   "imageContour/tolerance",
+   "imageContour/contour",
+   "waveMask/mask",
+   "waveMotion/frequency",
+   "waveMotion/expansion",
+   "waveMotion/orientation",
+   "waveMotion/direction",
+   "waveMotion/velocity",
+   "waveMotion/spin",
+   "waveMotion/lifespan",
+   "waveMotion/reflection",
+   "waveStroke/profile",
+   "waveStroke/color",
+   "waveStroke/opacity",
+   "waveStroke/fadeInTime",
+   "waveStroke/fadeOutTime",
+   "waveStroke/startWidth",
+   "waveStroke/endWidth"
+  ],
+  "ec.generate.scribble": [
+   "scribble",
+   "mask",
+   "fillType",
+   "edgeOptions/edgeWidth",
+   "edgeOptions/endCap",
+   "edgeOptions/join",
+   "edgeOptions/miterLimit",
+   "color",
+   "opacity",
+   "angle",
+   "strokeWidth",
+   "strokeOptions/curviness",
+   "strokeOptions/curvinessVariation",
+   "strokeOptions/spacing",
+   "strokeOptions/spacingVariation",
+   "strokeOptions/pathOverlap",
+   "strokeOptions/pathOverlapVariation",
+   "start",
+   "end",
+   "startEndApplyTo",
+   "fillPathsSequentially",
+   "wiggleType",
+   "wigglesPerSecond",
+   "randomSeed",
+   "composite"
+  ],
+  "ec.generate.stroke": [
+   "path",
+   "allMasks",
+   "strokeSequentially",
+   "color",
+   "brushSize",
+   "brushHardness",
+   "opacity",
+   "start",
+   "end",
+   "spacing",
+   "paintStyle"
+  ],
+  "ec.generate.vegas": [
+   "stroke",
+   "inputLayer",
+   "invertInput",
+   "ifLayerSizesDiffer",
+   "channel",
+   "threshold",
+   "preBlur",
+   "tolerance",
+   "renderMode",
+   "selectedContour",
+   "shorterContoursHave",
+   "path",
+   "segments",
+   "length",
+   "segmentDistribution",
+   "rotation",
+   "randomPhase",
+   "randomSeed",
+   "blendMode",
+   "color",
+   "width",
+   "hardness",
+   "startOpacity",
+   "midpointOpacity",
+   "midpointPosition",
+   "endOpacity"
+  ],
+  "ec.generate.writeon": [
+   "brushPosition",
+   "color",
+   "brushSize",
+   "brushHardness",
+   "brushOpacity",
+   "strokeLength",
+   "brushSpacing",
+   "paintTimeProperties",
+   "brushTimeProperties",
+   "paintStyle"
+  ],
+  "ec.vr.blur": [
+   "frameLayout",
+   "blurriness"
+  ],
+  "ec.vr.chromaticaberrations": [
+   "frameLayout",
+   "centerTilt",
+   "centerPan",
+   "aberrationRed",
+   "aberrationGreen",
+   "aberrationBlue",
+   "falloff",
+   "falloffInvert"
+  ],
+  "ec.vr.colorgradients": [
+   "frameLayout",
+   "enablePoint1",
+   "point1",
+   "color1",
+   "enablePoint2",
+   "point2",
+   "color2",
+   "enablePoint3",
+   "point3",
+   "color3",
+   "enablePoint4",
+   "point4",
+   "color4",
+   "enablePoint5",
+   "point5",
+   "color5",
+   "blend",
+   "opacity",
+   "blendingMode"
+  ],
+  "ec.vr.converter": [
+   "frameLayout",
+   "sourceProjection",
+   "sourceHorizontalFov",
+   "targetProjection",
+   "targetHorizontalFov",
+   "tilt",
+   "pan",
+   "roll"
+  ],
+  "ec.vr.denoise": [
+   "frameLayout",
+   "noiseType",
+   "noiseLevel",
+   "detail"
+  ],
+  "ec.vr.digitalglitch": [
+   "frameLayout",
+   "masterAmplitude",
+   "distortionRate",
+   "distortionComplexity",
+   "distortionEvolution",
+   "evolutionOptions/cycleEvolution",
+   "evolutionOptions/cycle",
+   "geometricDistortion",
+   "geometric/horizontalDisplacement",
+   "geometric/verticalDisplacement",
+   "colorDistortion",
+   "color/redOffset",
+   "color/greenOffset",
+   "color/blueOffset",
+   "scanlines",
+   "scanlineSpacing",
+   "target/tilt",
+   "target/pan",
+   "target/radius",
+   "target/feather",
+   "randomSeed"
+  ],
+  "ec.vr.fractalnoise": [
+   "frameLayout",
+   "fractalType",
+   "contrast",
+   "brightness",
+   "invert",
+   "complexity",
+   "evolution",
+   "transform/scale",
+   "transform/tilt",
+   "transform/pan",
+   "transform/roll",
+   "subSettings/subInfluence",
+   "subSettings/subScaling",
+   "randomSeed",
+   "opacity",
+   "blendingMode"
+  ],
+  "ec.vr.glow": [
+   "frameLayout",
+   "luminanceThreshold",
+   "glowRadius",
+   "glowBrightness",
+   "glowSaturation",
+   "useTintColor",
+   "tintColor"
+  ],
+  "ec.vr.planetosphere": [
+   "frameLayout",
+   "scale",
+   "feather",
+   "tilt",
+   "pan",
+   "roll"
+  ],
+  "ec.vr.rotatesphere": [
+   "frameLayout",
+   "invertRotation",
+   "tilt",
+   "pan",
+   "roll"
+  ],
+  "ec.vr.sharpen": [
+   "frameLayout",
+   "sharpenAmount"
+  ],
+  "ec.vr.spheretoplane": [
+   "frameLayout",
+   "horizontalFov",
+   "tilt",
+   "pan",
+   "roll"
+  ],
+  "ec.key.advancedspill": [
+   "method",
+   "suppression",
+   "ultraSettings/keyColor",
+   "ultraSettings/tolerance",
+   "ultraSettings/desaturate",
+   "ultraSettings/spillRange",
+   "ultraSettings/spillColorCorrection",
+   "ultraSettings/lumaCorrection"
+  ],
+  "ec.key.ccsimplewireremoval": [
+   "pointA",
+   "pointB",
+   "removalStyle",
+   "thickness",
+   "slope",
+   "mirrorBlend",
+   "frameOffset"
+  ],
+  "ec.key.colordifference": [
+   "view",
+   "keyColor",
+   "colorMatchingAccuracy",
+   "partialAInBlack",
+   "partialAInWhite",
+   "partialAGamma",
+   "partialAOutBlack",
+   "partialAOutWhite",
+   "partialBInBlack",
+   "partialBInWhite",
+   "partialBGamma",
+   "partialBOutBlack",
+   "partialBOutWhite",
+   "blackLevel",
+   "whiteLevel",
+   "gamma"
+  ],
+  "ec.key.colorrange": [
+   "fuzziness",
+   "colorSpace",
+   "minL",
+   "maxL",
+   "minA",
+   "maxA",
+   "minB",
+   "maxB"
+  ],
+  "ec.key.differencematte": [
+   "view",
+   "differenceLayer",
+   "ifLayerSizesDiffer",
+   "matchingTolerance",
+   "matchingSoftness",
+   "blurBeforeDifference"
+  ],
+  "ec.key.extract": [
+   "channel",
+   "blackPoint",
+   "whitePoint",
+   "blackSoftness",
+   "whiteSoftness",
+   "invert"
+  ],
+  "ec.key.innerouter": [
+   "foreground",
+   "additionalForeground/foreground1",
+   "additionalForeground/foreground2",
+   "additionalForeground/foreground3",
+   "additionalForeground/foreground4",
+   "additionalForeground/foreground5",
+   "additionalForeground/foreground6",
+   "additionalForeground/foreground7",
+   "additionalForeground/foreground8",
+   "additionalForeground/foreground9",
+   "additionalForeground/foreground10",
+   "background",
+   "additionalBackground/background1",
+   "additionalBackground/background2",
+   "additionalBackground/background3",
+   "additionalBackground/background4",
+   "additionalBackground/background5",
+   "additionalBackground/background6",
+   "additionalBackground/background7",
+   "additionalBackground/background8",
+   "additionalBackground/background9",
+   "additionalBackground/background10",
+   "cleanupForeground/cleanupForeground1/path",
+   "cleanupForeground/cleanupForeground1/brushRadius",
+   "cleanupForeground/cleanupForeground1/brushPressure",
+   "cleanupForeground/cleanupForeground2/path",
+   "cleanupForeground/cleanupForeground2/brushRadius",
+   "cleanupForeground/cleanupForeground2/brushPressure",
+   "cleanupForeground/cleanupForeground3/path",
+   "cleanupForeground/cleanupForeground3/brushRadius",
+   "cleanupForeground/cleanupForeground3/brushPressure",
+   "cleanupForeground/cleanupForeground4/path",
+   "cleanupForeground/cleanupForeground4/brushRadius",
+   "cleanupForeground/cleanupForeground4/brushPressure",
+   "cleanupForeground/cleanupForeground5/path",
+   "cleanupForeground/cleanupForeground5/brushRadius",
+   "cleanupForeground/cleanupForeground5/brushPressure",
+   "cleanupForeground/cleanupForeground6/path",
+   "cleanupForeground/cleanupForeground6/brushRadius",
+   "cleanupForeground/cleanupForeground6/brushPressure",
+   "cleanupForeground/cleanupForeground7/path",
+   "cleanupForeground/cleanupForeground7/brushRadius",
+   "cleanupForeground/cleanupForeground7/brushPressure",
+   "cleanupForeground/cleanupForeground8/path",
+   "cleanupForeground/cleanupForeground8/brushRadius",
+   "cleanupForeground/cleanupForeground8/brushPressure",
+   "cleanupForeground/cleanupForeground9/path",
+   "cleanupForeground/cleanupForeground9/brushRadius",
+   "cleanupForeground/cleanupForeground9/brushPressure",
+   "cleanupForeground/cleanupForeground10/path",
+   "cleanupForeground/cleanupForeground10/brushRadius",
+   "cleanupForeground/cleanupForeground10/brushPressure",
+   "cleanupBackground/cleanupBackground1/path",
+   "cleanupBackground/cleanupBackground1/brushRadius",
+   "cleanupBackground/cleanupBackground1/brushPressure",
+   "cleanupBackground/cleanupBackground2/path",
+   "cleanupBackground/cleanupBackground2/brushRadius",
+   "cleanupBackground/cleanupBackground2/brushPressure",
+   "cleanupBackground/cleanupBackground3/path",
+   "cleanupBackground/cleanupBackground3/brushRadius",
+   "cleanupBackground/cleanupBackground3/brushPressure",
+   "cleanupBackground/cleanupBackground4/path",
+   "cleanupBackground/cleanupBackground4/brushRadius",
+   "cleanupBackground/cleanupBackground4/brushPressure",
+   "cleanupBackground/cleanupBackground5/path",
+   "cleanupBackground/cleanupBackground5/brushRadius",
+   "cleanupBackground/cleanupBackground5/brushPressure",
+   "cleanupBackground/cleanupBackground6/path",
+   "cleanupBackground/cleanupBackground6/brushRadius",
+   "cleanupBackground/cleanupBackground6/brushPressure",
+   "cleanupBackground/cleanupBackground7/path",
+   "cleanupBackground/cleanupBackground7/brushRadius",
+   "cleanupBackground/cleanupBackground7/brushPressure",
+   "cleanupBackground/cleanupBackground8/path",
+   "cleanupBackground/cleanupBackground8/brushRadius",
+   "cleanupBackground/cleanupBackground8/brushPressure",
+   "cleanupBackground/cleanupBackground9/path",
+   "cleanupBackground/cleanupBackground9/brushRadius",
+   "cleanupBackground/cleanupBackground9/brushPressure",
+   "cleanupBackground/cleanupBackground10/path",
+   "cleanupBackground/cleanupBackground10/brushRadius",
+   "cleanupBackground/cleanupBackground10/brushPressure",
+   "singleMaskHighlightRadius",
+   "edgeThin",
+   "edgeFeather",
+   "edgeThreshold",
+   "invertExtraction",
+   "blendWithOriginal"
+  ],
+  "ec.key.keycleaner": [
+   "additionalEdgeRadius",
+   "reduceChatter",
+   "alphaContrast",
+   "strength"
+  ],
+  "ec.keying.keylight": [
+   "view",
+   "unpremultiplyResult",
+   "screenColour",
+   "screenGain",
+   "screenBalance",
+   "despillBias",
+   "alphaBias",
+   "lockBiasesTogether",
+   "screenPreblur",
+   "screenMatte/clipBlack",
+   "screenMatte/clipWhite",
+   "screenMatte/clipRollback",
+   "screenMatte/screenShrinkGrow",
+   "screenMatte/screenSoftness",
+   "screenMatte/screenDespotBlack",
+   "screenMatte/screenDespotWhite",
+   "screenMatte/replaceMethod",
+   "screenMatte/replaceColour",
+   "insideMask/insideMask",
+   "insideMask/insideMaskSoftness",
+   "insideMask/invertInsideMask",
+   "insideMask/insideReplaceMethod",
+   "insideMask/insideReplaceColour",
+   "insideMask/sourceAlpha",
+   "outsideMask/outsideMask",
+   "outsideMask/outsideMaskSoftness",
+   "outsideMask/invertOutsideMask",
+   "foregroundColourCorrection/enableColourCorrection",
+   "foregroundColourCorrection/saturation",
+   "foregroundColourCorrection/contrast",
+   "foregroundColourCorrection/brightness",
+   "foregroundColourCorrection/colourSuppression",
+   "foregroundColourCorrection/suppressionBalance",
+   "foregroundColourCorrection/suppressionAmount",
+   "foregroundColourCorrection/colourBalanceHue",
+   "foregroundColourCorrection/colourBalanceSaturation",
+   "edgeColourCorrection/enableEdgeColourCorrection",
+   "edgeColourCorrection/edgeHardness",
+   "edgeColourCorrection/edgeSoftness",
+   "edgeColourCorrection/edgeGrow",
+   "edgeColourCorrection/edgeSaturation",
+   "edgeColourCorrection/edgeContrast",
+   "edgeColourCorrection/edgeBrightness",
+   "edgeColourCorrection/edgeColourSuppression",
+   "edgeColourCorrection/edgeSuppressionBalance",
+   "edgeColourCorrection/edgeSuppressionAmount",
+   "edgeColourCorrection/edgeColourBalanceHue",
+   "edgeColourCorrection/edgeColourBalanceSaturation",
+   "sourceCrops/xMethod",
+   "sourceCrops/yMethod",
+   "sourceCrops/edgeColour",
+   "sourceCrops/edgeColourAlpha",
+   "sourceCrops/cropLeft",
+   "sourceCrops/cropRight",
+   "sourceCrops/cropTop",
+   "sourceCrops/cropBottom"
+  ],
+  "ec.key.linearcolor": [
+   "view",
+   "keyColor",
+   "matchColors",
+   "tolerance",
+   "softness",
+   "keyOperation"
+  ],
+  "ec.key.screen": [
+   "view",
+   "screenColor",
+   "screenGain",
+   "screenBalance",
+   "despill",
+   "clipBlack",
+   "clipWhite",
+   "screenPreblur",
+   "screenShrinkGrow",
+   "screenSoftness",
+   "edgeColor"
+  ],
+  "ec.key.unmult": [
+   "backgroundColor",
+   "blackLevel",
+   "whiteLevel",
+   "softness",
+   "removeColorMatting",
+   "clipHdrResults"
+  ],
+  "ec.matte.mattechoker": [
+   "geometricSoftness1",
+   "choke1",
+   "grayLevelSoftness1",
+   "geometricSoftness2",
+   "choke2",
+   "grayLevelSoftness2",
+   "iterations"
+  ],
+  "ec.obsolete.mochashape": [
+   "blendMode",
+   "invert",
+   "renderEdgeWidth",
+   "renderType",
+   "shapeColour",
+   "opacity",
+   "shapeData"
+  ],
+  "ec.matte.objectmatte": [
+   "objectPoint",
+   "useBox",
+   "boxTopLeft",
+   "boxBottomRight",
+   "objectTracking/trackObject",
+   "objectTracking/referenceFrame",
+   "objectTracking/framesBefore",
+   "objectTracking/framesAfter",
+   "objectMatte/feather",
+   "objectMatte/contrast",
+   "objectMatte/shiftEdge",
+   "invert",
+   "view",
+   "inputKey",
+   "frozen"
+  ],
+  "ec.matte.refinehard": [
+   "smooth",
+   "feather",
+   "choke",
+   "reduceChatter",
+   "useMotionBlur",
+   "motionBlur/motionBlurSamples",
+   "motionBlur/shutterAngle",
+   "motionBlur/higherQuality",
+   "decontaminate",
+   "decontaminationAmount",
+   "extendWhereSmoothed",
+   "increaseDecontaminationRadius",
+   "viewDecontaminationMap",
+   "radius",
+   "alphaContrast",
+   "invert"
+  ],
+  "ec.matte.refinesoft": [
+   "calculateEdgeDetails",
+   "radius",
+   "viewEdgeRegion",
+   "smooth",
+   "feather",
+   "contrast",
+   "shiftEdge",
+   "reduceChatter",
+   "useMotionBlur",
+   "motionBlur/motionBlurSamples",
+   "motionBlur/shutterAngle",
+   "motionBlur/higherQuality",
+   "decontaminate",
+   "decontamination/decontaminationAmount",
+   "decontamination/extendWhereSmoothed",
+   "decontamination/increaseDecontaminationRadius",
+   "decontamination/viewDecontaminationMap",
+   "invert",
+   "choke"
+  ],
+  "ec.matte.rotobrush": [
+   "version",
+   "quality",
+   "rotoBrushPropagation/searchRadius",
+   "rotoBrushPropagation/motionThreshold",
+   "rotoBrushPropagation/motionDamping",
+   "rotoBrushPropagation/viewSearchRegion",
+   "rotoBrushMatte/feather",
+   "rotoBrushMatte/contrast",
+   "rotoBrushMatte/shiftEdge",
+   "rotoBrushMatte/reduceChatter",
+   "refineEdgeMatte/smooth",
+   "refineEdgeMatte/feather",
+   "refineEdgeMatte/contrast",
+   "refineEdgeMatte/shiftEdge",
+   "refineEdgeMatte/reduceChatter",
+   "refineEdgeMatte/useMotionBlur",
+   "refineEdgeMatte/motionBlur/motionBlurSamples",
+   "refineEdgeMatte/motionBlur/shutterAngle",
+   "refineEdgeMatte/motionBlur/higherQuality",
+   "refineEdgeMatte/decontaminateEdgeColors",
+   "refineEdgeMatte/decontamination/decontaminationAmount",
+   "refineEdgeMatte/decontamination/extendWhereSmoothed",
+   "refineEdgeMatte/decontamination/increaseDecontaminationRadius",
+   "refineEdgeMatte/decontamination/viewDecontaminationMap",
+   "strokes",
+   "inputKey",
+   "frozen"
+  ],
+  "ec.matte.simplechoker": [
+   "view",
+   "chokeMatte"
+  ],
+  "ec.noise.addgrain": [
+   "viewingMode",
+   "preset",
+   "previewRegion/center",
+   "previewRegion/width",
+   "previewRegion/height",
+   "previewRegion/showBox",
+   "previewRegion/boxColor",
+   "tweaking/intensity",
+   "tweaking/channelIntensities/redIntensity",
+   "tweaking/channelIntensities/greenIntensity",
+   "tweaking/channelIntensities/blueIntensity",
+   "tweaking/size",
+   "tweaking/channelSize/redSize",
+   "tweaking/channelSize/greenSize",
+   "tweaking/channelSize/blueSize",
+   "tweaking/softness",
+   "tweaking/aspectRatio",
+   "color/monochromatic",
+   "color/saturation",
+   "color/tintAmount",
+   "color/tintColor",
+   "color/redBalance",
+   "color/greenBalance",
+   "color/blueBalance",
+   "application/blendingMode",
+   "application/shadows",
+   "application/midtones",
+   "application/highlights",
+   "application/midpoint",
+   "animation/animationSpeed",
+   "animation/animateSmoothly",
+   "animation/randomSeed"
+  ],
+  "ec.noise.curlnoise": [
+   "view",
+   "displacementAmount",
+   "scale",
+   "rotation",
+   "offset",
+   "complexity",
+   "evolution",
+   "steps",
+   "edgeBehavior",
+   "randomSeed"
+  ],
+  "ec.noise.dustscratches": [
+   "radius",
+   "threshold",
+   "operateOnAlpha"
+  ],
+  "ec.noise.fractal": [
+   "fractalType",
+   "noiseType",
+   "invert",
+   "contrast",
+   "brightness",
+   "overflow",
+   "transform/rotation",
+   "transform/uniformScaling",
+   "transform/scale",
+   "transform/scaleWidth",
+   "transform/scaleHeight",
+   "transform/offset",
+   "transform/perspectiveOffset",
+   "complexity",
+   "subSettings/subInfluence",
+   "subSettings/subScaling",
+   "subSettings/subRotation",
+   "subSettings/subOffset",
+   "subSettings/centerSubscale",
+   "evolution",
+   "evolutionOptions/cycleEvolution",
+   "evolutionOptions/cycle",
+   "evolutionOptions/seed",
+   "opacity",
+   "blendingMode",
+   "blend"
+  ],
+  "ec.noise.matchgrain": [
+   "viewingMode",
+   "noiseSourceLayer",
+   "noiseSourceLayerSource",
+   "compensateForExistingNoise",
+   "previewRegion/center",
+   "previewRegion/width",
+   "previewRegion/height",
+   "previewRegion/showBox",
+   "previewRegion/boxColor",
+   "sampling/samplingProcess",
+   "sampling/numberOfSamples",
+   "sampling/sampleSize",
+   "sampling/sampleBoxColor",
+   "tweaking/intensity",
+   "tweaking/channelIntensities/redIntensity",
+   "tweaking/channelIntensities/greenIntensity",
+   "tweaking/channelIntensities/blueIntensity",
+   "tweaking/size",
+   "tweaking/channelSize/redSize",
+   "tweaking/channelSize/greenSize",
+   "tweaking/channelSize/blueSize",
+   "tweaking/softness",
+   "tweaking/aspectRatio",
+   "color/monochromatic",
+   "color/saturation",
+   "color/tintAmount",
+   "color/tintColor",
+   "color/redBalance",
+   "color/greenBalance",
+   "color/blueBalance",
+   "application/blendingMode",
+   "application/shadows",
+   "application/midtones",
+   "application/highlights",
+   "application/midpoint",
+   "animation/animationSpeed",
+   "animation/animateSmoothly",
+   "animation/randomSeed"
+  ],
+  "ec.noise.median": [
+   "radius",
+   "operateOnAlpha"
+  ],
+  "ec.noise.medianlegacy": [
+   "radius",
+   "operateOnAlphaChannel"
+  ],
+  "ec.noise.noise": [
+   "amount",
+   "color",
+   "clip"
+  ],
+  "ec.noise.noisealpha": [
+   "noise",
+   "amount",
+   "originalAlpha",
+   "overflow",
+   "randomSeed",
+   "noisePhase",
+   "noiseOptions/cycleNoise",
+   "noiseOptions/cycle"
+  ],
+  "ec.noise.noisehls": [
+   "noise",
+   "hue",
+   "lightness",
+   "saturation",
+   "grainSize",
+   "noisePhase"
+  ],
+  "ec.noise.noisehlsauto": [
+   "noise",
+   "hue",
+   "lightness",
+   "saturation",
+   "grainSize",
+   "noiseAnimationSpeed"
+  ],
+  "ec.noise.removegrain": [
+   "viewingMode",
+   "previewRegion/center",
+   "previewRegion/width",
+   "previewRegion/height",
+   "previewRegion/showBox",
+   "previewRegion/boxColor",
+   "noiseReductionSettings/noiseReduction",
+   "noiseReductionSettings/passes",
+   "noiseReductionSettings/mode",
+   "fineTuning/texture",
+   "unsharpMask/amount",
+   "unsharpMask/radius",
+   "unsharpMask/threshold",
+   "temporalFiltering/enabled",
+   "temporalFiltering/amount",
+   "temporalFiltering/motionSensitivity",
+   "sampling/samplingProcess",
+   "sampling/numberOfSamples",
+   "sampling/sampleSize",
+   "sampling/sampleBoxColor"
+  ],
+  "ec.noise.turbulent": [
+   "fractalType",
+   "noiseType",
+   "invert",
+   "contrast",
+   "brightness",
+   "overflow",
+   "transform/rotation",
+   "transform/uniformScaling",
+   "transform/scale",
+   "transform/scaleWidth",
+   "transform/scaleHeight",
+   "transform/offset",
+   "transform/perspectiveOffset",
+   "complexity",
+   "subSettings/subInfluence",
+   "subSettings/subScaling",
+   "evolution",
+   "evolutionOptions/turbulenceFactor",
+   "evolutionOptions/randomSeed",
+   "opacity",
+   "blendingMode",
+   "blend"
+  ],
+  "ec.obsolete.basic3d": [
+   "swivel",
+   "tilt",
+   "distanceToImage",
+   "specularHighlight",
+   "preview/drawPreviewWireframe"
+  ],
+  "ec.obsolete.basictext": [
+   "text",
+   "alignment",
+   "position",
+   "fillAndStroke/displayOptions",
+   "fillAndStroke/fillColor",
+   "fillAndStroke/strokeColor",
+   "fillAndStroke/strokeWidth",
+   "size",
+   "tracking",
+   "lineSpacing",
+   "compositeOnOriginal"
+  ],
+  "ec.key.colorkey": [
+   "keyColor",
+   "colorTolerance",
+   "edgeThin",
+   "edgeFeather"
+  ],
+  "ec.obsolete.gaussianlegacy": [
+   "blurriness",
+   "blurDimensions"
+  ],
+  "ec.obsolete.lightning": [
+   "startPoint",
+   "endPoint",
+   "segments",
+   "amplitude",
+   "detailLevel",
+   "detailAmplitude",
+   "branching",
+   "rebranching",
+   "branchAngle",
+   "branchSegLength",
+   "branchSegments",
+   "branchWidth",
+   "speed",
+   "stability",
+   "fixedEndpoint",
+   "width",
+   "widthVariation",
+   "coreWidth",
+   "outsideColor",
+   "insideColor",
+   "pullForce",
+   "pullDirection",
+   "randomSeed",
+   "blendingMode",
+   "rerunAtEachFrame"
+  ],
+  "ec.key.luma": [
+   "keyType",
+   "threshold",
+   "tolerance",
+   "edgeThin",
+   "edgeFeather"
+  ],
+  "ec.obsolete.pathtext": [
+   "text",
+   "pathOptions/shapeType",
+   "pathOptions/controlPoints/tangent1",
+   "pathOptions/controlPoints/vertex1",
+   "pathOptions/controlPoints/tangent2",
+   "pathOptions/controlPoints/vertex2",
+   "pathOptions/customPath",
+   "pathOptions/reversePath",
+   "fillAndStroke/displayOptions",
+   "fillAndStroke/fillColor",
+   "fillAndStroke/strokeColor",
+   "fillAndStroke/strokeWidth",
+   "character/size",
+   "character/tracking",
+   "character/kerning",
+   "character/orientation/characterRotation",
+   "character/orientation/characterShear",
+   "character/horizontalShear",
+   "character/horizontalScale",
+   "character/verticalScale",
+   "paragraph/alignment",
+   "paragraph/leftMargin",
+   "paragraph/rightMargin",
+   "paragraph/lineSpacing",
+   "paragraph/baselineShift",
+   "advanced/visibleCharacters",
+   "advanced/fadeTime",
+   "advanced/jitterSettings/baselineJitterMax",
+   "advanced/jitterSettings/kerningJitterMax",
+   "advanced/jitterSettings/rotationJitterMax",
+   "advanced/jitterSettings/scaleJitterMax",
+   "compositeOnOriginal"
+  ],
+  "ec.blur.reduceflicker": [
+   "softness"
+  ],
+  "ec.key.spill": [
+   "colorToSuppress",
+   "colorAccuracy",
+   "suppression"
+  ],
+  "ec.paint.paint": [
+   "on_transparent"
+  ],
+  "ec.perspective.cameratracker": [
+   "shotType",
+   "horizontalAngleOfView",
+   "showTrackPoints",
+   "renderTrackPoints",
+   "trackPointSize",
+   "targetSize",
+   "advanced/solveMethod",
+   "advanced/methodUsed",
+   "advanced/averageError",
+   "advanced/detailedAnalysis",
+   "advanced/lensDistortion",
+   "advanced/undistort",
+   "advanced/autoDeletePoints",
+   "advanced/hideWarningBanner",
+   "tracks",
+   "tracksKey",
+   "solve",
+   "solveKey",
+   "deleted",
+   "camera"
+  ],
+  "ec.perspective.3dglasses": [
+   "leftView",
+   "rightView",
+   "sceneConvergence",
+   "verticalAlignment",
+   "units",
+   "leftRightSwap",
+   "view3d",
+   "balance"
+  ],
+  "ec.perspective.bevelalpha": [
+   "edgeThickness",
+   "lightAngle",
+   "lightColor",
+   "lightIntensity"
+  ],
+  "ec.perspective.beveledges": [
+   "edgeThickness",
+   "lightAngle",
+   "lightColor",
+   "lightIntensity"
+  ],
+  "ec.perspective.cccylinder": [
+   "radius",
+   "position",
+   "rotation",
+   "rotationX",
+   "rotationY",
+   "rotationZ",
+   "render",
+   "lightIntensity",
+   "lightColor",
+   "lightHeight",
+   "lightDirection",
+   "ambient",
+   "diffuse",
+   "specular",
+   "roughness"
+  ],
+  "ec.perspective.ccenvironment": [
+   "environment",
+   "mapping",
+   "filterEnvironment",
+   "height"
+  ],
+  "ec.perspective.ccsphere": [
+   "radius",
+   "offset",
+   "rotationX",
+   "rotationY",
+   "rotationZ",
+   "render",
+   "lightIntensity",
+   "lightColor",
+   "lightHeight",
+   "lightDirection",
+   "ambient",
+   "diffuse",
+   "specular",
+   "roughness"
+  ],
+  "ec.perspective.ccspotlight": [
+   "from",
+   "to",
+   "height",
+   "coneAngle",
+   "edgeSoftness",
+   "color",
+   "intensity",
+   "render"
+  ],
+  "ec.perspective.dropshadow": [
+   "color",
+   "opacity",
+   "direction",
+   "distance",
+   "softness",
+   "shadowOnly"
+  ],
+  "ec.perspective.radialshadow": [
+   "color",
+   "opacity",
+   "lightSource",
+   "projectionDistance",
+   "softness",
+   "render",
+   "colorInfluence",
+   "shadowOnly",
+   "resizeLayer"
+  ],
+  "ec.sim.ccballaction": [
+   "scatter",
+   "rotationAxis",
+   "rotation",
+   "twistProperty",
+   "twistAngle",
+   "gridSpacing",
+   "ballSize",
+   "instabilityState"
+  ],
+  "ec.sim.ccbubbles": [
+   "bubbleAmount",
+   "bubbleSpeed",
+   "wobbleAmplitude",
+   "wobbleFrequency",
+   "bubbleSize",
+   "reflectionType",
+   "shadingType"
+  ],
+  "ec.sim.ccdrizzle": [
+   "dripRate",
+   "longevity",
+   "rippling",
+   "displacement",
+   "rippleHeight",
+   "spreading",
+   "light/lightIntensity",
+   "light/lightColor",
+   "light/lightHeight",
+   "light/lightDirection",
+   "shading/ambient",
+   "shading/diffuse",
+   "shading/specular",
+   "shading/roughness"
+  ],
+  "ec.sim.cchair": [
+   "length",
+   "thickness",
+   "weight",
+   "constantMass",
+   "density",
+   "hairfallMap/mapStrength",
+   "hairfallMap/mapLayer",
+   "hairfallMap/mapSoftness",
+   "hairfallMap/addNoise",
+   "hairColor/hairColor",
+   "hairColor/brightness",
+   "hairColor/opacity",
+   "hairColor/colorInheritance",
+   "light/lightIntensity",
+   "light/lightDirection",
+   "shading/ambient",
+   "shading/diffuse",
+   "shading/specular",
+   "shading/roughness",
+   "randomSeed"
+  ],
+  "ec.sim.ccmrmercury": [
+   "radiusX",
+   "radiusY",
+   "producer",
+   "direction",
+   "velocity",
+   "birthRate",
+   "longevity",
+   "gravity",
+   "resistance",
+   "extra",
+   "animation",
+   "blobInfluence",
+   "blobBirthSize",
+   "blobDeathSize",
+   "light/lightIntensity",
+   "light/lightColor",
+   "light/lightHeight",
+   "light/lightDirection",
+   "shading/ambient",
+   "shading/diffuse",
+   "shading/specular",
+   "shading/roughness",
+   "shading/metal"
+  ],
+  "ec.sim.ccparticlesystems2": [
+   "birthRate",
+   "longevity",
+   "producer/position",
+   "producer/radiusX",
+   "producer/radiusY",
+   "physics/animation",
+   "physics/velocity",
+   "physics/inheritVelocity",
+   "physics/gravity",
+   "physics/resistance",
+   "physics/direction",
+   "physics/extra",
+   "particle/particleType",
+   "particle/birthSize",
+   "particle/deathSize",
+   "particle/sizeVariation",
+   "particle/maxOpacity",
+   "particle/birthColor",
+   "particle/deathColor",
+   "particle/transferMode",
+   "randomSeed"
+  ],
+  "ec.sim.ccparticleworld": [
+   "birthRate",
+   "longevity",
+   "producer/producerX",
+   "producer/producerY",
+   "producer/producerZ",
+   "producer/radiusX",
+   "producer/radiusY",
+   "producer/radiusZ",
+   "physics/animation",
+   "physics/velocity",
+   "physics/inheritVelocity",
+   "physics/gravity",
+   "physics/resistance",
+   "physics/extra",
+   "physics/extraAngle",
+   "physics/directionAxis/axisX",
+   "physics/directionAxis/axisY",
+   "physics/directionAxis/axisZ",
+   "physics/gravityVector/gravityX",
+   "physics/gravityVector/gravityY",
+   "physics/gravityVector/gravityZ",
+   "particle/particleType",
+   "particle/birthSize",
+   "particle/deathSize",
+   "particle/sizeVariation",
+   "particle/maxOpacity",
+   "particle/birthColor",
+   "particle/deathColor",
+   "particle/transferMode",
+   "extras/effectCamera/distance",
+   "extras/effectCamera/rotationX",
+   "extras/effectCamera/rotationY",
+   "extras/effectCamera/rotationZ",
+   "extras/effectCamera/fov",
+   "extras/randomSeed"
+  ],
+  "ec.sim.ccpixelpolly": [
+   "force",
+   "gravity",
+   "spinning",
+   "forceCenter",
+   "directionRandomness",
+   "speedRandomness",
+   "gridSpacing",
+   "object",
+   "enableDepthSort",
+   "startTime"
+  ],
+  "ec.sim.ccrainfall": [
+   "drops",
+   "size",
+   "sceneDepth",
+   "speed",
+   "wind",
+   "windVariation",
+   "spread",
+   "color",
+   "opacity",
+   "transferMode",
+   "compositeWithOriginal",
+   "extras/appearance",
+   "extras/offset",
+   "extras/randomSeed"
+  ],
+  "ec.sim.ccscatterize": [
+   "scatter",
+   "rightTwist",
+   "leftTwist",
+   "transferMode"
+  ],
+  "ec.sim.ccsnowfall": [
+   "flakes",
+   "size",
+   "sizeVariation",
+   "sceneDepth",
+   "speed",
+   "speedVariation",
+   "wind",
+   "windVariation",
+   "spread",
+   "wiggle/wiggleAmount",
+   "wiggle/wiggleAmountVariation",
+   "wiggle/wiggleFrequency",
+   "wiggle/wiggleFrequencyVariation",
+   "color",
+   "opacity",
+   "transferMode",
+   "compositeWithOriginal",
+   "extras/offset",
+   "extras/randomSeed"
+  ],
+  "ec.sim.ccstarburst": [
+   "scatter",
+   "speed",
+   "phase",
+   "gridSpacing",
+   "size",
+   "blendWithOriginal"
+  ],
+  "ec.sim.carddance": [
+   "rowsColumns",
+   "rows",
+   "columns",
+   "backLayer",
+   "gradientLayer1",
+   "gradientLayer2",
+   "xPosition/xPosSource",
+   "xPosition/xPosMultiplier",
+   "xPosition/xPosOffset",
+   "yPosition/yPosSource",
+   "yPosition/yPosMultiplier",
+   "yPosition/yPosOffset",
+   "zPosition/zPosSource",
+   "zPosition/zPosMultiplier",
+   "zPosition/zPosOffset",
+   "xRotation/xRotSource",
+   "xRotation/xRotMultiplier",
+   "xRotation/xRotOffset",
+   "yRotation/yRotSource",
+   "yRotation/yRotMultiplier",
+   "yRotation/yRotOffset",
+   "zRotation/zRotSource",
+   "zRotation/zRotMultiplier",
+   "zRotation/zRotOffset",
+   "xScale/xScaleSource",
+   "xScale/xScaleMultiplier",
+   "xScale/xScaleOffset",
+   "yScale/yScaleSource",
+   "yScale/yScaleMultiplier",
+   "yScale/yScaleOffset",
+   "cameraSystem",
+   "cameraPosition/xRotation",
+   "cameraPosition/yRotation",
+   "cameraPosition/zRotation",
+   "cameraPosition/xyPosition",
+   "cameraPosition/cameraZ",
+   "cameraPosition/focalLength",
+   "cameraPosition/transformOrder",
+   "cornerPins/upperLeftCorner",
+   "cornerPins/upperRightCorner",
+   "cornerPins/lowerLeftCorner",
+   "cornerPins/lowerRightCorner",
+   "cornerPins/autoFocalLength",
+   "cornerPins/focalLength",
+   "lighting/lightType",
+   "lighting/lightIntensity",
+   "lighting/lightColor",
+   "lighting/lightPosition",
+   "lighting/lightDepth",
+   "lighting/ambientLight",
+   "material/diffuse",
+   "material/specular",
+   "material/highlightSharpness"
+  ],
+  "ec.sim.caustics": [
+   "bottom/bottom",
+   "bottom/scaling",
+   "bottom/repeatMode",
+   "bottom/bottomSizeDiffers",
+   "bottom/blur",
+   "water/waterSurface",
+   "water/waveHeight",
+   "water/smoothing",
+   "water/waterDepth",
+   "water/refractiveIndex",
+   "water/surfaceColor",
+   "water/surfaceOpacity",
+   "water/causticsStrength",
+   "sky/sky",
+   "sky/scaling",
+   "sky/repeatMode",
+   "sky/skySizeDiffers",
+   "sky/intensity",
+   "sky/convergence",
+   "lighting/lightType",
+   "lighting/lightIntensity",
+   "lighting/lightColor",
+   "lighting/lightPosition",
+   "lighting/lightHeight",
+   "lighting/ambientLight",
+   "material/diffuse",
+   "material/specular",
+   "material/highlightSharpness"
+  ],
+  "ec.sim.foam": [
+   "view",
+   "producer/producerPoint",
+   "producer/producerXSize",
+   "producer/producerYSize",
+   "producer/producerOrientation",
+   "producer/zoomProducerPoint",
+   "producer/productionRate",
+   "bubbles/size",
+   "bubbles/sizeVariance",
+   "bubbles/lifespan",
+   "bubbles/growthSpeed",
+   "bubbles/strength",
+   "physics/initialSpeed",
+   "physics/initialDirection",
+   "physics/windSpeed",
+   "physics/windDirection",
+   "physics/turbulence",
+   "physics/wobbleAmount",
+   "physics/repulsion",
+   "physics/popVelocity",
+   "physics/viscosity",
+   "physics/stickiness",
+   "zoom",
+   "universeSize",
+   "rendering/blendMode",
+   "rendering/bubbleTexture",
+   "rendering/bubbleTextureLayer",
+   "rendering/bubbleOrientation",
+   "rendering/environmentMap",
+   "rendering/reflectionStrength",
+   "rendering/reflectionConvergence",
+   "flowMap/flowMap",
+   "flowMap/flowMapSteepness",
+   "flowMap/flowMapFits",
+   "flowMap/simulationQuality",
+   "randomSeed"
+  ],
+  "ec.sim.particleplayground": [
+   "options/cannonText",
+   "options/gridText",
+   "options/autoOrientRotation",
+   "cannonEnabled",
+   "gridEnabled",
+   "exploderEnabled",
+   "layerMapEnabled",
+   "mapperEnabled",
+   "cannon/cannonPosition",
+   "cannon/barrelRadius",
+   "cannon/particlesPerSecond",
+   "cannon/barrelAngle",
+   "cannon/directionRandomSpread",
+   "cannon/velocity",
+   "cannon/velocityRandomSpread",
+   "cannon/cannonColor",
+   "cannon/cannonParticleRadius",
+   "grid/gridPosition",
+   "grid/gridWidth",
+   "grid/gridHeight",
+   "grid/particlesAcross",
+   "grid/particlesDown",
+   "grid/gridColor",
+   "grid/gridParticleRadius",
+   "layerExploder/explodeLayer",
+   "layerExploder/radiusOfNewParticles",
+   "layerExploder/velocityDispersion",
+   "particleExploder/radiusOfNewParticles",
+   "particleExploder/velocityDispersion",
+   "particleExploder/affects/particlesFrom",
+   "particleExploder/affects/selectionMap",
+   "particleExploder/affects/characters",
+   "particleExploder/affects/olderYoungerThan",
+   "particleExploder/affects/ageFeather",
+   "layerMap/layerMapLayer",
+   "layerMap/timeOffsetType",
+   "layerMap/timeOffset",
+   "layerMap/affects/particlesFrom",
+   "layerMap/affects/selectionMap",
+   "layerMap/affects/characters",
+   "layerMap/affects/olderYoungerThan",
+   "layerMap/affects/ageFeather",
+   "gravity/gravityForce",
+   "gravity/gravityForceRandomSpread",
+   "gravity/gravityDirection",
+   "gravity/affects/particlesFrom",
+   "gravity/affects/selectionMap",
+   "gravity/affects/characters",
+   "gravity/affects/olderYoungerThan",
+   "gravity/affects/ageFeather",
+   "repel/repelForce",
+   "repel/repelForceRadius",
+   "repel/affects/particlesFrom",
+   "repel/affects/selectionMap",
+   "repel/affects/characters",
+   "repel/affects/olderYoungerThan",
+   "repel/affects/ageFeather",
+   "wall/wallBoundary",
+   "wall/affects/particlesFrom",
+   "wall/affects/selectionMap",
+   "wall/affects/characters",
+   "wall/affects/olderYoungerThan",
+   "wall/affects/ageFeather",
+   "persistentPropertyMapper/useLayerAsMap",
+   "persistentPropertyMapper/mapRedTo",
+   "persistentPropertyMapper/redMin",
+   "persistentPropertyMapper/redMax",
+   "persistentPropertyMapper/mapGreenTo",
+   "persistentPropertyMapper/greenMin",
+   "persistentPropertyMapper/greenMax",
+   "persistentPropertyMapper/mapBlueTo",
+   "persistentPropertyMapper/blueMin",
+   "persistentPropertyMapper/blueMax",
+   "persistentPropertyMapper/affects/particlesFrom",
+   "persistentPropertyMapper/affects/selectionMap",
+   "persistentPropertyMapper/affects/characters",
+   "persistentPropertyMapper/affects/olderYoungerThan",
+   "persistentPropertyMapper/affects/ageFeather",
+   "ephemeralPropertyMapper/useLayerAsMap",
+   "ephemeralPropertyMapper/mapRedTo",
+   "ephemeralPropertyMapper/redOperator",
+   "ephemeralPropertyMapper/redMin",
+   "ephemeralPropertyMapper/redMax",
+   "ephemeralPropertyMapper/mapGreenTo",
+   "ephemeralPropertyMapper/greenOperator",
+   "ephemeralPropertyMapper/greenMin",
+   "ephemeralPropertyMapper/greenMax",
+   "ephemeralPropertyMapper/mapBlueTo",
+   "ephemeralPropertyMapper/blueOperator",
+   "ephemeralPropertyMapper/blueMin",
+   "ephemeralPropertyMapper/blueMax",
+   "ephemeralPropertyMapper/affects/particlesFrom",
+   "ephemeralPropertyMapper/affects/selectionMap",
+   "ephemeralPropertyMapper/affects/characters",
+   "ephemeralPropertyMapper/affects/olderYoungerThan",
+   "ephemeralPropertyMapper/affects/ageFeather",
+   "randomSeed"
+  ],
+  "ec.sim.shatter": [
+   "view",
+   "render",
+   "shape/pattern",
+   "shape/repetitions",
+   "shape/direction",
+   "shape/origin",
+   "shape/customShatterMap",
+   "shape/whiteTilesFixed",
+   "shape/extrusionDepth",
+   "force1/force1Position",
+   "force1/force1Depth",
+   "force1/force1Radius",
+   "force1/force1Strength",
+   "force2/force2Position",
+   "force2/force2Depth",
+   "force2/force2Radius",
+   "force2/force2Strength",
+   "physics/rotationSpeed",
+   "physics/tumbleAxis",
+   "physics/randomness",
+   "physics/viscosity",
+   "physics/massVariance",
+   "physics/gravity",
+   "physics/gravityDirection",
+   "physics/gravityInclination",
+   "gradient/shatterThreshold",
+   "gradient/gradientLayer",
+   "gradient/invertGradient",
+   "textures/color",
+   "textures/opacity",
+   "textures/frontMode",
+   "textures/sideMode",
+   "textures/backMode",
+   "textures/frontLayer",
+   "textures/sideLayer",
+   "textures/backLayer",
+   "cameraSystem",
+   "cameraPosition/xRotation",
+   "cameraPosition/yRotation",
+   "cameraPosition/zRotation",
+   "cameraPosition/xyPosition",
+   "cameraPosition/cameraZ",
+   "cameraPosition/focalLength",
+   "cameraPosition/transformOrder",
+   "cornerPins/upperLeftCorner",
+   "cornerPins/upperRightCorner",
+   "cornerPins/lowerLeftCorner",
+   "cornerPins/lowerRightCorner",
+   "cornerPins/autoFocalLength",
+   "cornerPins/focalLength",
+   "lighting/lightType",
+   "lighting/lightIntensity",
+   "lighting/lightColor",
+   "lighting/lightPosition",
+   "lighting/lightDepth",
+   "lighting/ambientLight",
+   "material/diffuse",
+   "material/specular",
+   "material/highlightSharpness",
+   "randomSeed"
+  ],
+  "ec.sim.waveworld": [
+   "view",
+   "wireframeControls/horizontalRotation",
+   "wireframeControls/verticalRotation",
+   "wireframeControls/verticalScale",
+   "heightMapControls/brightness",
+   "heightMapControls/contrast",
+   "heightMapControls/gamma",
+   "heightMapControls/renderDryAreasAs",
+   "heightMapControls/transparency",
+   "simulation/gridResolution",
+   "simulation/gridResDownsamples",
+   "simulation/waveSpeed",
+   "simulation/damping",
+   "simulation/reflectEdges",
+   "simulation/preRoll",
+   "ground/ground",
+   "ground/steepness",
+   "ground/height",
+   "ground/waveStrength",
+   "producer1/producer1Type",
+   "producer1/producer1Position",
+   "producer1/producer1Length",
+   "producer1/producer1Width",
+   "producer1/producer1Angle",
+   "producer1/producer1Amplitude",
+   "producer1/producer1Frequency",
+   "producer1/producer1Phase",
+   "producer2/producer2Type",
+   "producer2/producer2Position",
+   "producer2/producer2Length",
+   "producer2/producer2Width",
+   "producer2/producer2Angle",
+   "producer2/producer2Amplitude",
+   "producer2/producer2Frequency",
+   "producer2/producer2Phase"
+  ],
+  "ec.stylize.brushstrokes": [
+   "strokeAngle",
+   "brushSize",
+   "strokeLength",
+   "strokeDensity",
+   "strokeRandomness",
+   "paintSurface",
+   "blendWithOriginal"
+  ],
+  "ec.stylize.ccblockload": [
+   "completion",
+   "scanlines",
+   "smoothing",
+   "startCleared",
+   "bilinear"
+  ],
+  "ec.stylize.ccburnfilm": [
+   "burn",
+   "center",
+   "randomSeed"
+  ],
+  "ec.stylize.ccglass": [
+   "bumpMap",
+   "property",
+   "softness",
+   "height",
+   "displacement",
+   "using",
+   "lightIntensity",
+   "lightColor",
+   "lightType",
+   "lightHeight",
+   "lightPosition",
+   "lightDirection",
+   "ambient",
+   "diffuse",
+   "specular",
+   "roughness",
+   "metal"
+  ],
+  "ec.stylize.cchextile": [
+   "render",
+   "radius",
+   "center",
+   "rotate",
+   "smearing"
+  ],
+  "ec.stylize.cckaleida": [
+   "center",
+   "size",
+   "mirroring",
+   "rotation"
+  ],
+  "ec.stylize.ccmrsmoothie": [
+   "flowLayer",
+   "property",
+   "smoothness",
+   "sampleA",
+   "sampleB",
+   "phase",
+   "colorLoop"
+  ],
+  "ec.stylize.ccplastic": [
+   "bumpLayer",
+   "property",
+   "softness",
+   "height",
+   "cutMin",
+   "cutMax",
+   "using",
+   "lightIntensity",
+   "lightColor",
+   "lightType",
+   "lightHeight",
+   "lightPosition",
+   "lightDirection",
+   "ambient",
+   "diffuse",
+   "specular",
+   "roughness",
+   "metal"
+  ],
+  "ec.stylize.ccrepetile": [
+   "expandRight",
+   "expandLeft",
+   "expandDown",
+   "expandUp",
+   "tiling"
+  ],
+  "ec.stylize.ccthreshold": [
+   "threshold",
+   "channel",
+   "invert",
+   "blend"
+  ],
+  "ec.stylize.ccthresholdrgb": [
+   "redThreshold",
+   "greenThreshold",
+   "blueThreshold",
+   "invertRed",
+   "invertGreen",
+   "invertBlue",
+   "blend"
+  ],
+  "ec.stylize.ccvignette": [
+   "amount",
+   "angleOfView",
+   "center",
+   "pinHighlights"
+  ],
+  "ec.stylize.cartoon": [
+   "render",
+   "detailRadius",
+   "detailThreshold",
+   "fill/shadingSteps",
+   "fill/shadingSmoothness",
+   "edge/edgeThreshold",
+   "edge/edgeWidth",
+   "edge/edgeSoftness",
+   "edge/edgeOpacity",
+   "advanced/edgeEnhancement",
+   "advanced/edgeBlackLevel",
+   "advanced/edgeContrast"
+  ],
+  "ec.stylize.coloremboss": [
+   "direction",
+   "relief",
+   "contrast",
+   "blend"
+  ],
+  "ec.stylize.emboss": [
+   "direction",
+   "relief",
+   "contrast",
+   "blend"
+  ],
+  "ec.stylize.findedges": [
+   "invert",
+   "blend"
+  ],
+  "ec.stylize.glow": [
+   "based",
+   "threshold",
+   "radius",
+   "intensity",
+   "operation",
+   "glowOperation",
+   "colors",
+   "arbitraryMap",
+   "colorLooping",
+   "colorLoops",
+   "colorPhase",
+   "abMidpoint",
+   "colorA",
+   "colorB",
+   "glowDimensions"
+  ],
+  "ec.stylize.mosaic": [
+   "horizontal",
+   "vertical",
+   "sharpColors"
+  ],
+  "ec.stylize.motiontile": [
+   "tileCenter",
+   "tileWidth",
+   "tileHeight",
+   "outputWidth",
+   "outputHeight",
+   "mirrorEdges",
+   "phase",
+   "horizontalPhaseShift"
+  ],
+  "ec.stylize.posterize": [
+   "level"
+  ],
+  "ec.stylize.roughenedges": [
+   "edgeType",
+   "edgeColor",
+   "border",
+   "edgeSharpness",
+   "fractalInfluence",
+   "scale",
+   "stretch",
+   "offset",
+   "complexity",
+   "evolution",
+   "evolutionOptions/cycleEvolution",
+   "evolutionOptions/cycle",
+   "evolutionOptions/randomSeed"
+  ],
+  "ec.stylize.scatter": [
+   "amount",
+   "grain",
+   "randomizeEveryFrame"
+  ],
+  "ec.stylize.strobe": [
+   "strobeColor",
+   "blendWithOriginal",
+   "strobeDuration",
+   "strobePeriod",
+   "randomStrobeProbability",
+   "strobe",
+   "strobeOperator"
+  ],
+  "ec.stylize.texturize": [
+   "textureLayer",
+   "lightDirection",
+   "textureContrast",
+   "texturePlacement"
+  ],
+  "ec.stylize.threshold": [
+   "level"
+  ],
+  "ec.text.numbers": [
+   "format/type",
+   "format/randomValues",
+   "format/value",
+   "format/decimalPlaces",
+   "format/currentTimeDate",
+   "fillAndStroke/position",
+   "fillAndStroke/displayOptions",
+   "fillAndStroke/fillColor",
+   "fillAndStroke/strokeColor",
+   "fillAndStroke/strokeWidth",
+   "size",
+   "tracking",
+   "proportionalSpacing",
+   "compositeOnOriginal"
+  ],
+  "ec.text.timecode": [
+   "displayFormat",
+   "timeSource",
+   "timeUnits",
+   "dropFrame",
+   "startingFrame",
+   "textPosition",
+   "textSize",
+   "textColor",
+   "showBox",
+   "boxColor",
+   "opacity",
+   "renderOnOriginal"
+  ],
+  "ec.time.ccforcemotionblur": [
+   "motionBlurLevels",
+   "overrideShutterAngle",
+   "shutterAngle",
+   "nativeMotionBlur"
+  ],
+  "ec.time.ccwidetime": [
+   "forwardSteps",
+   "backwardSteps",
+   "nativeMotionBlur"
+  ],
+  "ec.time.echo": [
+   "echoTime",
+   "numberOfEchoes",
+   "startingIntensity",
+   "decay",
+   "echoOperator"
+  ],
+  "ec.time.pixelmotionblur": [
+   "shutterControl",
+   "shutterAngle",
+   "shutterSamples",
+   "vectorDetail"
+  ],
+  "ec.time.posterizetime": [
+   "frameRate"
+  ],
+  "ec.time.timedifference": [
+   "targetLayer",
+   "timeOffset",
+   "contrast",
+   "absoluteDifference",
+   "alphaChannel"
+  ],
+  "ec.time.timedisplacement": [
+   "displacementMapLayer",
+   "maxDisplacementTime",
+   "timeResolution",
+   "stretchMap"
+  ],
+  "ec.time.timewarp": [
+   "method",
+   "adjustTimeBy",
+   "speed",
+   "sourceFrame",
+   "tuning/vectorDetail",
+   "tuning/smoothing/globalSmoothness",
+   "tuning/smoothing/localSmoothness",
+   "tuning/smoothing/smoothingIterations",
+   "tuning/buildFromOneImage",
+   "tuning/correctLuminanceChanges",
+   "tuning/filtering",
+   "tuning/errorThreshold",
+   "tuning/blockSize",
+   "tuning/weighting/redWeighting",
+   "tuning/weighting/greenWeighting",
+   "tuning/weighting/blueWeighting",
+   "motionBlur/enableMotionBlur",
+   "motionBlur/shutterControl",
+   "motionBlur/shutterAngle",
+   "motionBlur/shutterSamples",
+   "matteLayer",
+   "matteChannel",
+   "warpLayer",
+   "show",
+   "sourceCrops/leftCrop",
+   "sourceCrops/rightCrop",
+   "sourceCrops/bottomCrop",
+   "sourceCrops/topCrop"
+  ],
+  "ec.transition.blockdissolve": [
+   "completion",
+   "blockWidth",
+   "blockHeight",
+   "feather",
+   "softEdges"
+  ],
+  "ec.transition.ccglasswipe": [
+   "completion",
+   "layerToReveal",
+   "gradientLayer",
+   "softness",
+   "displacementAmount"
+  ],
+  "ec.transition.ccgridwipe": [
+   "completion",
+   "center",
+   "rotation",
+   "border",
+   "tiles",
+   "shape",
+   "reverse"
+  ],
+  "ec.transition.ccimagewipe": [
+   "completion",
+   "borderSoftness",
+   "autoSoftness",
+   "layer",
+   "property",
+   "blur",
+   "inverseGradient"
+  ],
+  "ec.transition.ccjaws": [
+   "completion",
+   "center",
+   "direction",
+   "height",
+   "width",
+   "shape"
+  ],
+  "ec.transition.cclightwipe": [
+   "completion",
+   "center",
+   "intensity",
+   "shape",
+   "direction",
+   "colorFromSource",
+   "color",
+   "reverse"
+  ],
+  "ec.transition.cclinesweep": [
+   "completion",
+   "direction",
+   "thickness",
+   "slant",
+   "flipDirection"
+  ],
+  "ec.transition.ccradialscalewipe": [
+   "completion",
+   "center",
+   "reverse"
+  ],
+  "ec.transition.ccscalewipe": [
+   "stretch",
+   "center",
+   "direction"
+  ],
+  "ec.transition.cctwister": [
+   "completion",
+   "backside",
+   "shading",
+   "center",
+   "axis"
+  ],
+  "ec.transition.ccwarpomatic": [
+   "completion",
+   "layerToReveal",
+   "reactorLayer",
+   "reactor",
+   "smoothness",
+   "warpAmount",
+   "warpDirection",
+   "blendSpan"
+  ],
+  "ec.transition.cardwipe": [
+   "completion",
+   "transitionWidth",
+   "backLayer",
+   "backSelf",
+   "rowsAndColumns",
+   "rows",
+   "columns",
+   "cardScale",
+   "flipAxis",
+   "flipDirection",
+   "flipOrder",
+   "gradientLayer",
+   "timingRandomness",
+   "randomSeed",
+   "cameraSystem",
+   "cameraPosition/xRotation",
+   "cameraPosition/yRotation",
+   "cameraPosition/zRotation",
+   "cameraPosition/xyPosition",
+   "cameraPosition/cameraZ",
+   "cameraPosition/focalLength",
+   "cameraPosition/transformOrder",
+   "cornerPins/upperLeftCorner",
+   "cornerPins/upperRightCorner",
+   "cornerPins/lowerLeftCorner",
+   "cornerPins/lowerRightCorner",
+   "cornerPins/autoFocalLength",
+   "cornerPins/focalLength",
+   "lighting/lightType",
+   "lighting/lightIntensity",
+   "lighting/lightColor",
+   "lighting/lightPosition",
+   "lighting/lightDepth",
+   "lighting/ambientLight",
+   "material/diffuse",
+   "material/specular",
+   "material/highlightSharpness",
+   "positionJitter/xJitterAmount",
+   "positionJitter/jitterSpeed",
+   "positionJitter/yJitterAmount",
+   "positionJitter/zJitterAmount",
+   "rotationJitter/xRotJitterAmount",
+   "rotationJitter/rotJitterSpeed",
+   "rotationJitter/yRotJitterAmount",
+   "rotationJitter/zRotJitterAmount"
+  ],
+  "ec.transition.gradientwipe": [
+   "completion",
+   "softness",
+   "gradientLayer",
+   "gradientPlacement",
+   "invert"
+  ],
+  "ec.transition.iriswipe": [
+   "center",
+   "points",
+   "outerRadius",
+   "useInnerRadius",
+   "innerRadius",
+   "rotation",
+   "feather"
+  ],
+  "ec.transition.linearwipe": [
+   "completion",
+   "angle",
+   "feather"
+  ],
+  "ec.transition.radialwipe": [
+   "completion",
+   "startAngle",
+   "center",
+   "wipe",
+   "feather"
+  ],
+  "ec.transition.venetian": [
+   "completion",
+   "direction",
+   "width",
+   "feather"
+  ],
+  "ec.utility.applylut": [
+   "lut"
+  ],
+  "ec.utility.ccoverbrights": [
+   "channel",
+   "highlightColor"
+  ],
+  "ec.utility.cineon": [
+   "conversionType",
+   "tenBitBlackPoint",
+   "internalBlackPoint",
+   "tenBitWhitePoint",
+   "internalWhitePoint",
+   "gamma",
+   "highlightRolloff"
+  ],
+  "ec.utility.colorprofileconverter": [
+   "inputProfile",
+   "linearizeInputProfile",
+   "outputProfile",
+   "linearizeOutputProfile",
+   "intent",
+   "useBlackPointCompensation",
+   "sceneRefCompensation"
+  ],
+  "ec.utility.facemeasurements": [
+   "headPositionX",
+   "headPositionY",
+   "headScale",
+   "headOrientationX",
+   "headOrientationY",
+   "headOrientationZ",
+   "leftEyeOpenness",
+   "rightEyeOpenness",
+   "leftEyebrowRaise",
+   "rightEyebrowRaise",
+   "mouthOpenness",
+   "mouthWidth",
+   "mouthOffsetX",
+   "mouthOffsetY"
+  ],
+  "ec.utility.facetrackpoints": [
+   "leftEyebrowInner",
+   "leftEyebrowMiddle",
+   "leftEyebrowOuter",
+   "rightEyebrowInner",
+   "rightEyebrowMiddle",
+   "rightEyebrowOuter",
+   "leftEyeInner",
+   "leftEyeOuter",
+   "leftEyeTop",
+   "leftEyeBottom",
+   "leftPupil",
+   "rightEyeInner",
+   "rightEyeOuter",
+   "rightEyeTop",
+   "rightEyeBottom",
+   "rightPupil",
+   "noseTip",
+   "leftNostril",
+   "rightNostril",
+   "mouthLeft",
+   "mouthRight",
+   "mouthTop",
+   "mouthBottom",
+   "chin",
+   "leftJaw",
+   "rightJaw"
+  ],
+  "ec.utility.growbounds": [
+   "pixels"
+  ],
+  "ec.utility.hdrcompander": [
+   "mode",
+   "gain",
+   "gamma"
+  ],
+  "ec.utility.hdrcompression": [
+   "amount"
+  ]
+ }
+}

@@ -1,0 +1,486 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iris.local/schemas/vocabulary-1.0.0.schema.json",
+  "title": "Iris creative description vocabulary",
+  "description": "Schema for vocabulary.yaml: the single term registry used by Iris creativo for analysis claims, direction targets and binding tables. Referential checks (ids that point to other ids, binding rows, catalog parameters) are done by tools/validate_vocabulary.py, not by this schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "language",
+    "name",
+    "id_policy",
+    "claim_kinds",
+    "temporal_units",
+    "regions",
+    "iris_techniques",
+    "measurement_keys",
+    "dimensions"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date"
+    },
+    "language": {
+      "const": "en"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "id_policy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "claim_kinds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "measured",
+        "estimated",
+        "interpreted",
+        "designed"
+      ],
+      "properties": {
+        "measured": {
+          "type": "string"
+        },
+        "estimated": {
+          "type": "string"
+        },
+        "interpreted": {
+          "type": "string"
+        },
+        "designed": {
+          "type": "string"
+        }
+      }
+    },
+    "temporal_units": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frame",
+        "shot",
+        "sequence",
+        "video"
+      ],
+      "properties": {
+        "frame": {
+          "type": "string"
+        },
+        "shot": {
+          "type": "string"
+        },
+        "sequence": {
+          "type": "string"
+        },
+        "video": {
+          "type": "string"
+        }
+      }
+    },
+    "regions": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/region"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "iris_techniques": {
+      "type": "array",
+      "minItems": 43,
+      "maxItems": 43,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z]+$"
+      }
+    },
+    "measurement_keys": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/measurement_key"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "artifact",
+          "description",
+          "status"
+        ],
+        "properties": {
+          "artifact": {
+            "enum": [
+              "frames.parquet",
+              "shots.json",
+              "motion.json",
+              "text.json",
+              "color.json",
+              "audio.json",
+              "sheets/",
+              "review_events.jsonl"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "planned",
+              "proposed"
+            ],
+            "description": "planned: named in the Iris plan; proposed: added by this vocabulary and not yet in the plan."
+          }
+        }
+      }
+    },
+    "dimensions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/dimension"
+      }
+    }
+  },
+  "$defs": {
+    "snake_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "dimension_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)?$"
+    },
+    "measurement_key": {
+      "type": "string",
+      "pattern": "^[a-z_]+\\.[A-Za-z0-9_]+$"
+    },
+    "region": {
+      "enum": [
+        "background",
+        "food",
+        "product",
+        "skin",
+        "ui",
+        "graphics",
+        "whole_frame"
+      ]
+    },
+    "nonempty_strings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "url",
+        "title",
+        "accessed"
+      ],
+      "properties": {
+        "url": {
+          "type": "string",
+          "pattern": "^https?://"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "accessed": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "qualifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "values",
+        "description"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/snake_id"
+        },
+        "values": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/snake_id"
+          }
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "applies_to": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/snake_id"
+          },
+          "description": "Term ids the qualifier applies to; omitted means every term of the dimension."
+        }
+      }
+    },
+    "counterexample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "distinguish"
+      ],
+      "properties": {
+        "confused_with": {
+          "$ref": "#/$defs/snake_id",
+          "description": "A term id in this vocabulary. Omitted when the confusable phenomenon has no term."
+        },
+        "distinguish": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "related_term": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "term_id",
+        "relation"
+      ],
+      "properties": {
+        "term_id": {
+          "$ref": "#/$defs/snake_id"
+        },
+        "relation": {
+          "enum": [
+            "realizes",
+            "realized_by",
+            "can_realize",
+            "typically_realized_by",
+            "often_with",
+            "produces"
+          ]
+        }
+      }
+    },
+    "term": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "aliases",
+        "definition",
+        "observable_cues",
+        "measurement_hints",
+        "counterexamples",
+        "claim_kind_default",
+        "sources",
+        "verified"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/snake_id"
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "definition": {
+          "type": "string",
+          "minLength": 10
+        },
+        "observable_cues": {
+          "$ref": "#/$defs/nonempty_strings"
+        },
+        "measurement_hints": {
+          "$ref": "#/$defs/nonempty_strings"
+        },
+        "counterexamples": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/counterexample"
+          }
+        },
+        "claim_kind_default": {
+          "enum": [
+            "measured",
+            "estimated",
+            "interpreted"
+          ]
+        },
+        "region_scope": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/region"
+          }
+        },
+        "iris_technique_id": {
+          "type": "string",
+          "pattern": "^[a-z]+$"
+        },
+        "related_terms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/related_term"
+          }
+        },
+        "prompt_en": {
+          "type": "string",
+          "minLength": 5,
+          "description": "Canonical English prompt phrase used by prompt_only bindings."
+        },
+        "dictionary_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(HF|IR|TX)-\\d{4}$"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source"
+          },
+          "description": "Empty only when verified is false."
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "verification_note": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "verified": {
+                "const": false
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "verification_note"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "verified": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "sources": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "temporal_unit",
+        "cardinality",
+        "description",
+        "region_scoped",
+        "measurement_keys",
+        "terms"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/dimension_id"
+        },
+        "temporal_unit": {
+          "enum": [
+            "frame",
+            "shot",
+            "sequence",
+            "video"
+          ]
+        },
+        "cardinality": {
+          "enum": [
+            "single",
+            "multi"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10
+        },
+        "region_scoped": {
+          "type": "boolean",
+          "description": "When true, every claim must name a region and every term declares region_scope."
+        },
+        "measurement_keys": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/measurement_key"
+          }
+        },
+        "qualifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/qualifier"
+          }
+        },
+        "exclusive_groups": {
+          "type": "array",
+          "description": "Groups of term ids that cannot co-occur in one claim set even when cardinality is multi.",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/$defs/snake_id"
+            }
+          }
+        },
+        "terms": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/term"
+          }
+        }
+      }
+    }
+  }
+}

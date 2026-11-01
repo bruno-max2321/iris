@@ -1,0 +1,811 @@
+# Binding table: vocabulary term -> effectcraft-0.17
+# relation: exact | approx | prompt_only | unsupported. A term absent from this file is unsupported here.
+target: effectcraft-0.17
+surface: effectcraft_mcp
+version: 0.17.0
+capabilities: capabilities/effectcraft-0.17.0-extract.json
+generated_at: '2026-11-01'
+notes: 'Commands come from the EffectCraft guide (modules 07-21, 33-35) and its local reference catalog (commands
+  and effects.json). MCP tools: add_keyframe, add_effect; engine commands run through execute_command. Layer names
+  and numeric values are illustrative placeholders; values in add_effect must be checked with list_effects. Camera
+  moves are 2.5D only. Graphics, typography and captions belong here rather than in video generation.'
+rows:
+- term_id: linear_easing
+  target:
+    command: add_keyframe
+    params:
+      path: transform/position
+      interpolation: linear
+      timeBase: comp
+  relation: exact
+  notes: Constant-rate interpolation.
+  verified_on: '2026-11-01'
+- term_id: ease_in
+  target:
+    command: add_keyframe
+    params:
+      path: transform/position
+      interpolation: easyEaseOut
+      timeBase: comp
+  relation: approx
+  notes: 'AE naming: easyEaseOut on the departure key accelerates out of it (CSS ease-in). Verify influence with
+    keys.velocity.'
+  verified_on: '2026-11-01'
+- term_id: ease_out
+  target:
+    command: add_keyframe
+    params:
+      path: transform/position
+      interpolation: easyEaseIn
+      timeBase: comp
+  relation: approx
+  notes: 'AE naming: easyEaseIn on the arrival key decelerates into it (CSS ease-out). Tune with keys.velocity inInfluence.'
+  verified_on: '2026-11-01'
+- term_id: ease_in_out
+  target:
+    command: add_keyframe
+    params:
+      path: transform/position
+      interpolation: easyEase
+      timeBase: comp
+  relation: approx
+  notes: Easy ease on both keys; AE default influence (33%) is not identical to cubic-bezier(0.42,0,0.58,1).
+  verified_on: '2026-11-01'
+- term_id: spring_motion
+  target:
+    command: add_keyframe
+    params:
+      path: transform/scale
+      interpolation: easyEase
+      timeBase: comp
+      keys:
+      - time: 0
+        value:
+        - 96
+        - 96
+      - time: 0.29
+        value:
+        - 103
+        - 103
+      - time: 0.46
+        value:
+        - 99
+        - 99
+      - time: 0.6
+        value:
+        - 100
+        - 100
+  relation: approx
+  notes: Explicit extra keys reproduce a damped spring (guide module 09); no native spring curve.
+  verified_on: '2026-11-01'
+- term_id: overshoot
+  target:
+    command: add_keyframe
+    params:
+      path: transform/scale
+      interpolation: easyEase
+      timeBase: comp
+      keys:
+      - time: 0
+        value:
+        - 96
+        - 96
+      - time: 0.29
+        value:
+        - 103
+        - 103
+      - time: 0.46
+        value:
+        - 100
+        - 100
+  relation: approx
+  notes: 'Guide module 09 starting values at 24 fps: 96% f0, 103% f7, 100% f11.'
+  verified_on: '2026-11-01'
+- term_id: settle
+  target:
+    command: add_keyframe
+    params:
+      path: transform/scale
+      interpolation: easyEaseIn
+      timeBase: comp
+  relation: approx
+  notes: Final key with long incoming influence produces the settle; measure settle time on render.
+  verified_on: '2026-11-01'
+- term_id: hold
+  target:
+    command: add_keyframe
+    params:
+      path: transform/position
+      interpolation: hold
+      timeBase: comp
+  relation: approx
+  notes: Two equal-value keys or hold interpolation keep the element still for the reading time.
+  verified_on: '2026-11-01'
+- term_id: stagger
+  target:
+    command: execute_command
+    engine_command: layer.timing
+    params:
+      layers:
+      - LINE_1
+      - LINE_2
+      - LINE_3
+      op: moveInToTime
+      inDelta: 0.125
+  relation: approx
+  notes: 'Guide module 10: offsets of 0.125 s between lines; distinguish moving layer in-points from shifting keys.'
+  verified_on: '2026-11-01'
+- term_id: anticipation
+  target:
+    command: add_keyframe
+    params:
+      path: transform/position
+      interpolation: easyEase
+      timeBase: comp
+  relation: approx
+  notes: A small opposite move a few frames before the main move.
+  verified_on: '2026-11-01'
+- term_id: follow_through
+  target:
+    command: execute_command
+    engine_command: layer.setParent
+    params:
+      layers:
+      - TAG
+      parent: CARD
+      compensate: true
+  relation: approx
+  notes: Parent the secondary element and add delayed keys on it so it settles after the parent.
+  verified_on: '2026-11-01'
+- term_id: motion_blur
+  target:
+    command: execute_command
+    engine_command: comp.settings
+    params:
+      shutterAngle: 180
+      shutterPhase: -90
+  relation: approx
+  notes: Also enable layer.setSwitch switch=motionBlur on moving layers; verify on render.
+  verified_on: '2026-11-01'
+- term_id: fade_in
+  target:
+    command: add_keyframe
+    params:
+      path: transform/opacity
+      interpolation: easyEase
+      timeBase: comp
+      keys:
+      - time: 0
+        value: 0
+      - time: 0.3
+        value: 100
+  relation: exact
+  notes: Opacity 0 to 100 (or 100 to 0 with phase=exit).
+  verified_on: '2026-11-01'
+- term_id: slide_in
+  target:
+    command: add_keyframe
+    params:
+      path: transform/position
+      interpolation: easyEaseIn
+      timeBase: comp
+  relation: exact
+  notes: Travel from off-position to rest; direction qualifier sets the start offset.
+  verified_on: '2026-11-01'
+- term_id: scale_in
+  target:
+    command: add_keyframe
+    params:
+      path: transform/scale
+      interpolation: easyEaseIn
+      timeBase: comp
+  relation: exact
+  notes: Scale from small to 100%; add overshoot keys for a pop.
+  verified_on: '2026-11-01'
+- term_id: blur_in
+  target:
+    command: execute_command
+    engine_command: layer.addTextAnimator
+    params:
+      layer: TITLE
+      properties:
+      - blur
+      - opacity
+      name: BLUR_IN
+  relation: approx
+  notes: Animate the returned blur property from high to 0; inspect the tree with get_layer first.
+  verified_on: '2026-11-01'
+- term_id: cut_in
+  target:
+    command: execute_command
+    engine_command: layer.timing
+    params:
+      layers:
+      - TITLE
+      op: moveInToTime
+      in: 1.0
+  relation: exact
+  notes: Layer in-point equals the appearance frame.
+  verified_on: '2026-11-01'
+- term_id: word_highlight
+  target:
+    command: execute_command
+    engine_command: layer.setText
+    params:
+      layer: SUB_001
+      range:
+      - 6
+      - 12
+      fill: '#FFD400'
+  relation: exact
+  notes: Character range styling of the active word (guide module 34); recompute ranges if the text changes.
+  verified_on: '2026-11-01'
+- term_id: word_reveal
+  target:
+    command: execute_command
+    engine_command: layer.addTextAnimator
+    params:
+      layer: SUB_001
+      properties:
+      - opacity
+      name: WORD_REVEAL
+  relation: approx
+  notes: Then layer.addTextSelector kind=range and animate the range by words.
+  verified_on: '2026-11-01'
+- term_id: typewriter
+  target:
+    command: execute_command
+    engine_command: layer.addTextAnimator
+    params:
+      layer: TITLE
+      properties:
+      - opacity
+      name: TYPE_ON
+  relation: approx
+  notes: Range selector by characters with hold interpolation on the range keys.
+  verified_on: '2026-11-01'
+- term_id: line_reveal
+  target:
+    command: execute_command
+    engine_command: layer.newText
+    params:
+      name: LINE_1
+      text: First line
+      position:
+      - 540
+      - 1300
+  relation: approx
+  notes: One text layer per line plus layer.timing stagger (guide module 10).
+  verified_on: '2026-11-01'
+- term_id: mask_reveal
+  target:
+    command: execute_command
+    engine_command: layer.setTrackMatte
+    params:
+      layer: TITLE
+      matte: WINDOW
+      kind: alpha
+  relation: exact
+  notes: 'Guide module 17 recipe: text rises behind a still window.'
+  verified_on: '2026-11-01'
+- term_id: all_caps
+  target:
+    command: execute_command
+    engine_command: layer.newText
+    params:
+      text: TITLE
+      allCaps: true
+  relation: exact
+  notes: allCaps attribute; or write the text uppercase.
+  verified_on: '2026-11-01'
+- term_id: bold_weight
+  target:
+    command: execute_command
+    engine_command: layer.newText
+    params:
+      text: Title
+      font: Inter
+      style: Bold
+  relation: exact
+  notes: Resolve installed fonts with list_fonts; avoid fauxBold when a real Bold exists.
+  verified_on: '2026-11-01'
+- term_id: regular_weight
+  target:
+    command: execute_command
+    engine_command: layer.newText
+    params:
+      text: Title
+      font: Inter
+      style: Regular
+  relation: exact
+  notes: Resolve with list_fonts.
+  verified_on: '2026-11-01'
+- term_id: light_weight
+  target:
+    command: execute_command
+    engine_command: layer.newText
+    params:
+      text: Title
+      font: Inter
+      style: Light
+  relation: exact
+  notes: Resolve with list_fonts.
+  verified_on: '2026-11-01'
+- term_id: lower_third
+  target:
+    command: execute_command
+    engine_command: layer.newText
+    params:
+      text: Caption
+      position:
+      - 540
+      - 1500
+      justify: center
+  relation: exact
+  notes: Position in px for 1080x1920; keep inside the brand safe area.
+  verified_on: '2026-11-01'
+- term_id: upper_third
+  target:
+    command: execute_command
+    engine_command: layer.newText
+    params:
+      text: Headline
+      position:
+      - 540
+      - 420
+      justify: center
+  relation: exact
+  notes: Position in px for 1080x1920.
+  verified_on: '2026-11-01'
+- term_id: middle_band
+  target:
+    command: execute_command
+    engine_command: layer.newText
+    params:
+      text: Headline
+      position:
+      - 540
+      - 960
+      justify: center
+  relation: exact
+  notes: Position in px for 1080x1920.
+  verified_on: '2026-11-01'
+- term_id: phrase_cues
+  target:
+    command: execute_command
+    engine_command: layer.newText
+    params:
+      name: SUB_001
+      text: short phrase here
+      size: 52
+      justify: center
+  relation: approx
+  notes: One layer per cue timed with layer.timing from the transcript; no native SRT import is assumed.
+  verified_on: '2026-11-01'
+- term_id: hard_cut
+  target:
+    command: execute_command
+    engine_command: layer.timing
+    params:
+      layers:
+      - SHOT_02
+      op: moveInToTime
+      in: 2.0
+  relation: exact
+  notes: Abutting layers.
+  verified_on: '2026-11-01'
+- term_id: cross_dissolve
+  target:
+    command: add_keyframe
+    params:
+      path: transform/opacity
+      interpolation: linear
+      timeBase: comp
+      keys:
+      - time: 2.0
+        value: 100
+      - time: 2.5
+        value: 0
+  relation: exact
+  notes: Overlap two layers and ramp the upper one's opacity 100 to 0.
+  verified_on: '2026-11-01'
+- term_id: fade
+  target:
+    command: execute_command
+    engine_command: layer.newSolid
+    params:
+      name: FADE
+      color: '#000000'
+  relation: approx
+  notes: Black (or white with color=white) solid whose opacity ramps 0-100-0.
+  verified_on: '2026-11-01'
+- term_id: wipe
+  target:
+    command: add_effect
+    params:
+      effect: ec.transition.linearwipe
+      values:
+        completion: 0
+        angle: 90
+        feather: 0
+  relation: exact
+  notes: Animate completion 0 to 100 (guide module 13).
+  verified_on: '2026-11-01'
+- term_id: whip_transition
+  target:
+    command: add_effect
+    params:
+      effect: ec.blur.directional
+      values:
+        direction: 90
+        length: 0
+  relation: approx
+  notes: Key length up and down across the cut plus fast position keys.
+  verified_on: '2026-11-01'
+- term_id: mask_transition
+  target:
+    command: execute_command
+    engine_command: layer.setTrackMatte
+    params:
+      layer: SHOT_02
+      matte: HAND_MATTE
+      kind: alpha
+  relation: approx
+  notes: Needs a rotoscoped matte of the occluding object.
+  verified_on: '2026-11-01'
+- term_id: digital_zoom
+  target:
+    command: add_keyframe
+    params:
+      path: transform/scale
+      interpolation: linear
+      timeBase: comp
+  relation: exact
+  notes: Scale up the captured layer over the shot (Ken Burns).
+  verified_on: '2026-11-01'
+- term_id: punch_in
+  target:
+    command: add_keyframe
+    params:
+      path: transform/scale
+      interpolation: hold
+      timeBase: comp
+  relation: exact
+  notes: Instant scale step (e.g. 100 to 115) at the cut frame.
+  verified_on: '2026-11-01'
+- term_id: crop_animation
+  target:
+    command: add_keyframe
+    params:
+      path: transform/position
+      interpolation: linear
+      timeBase: comp
+  relation: exact
+  notes: Move a scaled-up layer to scan the frame.
+  verified_on: '2026-11-01'
+- term_id: added_shake
+  target:
+    command: execute_command
+    engine_command: prop.setExpression
+    params:
+      layer: SHOT_01
+      path: transform/position
+      expression: wiggle(8, 12)
+  relation: approx
+  notes: Verify wiggle() support in EffectCraft before relying on it; explicit keys are the fallback (guide module
+    15).
+  verified_on: '2026-11-01'
+- term_id: freeze_frame
+  target:
+    command: execute_command
+    engine_command: layer.timeStretch
+    params:
+      layers:
+      - SHOT_01
+      hold: current
+  relation: approx
+  notes: Hold the current frame; or use layer.enableTimeRemap with hold keys.
+  verified_on: '2026-11-01'
+- term_id: split_screen
+  target:
+    command: execute_command
+    engine_command: layer.newShape
+    params:
+      kind: rect
+      name: PANEL_MASK
+      size:
+      - 540
+      - 1920
+      position:
+      - 270
+      - 960
+  relation: approx
+  notes: Use shape layers as track mattes for each panel.
+  verified_on: '2026-11-01'
+- term_id: green_screen_composite
+  target:
+    command: add_effect
+    params:
+      effect: ec.keying.keylight
+      values:
+        screenColour: '#00FF00'
+  relation: exact
+  notes: Key Light on the subject layer over a background layer.
+  verified_on: '2026-11-01'
+- term_id: slow_motion
+  target:
+    command: execute_command
+    engine_command: layer.timeStretch
+    params:
+      layers:
+      - SHOT_01
+      percent: 200
+  relation: exact
+  notes: Frame interpolation quality depends on source frame rate.
+  verified_on: '2026-11-01'
+- term_id: fast_motion
+  target:
+    command: execute_command
+    engine_command: layer.timeStretch
+    params:
+      layers:
+      - SHOT_01
+      percent: 50
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: speed_ramp
+  target:
+    command: execute_command
+    engine_command: layer.enableTimeRemap
+    params:
+      layers:
+      - SHOT_01
+      value: true
+  relation: approx
+  notes: Then key the time-remap property; or ec.time.timewarp speed keys.
+  verified_on: '2026-11-01'
+- term_id: reverse_playback
+  target:
+    command: execute_command
+    engine_command: layer.timeReverse
+    params:
+      layers:
+      - SHOT_01
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: timelapse
+  target:
+    command: execute_command
+    engine_command: layer.timeStretch
+    params:
+      layers:
+      - SHOT_01
+      percent: 10
+  relation: approx
+  notes: Strong speed-up; combine with ec.time.posterizetime for a stepped look.
+  verified_on: '2026-11-01'
+- term_id: black_and_white
+  target:
+    command: add_effect
+    params:
+      effect: ec.color.blackwhite
+      values: {}
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: muted
+  target:
+    command: add_effect
+    params:
+      effect: ec.color.huesaturation
+      values:
+        saturation: -40
+  relation: approx
+  notes: Value range must be checked with list_effects.
+  verified_on: '2026-11-01'
+- term_id: saturated
+  target:
+    command: add_effect
+    params:
+      effect: ec.color.vibrance
+      values:
+        vibrance: 30
+  relation: approx
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: warm
+  target:
+    command: add_effect
+    params:
+      effect: ec.color.photofilter
+      values:
+        filter: 0
+  relation: approx
+  notes: Warming filter; or ec.color.lumetri basicCorrection/whiteBalance/temperature.
+  verified_on: '2026-11-01'
+- term_id: cool
+  target:
+    command: add_effect
+    params:
+      effect: ec.color.photofilter
+      values:
+        filter: 2
+  relation: approx
+  notes: Cooling filter index must be confirmed with list_effects.
+  verified_on: '2026-11-01'
+- term_id: high_contrast
+  target:
+    command: add_effect
+    params:
+      effect: ec.color.curves
+      values: {}
+  relation: approx
+  notes: S-curve on the rgb channel.
+  verified_on: '2026-11-01'
+- term_id: low_contrast
+  target:
+    command: add_effect
+    params:
+      effect: ec.color.brightnesscontrast
+      values:
+        contrast: -30
+  relation: approx
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: crushed_blacks
+  target:
+    command: add_effect
+    params:
+      effect: ec.color.levels
+      values:
+        inBlack: 0.08
+  relation: approx
+  notes: Raise input black.
+  verified_on: '2026-11-01'
+- term_id: lifted_blacks
+  target:
+    command: add_effect
+    params:
+      effect: ec.color.levels
+      values:
+        outBlack: 0.06
+  relation: approx
+  notes: Raise output black.
+  verified_on: '2026-11-01'
+- term_id: teal_orange
+  target:
+    command: add_effect
+    params:
+      effect: ec.color.colorbalance
+      values:
+        shadowBlue: 20
+        shadowGreen: 10
+        hiRed: 15
+  relation: approx
+  notes: Starting point only; grade per region.
+  verified_on: '2026-11-01'
+- term_id: filmic_print
+  target:
+    command: add_effect
+    params:
+      effect: ec.utility.applylut
+      values:
+        lut: film_print.cube
+  relation: approx
+  notes: Check whether lut is a path or content (guide module 31).
+  verified_on: '2026-11-01'
+- term_id: naturalistic_clean
+  target:
+    command: add_effect
+    params:
+      effect: ec.color.lumetri
+      values: {}
+  relation: approx
+  notes: Neutral primary correction; Lumetri parity with Adobe is not certified.
+  verified_on: '2026-11-01'
+- term_id: vignetting
+  target:
+    command: add_effect
+    params:
+      effect: ec.stylize.ccvignette
+      values:
+        amount: 30
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: lens_flare
+  target:
+    command: add_effect
+    params:
+      effect: ec.generate.lensflare
+      values:
+        flareBrightness: 100
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: halation
+  target:
+    command: add_effect
+    params:
+      effect: ec.stylize.glow
+      values:
+        threshold: 80
+        radius: 20
+  relation: approx
+  notes: Warm-tinted glow on highlights approximates halation.
+  verified_on: '2026-11-01'
+- term_id: diffusion
+  target:
+    command: add_effect
+    params:
+      effect: ec.stylize.glow
+      values:
+        threshold: 60
+        radius: 40
+  relation: approx
+  notes: Low-intensity glow plus slight blur.
+  verified_on: '2026-11-01'
+- term_id: film_grain
+  target:
+    command: add_effect
+    params:
+      effect: ec.noise.addgrain
+      values: {}
+  relation: exact
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: shallow_depth_of_field
+  target:
+    command: add_effect
+    params:
+      effect: ec.blur.cameralens
+      values:
+        blurRadius: 15
+  relation: approx
+  notes: Needs a depth or subject matte to look optical.
+  verified_on: '2026-11-01'
+- term_id: rack_focus
+  target:
+    command: execute_command
+    engine_command: layer.newCamera
+    params:
+      name: CAM
+      dof: true
+      focusDistance: 1200
+  relation: approx
+  notes: '2.5D only: key focusDistance between layers.'
+  verified_on: '2026-11-01'
+- term_id: fisheye
+  target:
+    command: add_effect
+    params:
+      effect: ec.distort.opticscompensation
+      values:
+        fieldOfView: 80
+  relation: approx
+  notes: ''
+  verified_on: '2026-11-01'
+- term_id: dolly_in
+  target:
+    command: execute_command
+    engine_command: layer.newCamera
+    params:
+      name: CAM
+      type: twoNode
+      preset: 35mm
+  relation: approx
+  notes: '2.5D only: key camera position z toward the layers to create parallax (guide module 21).'
+  verified_on: '2026-11-01'
+- term_id: zoom_in
+  target:
+    command: execute_command
+    engine_command: layer.newCamera
+    params:
+      name: CAM
+      type: twoNode
+      preset: 50mm
+  relation: approx
+  notes: '2.5D only: key camera zoom without moving position.'
+  verified_on: '2026-11-01'
