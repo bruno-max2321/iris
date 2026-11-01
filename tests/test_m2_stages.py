@@ -182,3 +182,30 @@ def test_analyze_force_stages_subset_keeps_other_checkpoints(ws):
     assert out3["created"] is True
     assert (ref / "motion.done.json").stat().st_mtime_ns == m_before
     assert out3["stages"]["motion"].get("cached") is True and out3["stages"]["audio"].get("cached") is None
+
+
+def test_tracks_merge_word_by_word_caption_growth():
+    from iris import textocr
+
+    W, H = 540, 960
+    # a caption revealed in four steps on the middle band, box growing to the right; a second line below
+    def box(x1, y):
+        return [100, y, x1, y + 40]
+    dets = {
+        0: [{"text": "He", "conf": 0.99, "box": box(160, 500)}],
+        6: [{"text": "He climbea", "conf": 0.92, "box": box(300, 500)}],
+        12: [{"text": "He climbedonto", "conf": 0.90, "box": box(380, 500)}],
+        18: [{"text": "Heclimbedontoa", "conf": 0.98, "box": box(420, 500)}],
+        24: [{"text": "He climbed onto a", "conf": 0.97, "box": box(420, 500)},
+             {"text": "hadamn", "conf": 0.97, "box": box(260, 560)}],
+        30: [{"text": "He climbed onto a", "conf": 0.97, "box": box(420, 500)},
+             {"text": "had a man", "conf": 0.95, "box": box(260, 560)}],
+        42: [{"text": "cut the", "conf": 0.99, "box": box(240, 500)}],   # new caption after a gap: new track
+    }
+    tracks = textocr.build_tracks(dets, W, H, step=6, n_frames=60)
+    texts = [t["text"] for t in tracks]
+    assert texts == ["He climbed onto a", "had a man", "cut the"], texts
+    first = tracks[0]
+    assert first["reveal_steps"] == 3 and first["animation"] == "build_on"
+    assert first["frame_first_seen"] == 0 and first["frame_last_seen"] == 30 and first["frame_full_text_seen"] == 24
+    assert tracks[1]["text"] == "had a man" and tracks[1]["reveal_steps"] == 0

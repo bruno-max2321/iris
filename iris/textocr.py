@@ -28,7 +28,7 @@ import numpy as np
 
 from . import decode, worker
 
-METHOD_VERSION = "textocr@0.2.0"
+METHOD_VERSION = "textocr@0.2.1"
 OCR_LONG_SIDE = int(os.environ.get("IRIS_OCR_LONG_SIDE", "960"))
 ECONOMY_STEP = 6
 FIRST_FRAME_BUDGET_S = float(os.environ.get("IRIS_OCR_FIRST_FRAME_BUDGET_S", "180"))   # model load + first frame
@@ -213,31 +213,77 @@ def _iou(a: list[float], b: list[float]) -> float:
     return inter / ua if ua > 0 else 0.0
 
 
+def _norm(text: str) -> str:
+    return "".join(ch for ch in text.lower() if ch.isalnum())
+
+
+def _containment(a: list[float], b: list[float]) -> float:
+    """Intersection over the smaller box: a caption that grows word by word keeps containing its earlier self."""
+    x0, y0 = max(a[0], b[0]), max(a[1], b[1]); x1, y1 = min(a[2], b[2]), min(a[3], b[3])
+    inter = max(0.0, x1 - x0) * max(0.0, y1 - y0)
+    small = min((a[2] - a[0]) * (a[3] - a[1]), (b[2] - b[0]) * (b[3] - b[1]))
+    return inter / small if small > 0 else 0.0
+
+
+def _same_line(prev_box: list[float], box: list[float]) -> bool:
+    """Vertical overlap of the two boxes relative to the shorter one (text lines keep their baseline)."""
+    top, bottom = max(prev_box[1], box[1]), min(prev_box[3], box[3])
+    h = min(prev_box[3] - prev_box[1], box[3] - box[1])
+    return h > 0 and (bottom - top) / h >= 0.5
+
+
+def _match_score(tr: dict[str, Any], d_norm: str, nb: list[float]) -> tuple[float, str] | None:
+    """Return (score, kind) when detection continues the track. kind: same | grow | shrink | similar."""
+    t_norm = tr["norm"]
+    if not t_norm or not d_norm:
+        return None
+    if _iou(tr["box"], nb) >= 0.4 and t_norm == d_norm:
+        return 2.0 + _iou(tr["box"], nb), "same"
+    if _same_line(tr["box"], nb) and _containment(tr["box"], nb) >= 0.6:
+        if len(t_norm) >= 2 and d_norm.startswith(t_norm) and len(d_norm) > len(t_norm):
+            return 1.5 + _containment(tr["box"], nb), "grow"        # build-on reveal: "He" -> "He climbed"
+        if len(d_norm) >= 2 and t_norm.startswith(d_norm) and len(d_norm) < len(t_norm):
+            return 1.2 + _containment(tr["box"], nb), "shrink"      # reveal read with a dropped word, or exit
+    sim = difflib.SequenceMatcher(None, t_norm, d_norm).ratio()
+    if _iou(tr["box"], nb) >= 0.4 and sim >= 0.6:
+        return _iou(tr["box"], nb) + sim, "similar"
+    return None
+
+
 def build_tracks(detections: dict[int, list[dict[str, Any]]], img_w: int, img_h: int, step: int, n_frames: int) -> list[dict[str, Any]]:
+    """Group per-frame detections into text tracks. A caption revealed word by word (the dominant short-form
+    style) is one track: its growth steps are counted in `reveal_steps` and its final text is the longest
+    reading, preferring the variant with the most spaces (recognisers often merge italic words)."""
     tracks: list[dict[str, Any]] = []
     open_tracks: list[dict[str, Any]] = []
     for fid in sorted(detections):
         dets = detections[fid]
+        norm_dets = [(_norm(d["text"]), [d["box"][0] / img_w, d["box"][1] / img_h, d["box"][2] / img_w, d["box"][3] / img_h]) for d in dets]
         matched: set[int] = set()
         still_open = []
         for tr in open_tracks:
-            best, best_i = None, -1
+            best, best_i, best_kind = None, -1, ""
             for i, d in enumerate(dets):
                 if i in matched:
                     continue
-                nb = [d["box"][0] / img_w, d["box"][1] / img_h, d["box"][2] / img_w, d["box"][3] / img_h]
-                sim = difflib.SequenceMatcher(None, tr["text"].lower(), d["text"].lower()).ratio()
-                if _iou(tr["box"], nb) >= 0.4 and sim >= 0.6:
-                    score = _iou(tr["box"], nb) + sim
-                    if best is None or score > best:
-                        best, best_i = score, i
+                res = _match_score(tr, norm_dets[i][0], norm_dets[i][1])
+                if res and (best is None or res[0] > best):
+                    best, best_i, best_kind = res[0], i, res[1]
             if best_i >= 0 and fid - tr["last_sampled_frame"] <= step * 2:
                 d = dets[best_i]
+                d_norm, nb = norm_dets[best_i]
                 matched.add(best_i)
                 tr["last_sampled_frame"] = fid
                 tr["samples"].append(fid)
-                if d["conf"] > tr["conf"]:
-                    tr["text"], tr["conf"] = d["text"], d["conf"]
+                tr["readings"].append((d["text"], d["conf"], d_norm, fid))
+                if best_kind == "grow" or (best_kind == "similar" and len(d_norm) > len(tr["norm"]) + 1):
+                    # growth, including growth read with a recogniser slip ("climbea" -> "climbed onto")
+                    tr["reveal_steps"] += 1
+                    tr["norm"], tr["box"] = d_norm, nb
+                elif best_kind in ("same", "similar"):
+                    tr["box"] = [(x + y) / 2 for x, y in zip(tr["box"], nb)]
+                    if d["conf"] > tr["conf"]:
+                        tr["conf"] = d["conf"]
                 still_open.append(tr)
             else:
                 tracks.append(tr)
@@ -245,25 +291,34 @@ def build_tracks(detections: dict[int, list[dict[str, Any]]], img_w: int, img_h:
         for i, d in enumerate(dets):
             if i in matched:
                 continue
-            nb = [d["box"][0] / img_w, d["box"][1] / img_h, d["box"][2] / img_w, d["box"][3] / img_h]
-            open_tracks.append({"text": d["text"], "conf": d["conf"], "box": nb, "first_sampled_frame": fid,
-                                "last_sampled_frame": fid, "samples": [fid]})
+            d_norm, nb = norm_dets[i]
+            open_tracks.append({"norm": d_norm, "conf": d["conf"], "box": nb, "first_sampled_frame": fid,
+                                "last_sampled_frame": fid, "samples": [fid], "reveal_steps": 0,
+                                "readings": [(d["text"], d["conf"], d_norm, fid)]})
     tracks.extend(open_tracks)
     out = []
     for k, tr in enumerate(tracks):
+        # final text: among readings of the longest normalised content, most spaces first, then confidence
+        longest = max(len(r[2]) for r in tr["readings"])
+        finals = [r for r in tr["readings"] if len(r[2]) == longest]
+        text, conf, _, t_full = max(finals, key=lambda r: (r[0].count(" "), r[1]))
         cy = (tr["box"][1] + tr["box"][3]) / 2
         zone = "upper_third" if cy < 1 / 3 else ("middle_band" if cy < 2 / 3 else "lower_third")
         rel_h = tr["box"][3] - tr["box"][1]
         width = tr["box"][2] - tr["box"][0]
         klass = "subtitle_candidate" if (zone != "upper_third" and width > 0.25 and rel_h < 0.12) else "text"
         out.append({
-            "track_id": f"t{k:04d}", "text": tr["text"], "conf": round(tr["conf"], 3),
+            "track_id": f"t{k:04d}", "text": text, "conf": round(conf, 3),
             "box_norm": [round(v, 4) for v in tr["box"]], "zone": zone, "rel_height": round(rel_h, 4),
             "frame_first_seen": tr["first_sampled_frame"], "frame_last_seen": tr["last_sampled_frame"],
+            "frame_full_text_seen": t_full,
             # candidate span: the text may have appeared up to (step-1) frames before the first sample
             "frame_first_candidate": max(0, tr["first_sampled_frame"] - (step - 1)),
             "frame_last_candidate": min(n_frames - 1, tr["last_sampled_frame"] + (step - 1)),
             "samples": len(tr["samples"]), "class": klass,
+            "reveal_steps": tr["reveal_steps"],
+            "animation": "build_on" if tr["reveal_steps"] >= 2 else ("step" if tr["reveal_steps"] == 1 else "static_or_cut"),
+            "readings": len(tr["readings"]),
             "one_frame_candidate": len(tr["samples"]) == 1,
         })
     return out
