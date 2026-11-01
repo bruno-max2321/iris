@@ -41,7 +41,7 @@ Stage extras (`media`, `text`, `audio`, `people`, `interpret`) are installed per
 
 ## Status
 
-Milestone 0 (contracts and environment) in progress. Implemented: `version`, `doctor`, `lexicon`, `selftest`. Every other command exits with code 9 and names its milestone. See `docs/PLAN.es.md` for the full plan and `docs/style_bible.md` for the output contract.
+Milestone 1 (ingest and coverage) implemented: `ingest` (URL via yt-dlp with download limits, direct link, local file; idempotent on content hash), `analyze` (PTS frame index from ffprobe, bounded rawvideo decoding with every presented frame kept, per-frame colour/luminance/sharpness/edge/difference/pHash measurements in numpy, coverage report, idempotent job keys, heavy-job lock, per-stage checkpoints) and `jobs status|resume|cancel|list`. Also `version`, `doctor`, `lexicon`, `selftest`. Everything else exits with code 9 and names its milestone. Per-frame tables are Parquet when pyarrow is installed and gzip-CSV otherwise; `coverage.json` records which. See `docs/PLAN.es.md` and `docs/style_bible.md`.
 
 ## Non-negotiables
 

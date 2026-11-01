@@ -9,14 +9,13 @@ dependencies = [
   "pyyaml>=6.0.2",
   "jsonschema>=4.23",
   "pydantic>=2.9",
+  "numpy>=2.0",
 ]
 
 [project.optional-dependencies]
 # Stage dependencies are added per milestone and pinned in uv.lock on the Grok Bot VM.
 media = [
-  "av>=14.0",
   "opencv-python-headless>=4.10",
-  "numpy>=2.0",
   "scenedetect>=0.6.5",
   "imagehash>=4.3",
   "pyarrow>=17.0",

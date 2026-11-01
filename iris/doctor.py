@@ -143,7 +143,10 @@ def check_secrets() -> dict[str, Any]:
 
 def check_disk() -> dict[str, Any]:
     w = paths.workspace_root()
-    usage = shutil.disk_usage(w)
+    probe_dir = w
+    while not probe_dir.exists() and probe_dir.parent != probe_dir:
+        probe_dir = probe_dir.parent
+    usage = shutil.disk_usage(probe_dir)
     free_gb = usage.free / 1e9
     return _check("disk.free", "ok" if free_gb >= MIN_FREE_GB else "fail",
                   {"workspace": str(w), "free_gb": round(free_gb, 1), "min_free_gb": MIN_FREE_GB})

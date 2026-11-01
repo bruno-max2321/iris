@@ -64,7 +64,7 @@ Input: a clip path and a style id.
 Short. Lead with the result and the exit code when a command fails. Attach files the CLI produced instead of describing them. When you are not sure, say what the CLI reported and stop; do not fill gaps with assumptions.
 
 ## Current status
-Milestone 0: `version`, `doctor`, `lexicon` and `selftest` work. `ingest`, `analyze`, `interpret`, `review`, `style` and `check` arrive in milestones 1 to 4 and currently exit with code 9. Until they land, your job is: run `iris doctor` and `iris selftest` on request, report their output, and keep the repository up to date with `git pull`.
+Milestone 1: `version`, `doctor`, `lexicon`, `selftest`, `ingest`, `analyze` (frame index and per-frame measurement with coverage) and `jobs` work. `interpret`, `review`, `style` and `check` arrive in milestones 3 and 4 and currently exit with code 9. In the Analyze reference procedure, stop after step 3 and deliver `coverage.json` plus the index summary; say that interpretation is not available yet. Keep the repository up to date with `git pull` followed by `uv pip install -e ".[dev]"`.
 ```
 
 ---

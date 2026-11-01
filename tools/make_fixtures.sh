@@ -13,7 +13,7 @@ ffmpeg -y -loglevel error \
   -f lavfi -i "color=c=0x9E7852:s=1080x1920:r=30:d=2" \
   -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=6" \
   -filter_complex "[0:v][1:v][2:v]concat=n=3:v=1:a=0[v]" -map "[v]" -map 3:a \
-  -c:v libx264 -pix_fmt yuv420p -crf 20 -c:a aac -shortest cfr_30.mp4
+  -c:v libx264 -pix_fmt yuv420p -crf 20 -c:a aac -shortest -movflags +faststart cfr_30.mp4
 
 # 2. VFR: 24 + 30 + 60 fps segments concatenated without resampling
 for r in 24 30 60; do
@@ -33,13 +33,13 @@ ffmpeg -y -loglevel error -f lavfi -i "testsrc2=s=540x960:r=30:d=4" \
   -vf "fps=36" -c:v libx264 -pix_fmt yuv420p -crf 20 duplicate_frames.mp4
 
 # 5. Rotation metadata
-ffmpeg -y -loglevel error -f lavfi -i "testsrc2=s=1920x1080:r=30:d=3" -c:v libx264 -pix_fmt yuv420p -crf 20 \
-  -metadata:s:v:0 rotate=90 rotation_meta.mp4
+ffmpeg -y -loglevel error -f lavfi -i "testsrc2=s=1920x1080:r=30:d=3" -c:v libx264 -pix_fmt yuv420p -crf 20 rot_src.mp4
+ffmpeg -y -loglevel error -display_rotation 90 -i rot_src.mp4 -c copy rotation_meta.mp4 && rm -f rot_src.mp4
 
 # 6. Silent (no audio stream)
 ffmpeg -y -loglevel error -f lavfi -i "testsrc2=s=540x960:r=30:d=3" -an -c:v libx264 -pix_fmt yuv420p -crf 20 silent.mp4
 
-# 7. Truncated: cut the CFR file in the middle of the byte stream
+# 7. Truncated: cut the CFR file (faststart, so the moov atom survives and frames decode until the cut)
 head -c $(( $(stat -f%z cfr_30.mp4 2>/dev/null || stat -c%s cfr_30.mp4) / 2 )) cfr_30.mp4 > truncated.mp4
 
 # 8. Caption visible for exactly one frame (frame 60)

@@ -25,8 +25,13 @@ def test_lexicon_term_and_unknown():
 
 
 def test_unimplemented_commands_report_milestone():
-    code, out = run(["analyze", "ref_x"])
-    assert code == exit_codes.NOT_IMPLEMENTED and out["milestone"] == 2 and out["retryable"] is False
+    code, out = run(["interpret", "run", "ref_x"])
+    assert code == exit_codes.NOT_IMPLEMENTED and out["milestone"] == 3 and out["retryable"] is False
+
+
+def test_analyze_unknown_asset_is_usage_error():
+    code, out = run(["analyze", "ref_doesnotexist"])
+    assert code == exit_codes.USAGE and out["ok"] is False
 
 
 def test_doctor_emits_checks():
