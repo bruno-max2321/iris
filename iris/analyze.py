@@ -133,8 +133,9 @@ def run_derived_stages(src: Path, ref_dir: Path, manifest: dict[str, Any], index
     def do_text():
         doc = textocr.run(src, ref_dir, shot_list, index["frame_count"], dw, dh, index["frames"], mode=mode)
         _write(ref_dir / "text.json", doc)
-        return {"_status": "skipped" if doc.get("status") == "skipped" else "ok", "backend": doc.get("backend"),
-                "reason": doc.get("reason"), "sampled_frames": doc.get("sampled_frames"), "tracks": len(doc.get("tracks", []))}
+        return {"_status": doc.get("status", "ok"), "backend": doc.get("backend"), "reason": doc.get("reason"),
+                "seconds_per_frame": doc.get("seconds_per_frame"), "sampled_frames": doc.get("sampled_frames"),
+                "tracks": len(doc.get("tracks", []))}
     records["text"] = _derived(ref_dir, "text", do_text, mode=mode)
     text_doc = _read(ref_dir / "text.json") if (ref_dir / "text.json").exists() else {"tracks": []}
 

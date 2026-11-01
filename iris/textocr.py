@@ -12,12 +12,15 @@ import os
 import shutil
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 from typing import Any
 
-METHOD_VERSION = "textocr@0.1.0"
+METHOD_VERSION = "textocr@0.1.1"
 OCR_LONG_SIDE = 960
 ECONOMY_STEP = 6
+FIRST_FRAME_BUDGET_S = float(os.environ.get("IRIS_OCR_FIRST_FRAME_BUDGET_S", "30"))
+FRAME_BUDGET_S = float(os.environ.get("IRIS_OCR_FRAME_BUDGET_S", "5"))
 
 
 # ----------------------------------------------------------------------------------------------- backends
@@ -28,12 +31,21 @@ class _Paddle:
         from paddleocr import PaddleOCR  # type: ignore
 
         lang = os.environ.get("IRIS_OCR_LANG", "en")
-        kwargs = dict(lang=lang, enable_mkldnn=False, text_det_limit_side_len=OCR_LONG_SIDE, use_textline_orientation=False)
+        # Document orientation and UVDoc unwarping are on by default in PaddleOCR 3.x and take minutes per
+        # image on a CPU without oneDNN. Video frames are never warped documents, so both stay off.
+        kwargs = dict(
+            lang=lang, device="cpu", enable_mkldnn=False, cpu_threads=min(4, os.cpu_count() or 1),
+            text_det_limit_side_len=OCR_LONG_SIDE, text_det_limit_type="max",
+            use_doc_orientation_classify=False, use_doc_unwarping=False, use_textline_orientation=False,
+        )
         try:
-            self.ocr = PaddleOCR(ocr_version="PP-OCRv5", text_detection_model_name="PP-OCRv5_mobile_det",
+            self.ocr = PaddleOCR(text_detection_model_name="PP-OCRv5_mobile_det",
                                  text_recognition_model_name="PP-OCRv5_mobile_rec", **kwargs)
+            self.models = "PP-OCRv5_mobile_det + PP-OCRv5_mobile_rec"
         except TypeError:
-            self.ocr = PaddleOCR(lang=lang, enable_mkldnn=False)
+            self.ocr = PaddleOCR(lang=lang, enable_mkldnn=False, use_doc_orientation_classify=False,
+                                 use_doc_unwarping=False, use_textline_orientation=False)
+            self.models = "paddleocr default"
         self.lang = lang
 
     def detect(self, image_path: Path) -> list[dict[str, Any]]:
@@ -203,15 +215,26 @@ def run(src: Path, ref_dir: Path, shots: list[dict[str, Any]], n_frames: int, di
     tmp = Path(tempfile.mkdtemp(prefix="iris-ocr-", dir=str(ref_dir)))
     detections: dict[int, list[dict[str, Any]]] = {}
     img_w = img_h = None
+    timings: list[float] = []
     try:
         files = extract_frames(src, ids, tmp, OCR_LONG_SIDE, display_w, display_h)
-        for fid, f in files.items():
+        for n, (fid, f) in enumerate(files.items()):
             if img_w is None:
                 from PIL import Image
 
                 with Image.open(f) as im:
                     img_w, img_h = im.size
+            t0 = time.time()
             dets = backend.detect(f)
+            dt = time.time() - t0
+            timings.append(dt)
+            # a backend that is pathologically slow is a broken environment, not a result: stop early and say so
+            budget = FIRST_FRAME_BUDGET_S if n == 0 else FRAME_BUDGET_S * 4
+            if dt > budget:
+                return {"schema_version": "1.0.0", "method_version": METHOD_VERSION, "status": "failed",
+                        "reason": f"{backend.name} too slow: frame {n} took {dt:.1f} s (budget {budget:.0f} s); "
+                                  f"check oneDNN/thread settings or the doc-preprocessing flags",
+                        "backend": backend.name, "sampled_frames": len(ids), "frames_done": n, "tracks": []}
             if dets:
                 detections[fid] = dets
     finally:
@@ -223,7 +246,9 @@ def run(src: Path, ref_dir: Path, shots: list[dict[str, Any]], n_frames: int, di
         tr["t_last_seen"] = pts.get(tr["frame_last_seen"])
     return {
         "schema_version": "1.0.0", "method_version": METHOD_VERSION, "status": "ok",
-        "backend": backend.name, "lang": getattr(backend, "lang", None), "mode": mode, "step": step,
+        "backend": backend.name, "models": getattr(backend, "models", None), "lang": getattr(backend, "lang", None),
+        "mode": mode, "step": step,
+        "seconds_per_frame": round(sum(timings) / len(timings), 3) if timings else None,
         "sampled_frames": len(ids), "frames_with_text": len(detections), "detections": sum(len(v) for v in detections.values()),
         "image_size": [img_w, img_h], "tracks": tracks,
         "cue_timing_uncertainty_frames": step - 1,
