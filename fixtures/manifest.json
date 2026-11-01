@@ -76,6 +76,18 @@
           "text": "ONE FRAME"
         }
       ]
+    },
+    "pan_right.mp4": {
+      "fps": 30,
+      "frames": 120,
+      "motion": "camera pans right (content translates left) at ~4.5 px/frame on a 540 px wide frame",
+      "expected_class": "pan_right"
+    },
+    "push_in.mp4": {
+      "fps": 30,
+      "frames": 120,
+      "motion": "zoom from 1.0x to 1.25x over 4 s",
+      "expected_class": "apparent_push_in"
     }
   }
 }

@@ -53,17 +53,57 @@ if has_filter drawtext; then
     -c:v libx264 -pix_fmt yuv420p -crf 18 caption_1frame.mp4
 else
   python3 - <<'PY'
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 img = Image.new("RGBA", (1080, 1920), (0, 0, 0, 0))
 d = ImageDraw.Draw(img)
-d.rectangle((140, 1150, 940, 1290), fill=(244, 237, 223, 255))
-d.text((200, 1180), "ONE FRAME", fill=(43, 43, 43, 255))
+font = None
+for path in ("/System/Library/Fonts/Helvetica.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+             "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf", "/Library/Fonts/Arial.ttf"):
+    try:
+        font = ImageFont.truetype(path, 96)
+        break
+    except OSError:
+        continue
+if font is None:
+    font = ImageFont.load_default()
+d.rectangle((90, 1140, 990, 1300), fill=(255, 255, 255, 255))
+d.text((140, 1165), "ONE FRAME", fill=(20, 20, 20, 255), font=font)
 img.save("caption_overlay.png")
 PY
   ffmpeg -y -loglevel error -f lavfi -i "color=c=0xF4EDDF:s=1080x1920:r=30:d=4" -i caption_overlay.png \
     -filter_complex "[0:v][1:v]overlay=0:0:enable='eq(n,60)'" -c:v libx264 -pix_fmt yuv420p -crf 18 caption_1frame.mp4
   echo "note: drawtext not available in this ffmpeg; caption fixture used a PNG overlay" >&2
 fi
+
+# 9-10. Motion fixtures use a static, non-periodic textured image so the only motion is the camera's.
+python3 - <<'PY'
+import numpy as np
+from PIL import Image, ImageDraw
+rng = np.random.RandomState(7)
+w, h = 1600, 960
+base = rng.rand(h // 8, w // 8)
+img = np.kron(base, np.ones((8, 8)))                      # blocky low-frequency texture
+noise = rng.rand(h, w) * 0.15
+arr = np.clip(0.25 + 0.5 * img + noise, 0, 1)
+rgb = np.stack([arr * 244 / 255, arr * 237 / 255, arr * 223 / 255], axis=-1)
+im = Image.fromarray((rgb * 255).astype("uint8"))
+d = ImageDraw.Draw(im)
+for _ in range(60):                                        # a few hard-edged shapes for strong features
+    x, y = rng.randint(0, w - 120), rng.randint(0, h - 120)
+    r = rng.randint(20, 110)
+    col = tuple(int(c) for c in rng.randint(20, 235, 3))
+    (d.ellipse if rng.rand() < 0.5 else d.rectangle)((x, y, x + r, y + r), fill=col)
+im.save("texture_1600x960.png")
+PY
+# 9. Camera pan to the right: a 540x960 window slides left-to-right over the texture (content moves left on screen)
+ffmpeg -y -loglevel error -loop 1 -framerate 30 -t 4 -i texture_1600x960.png \
+  -vf "crop=540:960:x='(iw-540)*t/4':y=0" -c:v libx264 -pix_fmt yuv420p -crf 18 pan_right.mp4
+
+# 10. Apparent push-in: continuous zoom into the centre of the texture (positive flow divergence)
+ffmpeg -y -loglevel error -loop 1 -framerate 30 -t 4 -i texture_1600x960.png \
+  -vf "crop=540:960:x=540:y=0,zoompan=z='1+0.25*on/120':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=540x960:fps=30" \
+  -c:v libx264 -pix_fmt yuv420p -crf 18 push_in.mp4
+rm -f texture_1600x960.png
 
 echo "fixtures written to $OUT"
 ls -la "$OUT"

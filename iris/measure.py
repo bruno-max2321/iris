@@ -25,7 +25,9 @@ _WHITE = np.array([0.95047, 1.0, 1.08883], dtype=np.float32)
 def srgb_to_lab(rgb_u8: np.ndarray) -> np.ndarray:
     rgb = rgb_u8.astype(np.float32) / 255.0
     lin = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
-    xyz = lin @ _M.T / _WHITE
+    # Accelerate BLAS on macOS raises spurious FP warnings on this matmul; the values are finite.
+    with np.errstate(all="ignore"):
+        xyz = np.dot(np.ascontiguousarray(lin), _M.T) / _WHITE
     f = np.where(xyz > 0.008856, np.cbrt(xyz), 7.787 * xyz + 16.0 / 116.0)
     L = 116.0 * f[..., 1] - 16.0
     a = 500.0 * (f[..., 0] - f[..., 1])
