@@ -92,7 +92,8 @@ def load_backend() -> tuple[Any | None, str | None]:
     try:
         return _Paddle(), None
     except Exception as exc:  # noqa: BLE001
-        paddle_err = f"paddleocr unavailable: {type(exc).__name__}"
+        first_line = (str(exc).strip().splitlines() or [""])[0][:240]
+        paddle_err = f"paddleocr unavailable: {type(exc).__name__}: {first_line}".rstrip(": ")
     try:
         return _Tesseract(), None
     except Exception:  # noqa: BLE001
