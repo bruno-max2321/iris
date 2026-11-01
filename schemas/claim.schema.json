@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iris.local/schemas/claim.schema.json",
+  "title": "Iris claim",
+  "description": "One statement about a reference: a vocabulary term applied to a time span, with its kind, source, evidence and review status. Numbers live in the evidence the claim cites, never in the claim itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["claim_id", "asset_id", "vocabulary_version", "term_id", "dimension", "claim_kind", "time_span", "frame_range",
+               "evidence_ids", "source", "review_status", "method_version"],
+  "properties": {
+    "claim_id": {"type": "string", "pattern": "^c_[0-9]{6}$"},
+    "claim_key": {"type": "string", "description": "Stable key (asset, unit, dimension, term, source) used to keep the claim id across regenerations."},
+    "asset_id": {"type": "string", "pattern": "^ref_[0-9a-f]{12}$"},
+    "vocabulary_version": {"type": "string"},
+    "term_id": {"type": "string", "pattern": "^[a-z_.]+=[a-z0-9_]+$", "description": "Qualified 'dimension=term'."},
+    "dimension": {"type": "string"},
+    "claim_kind": {"type": "string", "enum": ["measured", "estimated", "interpreted"]},
+    "temporal_unit": {"type": "string", "enum": ["frame", "shot", "sequence", "video"]},
+    "unit_id": {"type": ["string", "null"], "description": "shot_id, event_id or null for video-level claims."},
+    "time_span": {
+      "type": "object", "additionalProperties": false, "required": ["start_seconds", "end_seconds"],
+      "properties": {"start_seconds": {"type": "number"}, "end_seconds": {"type": "number"}}
+    },
+    "frame_range": {
+      "type": "object", "additionalProperties": false, "required": ["first", "last_inclusive"],
+      "properties": {"first": {"type": "integer", "minimum": 0}, "last_inclusive": {"type": "integer", "minimum": 0}}
+    },
+    "region": {"type": ["string", "null"], "enum": ["background", "food", "product", "skin", "ui", "graphics", "whole_frame", null]},
+    "evidence_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "alternatives": {"type": "array", "items": {"type": "string"}},
+    "source": {"type": "string", "enum": ["code", "model"]},
+    "judges": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {"grok": {"type": ["string", "null"]}, "anthropic": {"type": ["string", "null"]}, "fixture": {"type": ["string", "null"]}},
+      "description": "Per judge: the term it proposed for this dimension and unit, 'unclear', or null when that judge did not answer."
+    },
+    "single_judge": {"type": "boolean"},
+    "disagreement_group": {"type": ["string", "null"]},
+    "review_status": {"type": "string", "enum": ["pending", "needs_review", "accepted", "corrected", "rejected"]},
+    "corrected_term_id": {"type": ["string", "null"]},
+    "method_version": {"type": "string"},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "created_at": {"type": "string"},
+    "updated_at": {"type": "string"}
+  }
+}

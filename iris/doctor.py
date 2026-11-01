@@ -115,16 +115,30 @@ def check_registry() -> dict[str, Any]:
 
 
 def check_schemas() -> dict[str, Any]:
+    """Every schema under schemas/ is a valid Draft 2020-12 schema and its example (when present) validates."""
     try:
         import jsonschema
 
-        schema = json.loads(paths.STYLE_BIBLE_SCHEMA.read_text(encoding="utf-8"))
-        jsonschema.Draft202012Validator.check_schema(schema)
-        example = json.loads(paths.STYLE_BIBLE_EXAMPLE.read_text(encoding="utf-8"))
-        errors = list(jsonschema.Draft202012Validator(schema).iter_errors(example))
-        return _check("schemas.style_bible", "ok" if not errors else "fail", {"example_errors": len(errors)})
+        detail: dict[str, Any] = {}
+        status = "ok"
+        for schema_path in sorted(paths.SCHEMAS_DIR.glob("*.schema.json")):
+            name = schema_path.name.replace(".schema.json", "")
+            schema = json.loads(schema_path.read_text(encoding="utf-8"))
+            jsonschema.Draft202012Validator.check_schema(schema)
+            example_path = paths.SCHEMAS_DIR / "examples" / f"{name}.example.json"
+            if example_path.exists():
+                example = json.loads(example_path.read_text(encoding="utf-8"))
+                errors = list(jsonschema.Draft202012Validator(schema).iter_errors(example))
+                detail[name] = {"example_errors": len(errors)}
+                if errors:
+                    status = "fail"
+                    detail[name]["first_error"] = errors[0].message[:200]
+            else:
+                detail[name] = {"example_errors": None, "note": "no example"}
+                status = "fail" if status == "ok" and False else status
+        return _check("schemas", status, detail)
     except Exception as exc:  # noqa: BLE001
-        return _check("schemas.style_bible", "fail", str(exc))
+        return _check("schemas", "fail", str(exc))
 
 
 def check_secrets() -> dict[str, Any]:

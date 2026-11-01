@@ -16,7 +16,7 @@ import numpy as np
 
 from . import decode
 
-METHOD_VERSION = "motion_phasecorr@0.1.0"
+METHOD_VERSION = "motion_phasecorr@0.1.1"
 ANALYSIS_WIDTH = 192
 GRID = (4, 3)  # rows, cols
 
@@ -99,9 +99,11 @@ def run(src: Path, display_w: int, display_h: int, shots: list[dict[str, Any]], 
             jit = float(np.mean(np.hypot(dx - np.convolve(dx, kern, mode="same"), dy - np.convolve(dy, kern, mode="same"))))
         else:
             jit = 0.0
-        pct_per_s = float(mag.mean() / w * 100.0 * fps)           # % of frame width per second
-        div_pct_per_s = float(div.mean() / w * 100.0 * fps)
-        mean_dx, mean_dy = float(dx.mean()), float(dy.mean())
+        # medians: a one-frame insert or flash inside the shot produces one or two wild pairs that a mean
+        # would turn into a phantom pan; the median keeps the sustained motion
+        pct_per_s = float(np.median(mag) / w * 100.0 * fps)       # % of frame width per second
+        div_pct_per_s = float(np.median(div) / w * 100.0 * fps)
+        mean_dx, mean_dy = float(np.median(dx)), float(np.median(dy))
         med_sharp = float(np.median(sharp[a:b + 1])) if b > a else 0.0
         sharp_drop = float(1.0 - sharp[a:b + 1].min() / med_sharp) if med_sharp > 1.0 else 0.0
 

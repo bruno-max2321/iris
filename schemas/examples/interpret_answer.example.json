@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "judge": "grok",
+  "model": null,
+  "asset_id": "ref_308c466f03ac",
+  "packet_hash": "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+  "vocabulary_version": "1.0.0",
+  "shots": [
+    {
+      "shot_id": "s001",
+      "dimensions": {
+        "composition": {"terms": ["centralbias", "framewithin"], "evidence_ids": ["keyframe:s001:mid"], "observation": "Figure centred inside the wooden hoist frame."},
+        "light.direction": {"terms": ["side_light"], "evidence_ids": ["keyframe:s001:mid", "light:s001:side"]},
+        "light.scheme": {"terms": ["unclear"], "evidence_ids": []},
+        "optics": {"terms": ["deep_focus"], "evidence_ids": ["keyframe:s001:mid"]},
+        "material.surface": {"terms": ["wood"], "evidence_ids": ["keyframe:s001:mid"]},
+        "typography.family_class": {"terms": ["serif"], "evidence_ids": ["text:t0000"], "alternatives": ["script"]},
+        "narrative.function": {"terms": ["hook"], "evidence_ids": ["shot:s001", "text:t0000"]},
+        "style.medium": {"terms": ["photorealistic"], "evidence_ids": ["keyframe:s001:mid"]}
+      }
+    }
+  ],
+  "video": {
+    "dimensions": {
+      "narrative.hook_type": {"terms": ["in_medias_res"], "evidence_ids": ["shot:s001", "audio:transcript"], "observation": "Opens mid-action: a man on a platform about to have the cable cut."}
+    }
+  }
+}

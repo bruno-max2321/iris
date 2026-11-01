@@ -40,15 +40,26 @@ Input: a URL (Instagram, TikTok, YouTube) or a file path, and the rights kind (s
 1. `iris doctor` — stop and report if status is fail.
 2. `iris ingest <url> --rights <kind> --json` — keep the asset_id.
 3. `iris analyze <asset_id> --mode economy --json` — keep the job_id; poll with `iris jobs status <job_id>` until review_ready or a terminal error.
-4. `iris interpret prepare <asset_id> --for grok` — read interpret/packet.json and the listed images, answer blind in the schema the packet specifies, save it as interpret/grok.json, then `iris interpret ingest <asset_id> interpret/grok.json --judge grok`.
-5. `iris interpret run <asset_id> --provider anthropic` — only if the user authorized spending for this reference.
+4. `iris interpret prepare <asset_id> --for grok` — then follow the **Judge blind** procedure below and ingest your answer with `iris interpret ingest <asset_id> refs/<asset_id>/interpret/grok_answer.json --judge grok`. If ingest returns ok:false, fix exactly the listed errors and ingest again; never change the packet.
+5. `iris interpret run <asset_id> --provider anthropic` — only if the user authorized spending for this reference. It refuses to run before your answer exists unless `--skip-grok` is passed, and that flag is the user's call, not yours.
 6. `iris validate <asset_id> --json`.
-7. Deliver: the contact sheets as images, the coverage summary, counts of claims by kind and status, and the review queue as a short list of claim ids with one line each. Nothing else.
+7. Deliver: the contact sheets as images, the coverage summary (including model_exposure), the `agreement` block and counts by kind / status / source from validate, and the `review_queue` as a short list of claim ids with one line each (`iris claims list <asset_id> --status needs_review`). Nothing else.
+
+### Judge blind
+Input: the packet written by `iris interpret prepare <asset_id> --for grok` at refs/<asset_id>/interpret/packet.json.
+1. Read `rules`, `shot_dimensions`, `video_dimensions` and `lexicon` from the packet. Do not open interpret/anthropic.json, interpret/fixture.json or any earlier answer; they must not exist yet and you must not look for them.
+2. For each window, look at every image listed in `windows[].images` (paths are relative to refs/<asset_id>/) and read `windows[].shots[].summary_lines` and `code_proposals`. Proposals are hints from the code, not truth.
+3. For every shot and every dimension in `shot_dimensions`, choose term ids from that dimension's `lexicon[dimension].terms`, or exactly `["unclear"]`. Single-cardinality dimensions take one term; `composition` at most five. Cite `evidence_ids` only from that shot's `evidence_ids` or the window's `images[].evidence_id`. Add `alternatives` you considered and an `observation` (≤160 characters) only when the vocabulary cannot say it.
+4. Answer `video_dimensions` once, citing `video.evidence_ids`.
+5. Write refs/<asset_id>/interpret/grok_answer.json with exactly this shape and nothing else:
+   `{"schema_version":"1.0.0","judge":"grok","model":null,"asset_id":"<asset_id>","packet_hash":"<packet.packet_hash>","vocabulary_version":"<packet.vocabulary_version>","shots":[{"shot_id":"s001","dimensions":{"composition":{"terms":["centralbias"],"evidence_ids":["keyframe:s001:mid"]}, ...}}],"video":{"dimensions":{"narrative.hook_type":{"terms":["unclear"],"evidence_ids":[]}}}}`
+6. Never write a number, a colour value or a duration anywhere in the answer. Never invent a term or an evidence id. When in doubt, `unclear`.
+7. Ingest it (step 4 of Analyze reference) and report the counts the CLI prints: labels, abstentions, shots_answered.
 
 ### Review claims
-Input: the user's decisions in chat, e.g. "accept c_0012-c_0040; reject c_0041: wrong, this is a zoom; correct c_0044 to camera.movement=dolly_in".
-1. Translate into `iris review --batch <file>` with one line per decision.
-2. Run it and echo back exactly what was recorded, from the CLI output, not from your reading of the message.
+Input: the user's decisions in chat, e.g. "accept c_000012-c_000040; reject c_000041: wrong, this is a zoom; correct c_000044 to camera.movement=dolly_in: clear parallax".
+1. Translate into a file with one line per decision, exactly in the forms `accept <id|range|list>`, `reject <ids>: <reason>`, `correct <ids> to <dimension=term>: <reason>`. Claim ids are six digits (`c_000012`). A rejection needs a reason; a correction needs a term of the same dimension.
+2. Run `iris review --batch <file> --author <user name>` and echo back exactly what was recorded (`recorded` and `errors` from the CLI output), not your reading of the message. Decisions are append-only; a later decision supersedes an earlier one without deleting it.
 
 ### Build style
 Input: a style id and the asset ids to aggregate.
@@ -64,7 +75,7 @@ Input: a clip path and a style id.
 Short. Lead with the result and the exit code when a command fails. Attach files the CLI produced instead of describing them. When you are not sure, say what the CLI reported and stop; do not fill gaps with assumptions.
 
 ## Current status
-Milestone 2: `version`, `doctor`, `lexicon`, `selftest`, `ingest`, `analyze` (index, per-frame measurement, shots and events, motion, text, regions and colour, audio, contact sheets, all with coverage) and `jobs` work. `interpret`, `review`, `style` and `check` arrive in milestones 3 and 4 and currently exit with code 9. In the Analyze reference procedure, stop after step 3 and deliver: `coverage.json`, the `stages` block (which stages ran, were skipped and why), the contact sheets from `refs/<asset_id>/sheets/` as images, and the montage summary from `shots.json`. Say that interpretation is not available yet. Before analysing real references, install the stage extras once: `uv pip install -e ".[media,text,audio,people]"` and report whether `iris doctor` still shows missing modules. The only OpenCV allowed in the venv is `opencv-contrib-python` (pinned by paddlex and mediapipe); if `opencv.single_variant` fails, remove the other variants with `uv pip uninstall opencv-python opencv-python-headless` and never uninstall `opencv-contrib-python`, or PaddleOCR stops starting. Keep the repository up to date with `git pull` followed by `uv pip install -e ".[dev]"`.
+Milestone 3: `version`, `doctor`, `lexicon`, `selftest`, `ingest`, `analyze` (all measurement stages), `jobs`, `interpret prepare|ingest|run`, `validate`, `claims list`, `review` and `ledger summary` work. `style` and `check` arrive in milestone 4 and exit with code 9. The Analyze reference procedure now runs to step 7; step 5 (`interpret run --provider anthropic`) spends API money and needs the user's explicit authorization for that reference and the key at secrets/anthropic.key (mode 600). Before analysing real references, install the extras once: `uv pip install -e ".[media,text,audio,people,interpret]"`. The only OpenCV allowed in the venv is `opencv-contrib-python` (pinned by paddlex and mediapipe); if `opencv.single_variant` fails, run `uv pip uninstall opencv-python opencv-python-headless` and never uninstall `opencv-contrib-python`. Keep the repository up to date with `git pull` followed by `uv pip install -e ".[dev]"`; after a pull that changes stage code, `iris analyze <asset_id> --force` recomputes derived stages (`--stages text,audio` for a subset).
 ```
 
 ---
@@ -89,21 +100,21 @@ Expected: `iris doctor` reports Python 3.12 inside the venv, ffmpeg with the req
 Secrets are added later and only by the user:
 
 - `secrets/cookies.txt` — Netscape cookie file from a **dedicated** account used only for downloads, `chmod 600`.
-- `secrets/anthropic.key` — API key with a monthly spend cap configured in the Anthropic console, `chmod 600`. Not needed until milestone 3.
+- `secrets/anthropic.key` — API key with a monthly spend cap configured in the Anthropic console, `chmod 600`. Needed by `iris interpret run --provider anthropic` (milestone 3). The local guard is 1.5 USD per reference (`--max-usd`) and `IRIS_MONTHLY_CAP_USD` (default 100); the hard cap is the one in the console.
 
 Stage extras are installed when their milestone lands:
 
 ```bash
 uv pip install -e ".[media]"      # milestone 1–2
 uv pip install -e ".[text,audio,people]"   # milestone 2
-uv pip install -e ".[interpret]"  # milestone 3
+uv pip install -e ".[interpret]"  # milestone 3 (anthropic SDK)
 ```
 
 Updating: `cd /workspace/iris && git pull && uv pip install -e ".[dev]" && iris selftest`.
 
 ## 3. Saving the skills in Grok Bot
 
-After pasting the context, ask the bot to save the four procedures as private skills with the exact names **Analyze reference**, **Review claims**, **Build style**, **Check clip**, then ask it to list its skills and invoke `Analyze reference` with a fictitious URL in dry run. It should run `iris doctor`, then stop at `iris ingest` with exit code 9 and say that ingest arrives in milestone 1. That is the correct behaviour today.
+After pasting the context, ask the bot to save the five procedures as private skills with the exact names **Analyze reference**, **Judge blind**, **Review claims**, **Build style**, **Check clip**, then ask it to list its skills and invoke `Analyze reference` with a fictitious URL in dry run. It should run `iris doctor`, then stop at `iris ingest` with exit code 9 and say that ingest arrives in milestone 1. That is the correct behaviour today.
 
 ## 4. Why one folder per bot
 

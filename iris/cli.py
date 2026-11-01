@@ -14,10 +14,7 @@ from typing import Any
 
 from . import __version__, doctor, exit_codes, paths, registry
 
-MILESTONE = {
-    "interpret": 3, "validate": 3, "claims": 3, "review": 3,
-    "style": 4, "check": 4, "query": 5, "report": 5, "ledger": 3, "gc": 5,
-}
+MILESTONE = {"style": 4, "check": 4, "query": 5, "report": 5, "gc": 5}
 
 _CODE_BY_NAME = {v: k for k, v in exit_codes.NAMES.items()}
 
@@ -110,6 +107,89 @@ def cmd_jobs(args: argparse.Namespace) -> int:
     return _emit({"ok": True, "job": out["job"], "coverage": out.get("coverage")})
 
 
+def _ws(args: argparse.Namespace):
+    from pathlib import Path
+
+    return Path(args.workspace) if getattr(args, "workspace", None) else None
+
+
+def cmd_interpret(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from . import anthropic_adapter, interpret
+
+    try:
+        if args.action == "prepare":
+            return _emit({"ok": True, **interpret.prepare(args.asset_id, for_judge=args.for_judge, workspace=_ws(args))})
+        if args.action == "ingest":
+            if not args.answer:
+                return _emit(exit_codes.error_payload(exit_codes.USAGE, "ingest needs the answer file path"), exit_codes.USAGE)
+            res = interpret.ingest_answer(args.asset_id, Path(args.answer), args.judge, workspace=_ws(args))
+            return _emit(res, exit_codes.OK if res["ok"] else exit_codes.VALIDATION)
+        if args.action == "run":
+            res = interpret.run(args.asset_id, args.provider, model=args.model, max_usd=args.max_usd, skip_grok=args.skip_grok,
+                                fixture_file=Path(args.fixture) if args.fixture else None, workspace=_ws(args))
+            return _emit(res, exit_codes.OK if res["ok"] else exit_codes.PARTIAL)
+    except interpret.InterpretError as exc:
+        code = _CODE_BY_NAME.get(exc.code, exit_codes.VALIDATION)
+        return _emit(exit_codes.error_payload(code, str(exc), retryable=exc.retryable), code)
+    except anthropic_adapter.AdapterError as exc:
+        code = _CODE_BY_NAME.get(exc.code, exit_codes.PROVIDER)
+        return _emit(exit_codes.error_payload(code, str(exc), retryable=exc.retryable), code)
+    except ImportError as exc:
+        return _emit(exit_codes.error_payload(exit_codes.VALIDATION, f"missing dependency: {exc}; install the 'interpret' extra"), exit_codes.VALIDATION)
+    return _emit(exit_codes.error_payload(exit_codes.USAGE, "unknown interpret action"), exit_codes.USAGE)
+
+
+def cmd_validate(args: argparse.Namespace) -> int:
+    from . import claims
+
+    try:
+        report = claims.validate_asset(args.asset_id, workspace=_ws(args))
+    except claims.ClaimsError as exc:
+        return _emit(exit_codes.error_payload(exit_codes.VALIDATION, str(exc)), exit_codes.VALIDATION)
+    return _emit(report, exit_codes.OK if report["ok"] else exit_codes.VALIDATION)
+
+
+def cmd_claims(args: argparse.Namespace) -> int:
+    from . import claims
+
+    rows = claims.list_claims(args.asset_id, kind=args.kind, status=args.status, source=args.source, workspace=_ws(args))
+    brief = [{k: c.get(k) for k in ("claim_id", "term_id", "claim_kind", "source", "unit_id", "review_status", "single_judge", "disagreement_group", "corrected_term_id")} for c in rows]
+    return _emit({"ok": True, "asset_id": args.asset_id, "count": len(rows), "claims": brief if not args.full else rows})
+
+
+def cmd_review(args: argparse.Namespace) -> int:
+    import os
+    from pathlib import Path
+
+    from . import claims
+
+    author = args.author or os.environ.get("IRIS_REVIEWER", "user")
+    try:
+        if args.batch:
+            decisions = []
+            for n, line in enumerate(Path(args.batch).read_text(encoding="utf-8").splitlines(), start=1):
+                try:
+                    decisions.extend(claims.parse_batch_line(line))
+                except claims.ClaimsError as exc:
+                    return _emit(exit_codes.error_payload(exit_codes.USAGE, f"line {n}: {exc}"), exit_codes.USAGE)
+        else:
+            if not args.claim_ids or not args.status:
+                return _emit(exit_codes.error_payload(exit_codes.USAGE, "review needs <claim_id|range> --status ... or --batch <file>"), exit_codes.USAGE)
+            decisions = [{"claim_id": cid, "status": args.status, "value": args.value, "reason": args.reason} for cid in claims.expand_ids(args.claim_ids)]
+    except claims.ClaimsError as exc:
+        return _emit(exit_codes.error_payload(exit_codes.USAGE, str(exc)), exit_codes.USAGE)
+    res = claims.apply_decisions(decisions, author, workspace=_ws(args))
+    return _emit(res, exit_codes.OK if res["ok"] else exit_codes.VALIDATION)
+
+
+def cmd_ledger(args: argparse.Namespace) -> int:
+    from . import ledger
+
+    return _emit({"ok": True, **ledger.summary(workspace=_ws(args), month=args.month)})
+
+
 def cmd_selftest(args: argparse.Namespace) -> int:
     """Run the registry validator, the Style Bible example validation and the unit tests."""
     results: dict[str, Any] = {}
@@ -173,16 +253,61 @@ def build_parser() -> argparse.ArgumentParser:
     jb.add_argument("--json", action="store_true")
     jb.set_defaults(func=cmd_jobs)
 
+    ip = sub.add_parser("interpret", help="Prepare a packet, ingest a judge's answer, or run the API judge")
+    ip.add_argument("action", choices=["prepare", "ingest", "run"])
+    ip.add_argument("asset_id")
+    ip.add_argument("answer", nargs="?", help="(ingest) path to the judge's answer JSON")
+    ip.add_argument("--for", dest="for_judge", choices=["grok", "anthropic"], default="anthropic", help="(prepare) image budget profile")
+    ip.add_argument("--judge", choices=["grok", "anthropic", "fixture"], default="grok", help="(ingest) which judge wrote the answer")
+    ip.add_argument("--provider", choices=["anthropic", "fixture"], default="anthropic", help="(run)")
+    ip.add_argument("--model", help="(run) exact model id; default claude-sonnet-5-5")
+    ip.add_argument("--max-usd", type=float, default=1.5, help="(run) per-reference cap in USD")
+    ip.add_argument("--skip-grok", action="store_true", help="(run) proceed without the Grok judge's answer")
+    ip.add_argument("--fixture", help="(run --provider fixture) answer file to replay")
+    ip.add_argument("--workspace")
+    ip.add_argument("--json", action="store_true")
+    ip.set_defaults(func=cmd_interpret)
+
+    va = sub.add_parser("validate", help="Build and validate claims and evidence for an asset")
+    va.add_argument("asset_id")
+    va.add_argument("--workspace")
+    va.add_argument("--json", action="store_true")
+    va.set_defaults(func=cmd_validate)
+
+    cl = sub.add_parser("claims", help="List claims")
+    cl.add_argument("action", choices=["list"])
+    cl.add_argument("asset_id")
+    cl.add_argument("--kind", choices=["measured", "estimated", "interpreted"])
+    cl.add_argument("--status", choices=["pending", "needs_review", "accepted", "corrected", "rejected"])
+    cl.add_argument("--source", choices=["code", "model"])
+    cl.add_argument("--full", action="store_true")
+    cl.add_argument("--workspace")
+    cl.add_argument("--json", action="store_true")
+    cl.set_defaults(func=cmd_claims)
+
+    rv = sub.add_parser("review", help="Record human review decisions (append-only)")
+    rv.add_argument("claim_ids", nargs="?", help="claim id, range c_000012-c_000040, or comma list")
+    rv.add_argument("--status", choices=["accepted", "corrected", "rejected"])
+    rv.add_argument("--value", help="(corrected) dimension=term")
+    rv.add_argument("--reason")
+    rv.add_argument("--batch", help="file with one decision per line: accept/reject/correct ...")
+    rv.add_argument("--author")
+    rv.add_argument("--workspace")
+    rv.add_argument("--json", action="store_true")
+    rv.set_defaults(func=cmd_review)
+
+    lg = sub.add_parser("ledger", help="Summarize model calls and cost")
+    lg.add_argument("action", choices=["summary"])
+    lg.add_argument("--month", help="YYYY-MM (default: current month)")
+    lg.add_argument("--workspace")
+    lg.add_argument("--json", action="store_true")
+    lg.set_defaults(func=cmd_ledger)
+
     for name, helptext in [
-        ("interpret", "Prepare, ingest or run closed-vocabulary interpretation"),
-        ("validate", "Validate claims and observations"),
-        ("claims", "List claims"),
-        ("review", "Record human review decisions"),
         ("style", "Build or lint a Style Bible"),
         ("check", "Evaluate a clip against a Style Bible"),
         ("query", "Search accepted claims and references"),
         ("report", "Export the HTML report"),
-        ("ledger", "Summarize agent calls and cost"),
         ("gc", "Apply the retention policy"),
     ]:
         sp = sub.add_parser(name, help=f"{helptext} (milestone {MILESTONE[name]})")
