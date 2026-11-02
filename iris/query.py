@@ -4,9 +4,10 @@ query: claims across every reference, filtered by term, dimension, review status
 an optional full-text search over caption blocks, transcripts and judge observations. A text search
 alone returns the text hits; combined with claim filters it keeps the claims of references that have a hit.
 
-observations: the free-text notes judges leave when the vocabulary cannot say something. A phrase that
-recurs in at least MIN_REFS different references, and is not already a term or alias of that dimension,
-becomes a term proposal for the next minor vocabulary version. Proposals are written to
+observations: the free-text notes judges leave when the vocabulary cannot say something. A phrase of two
+or three words that recurs in at least MIN_REFS different references (a single word: MIN_REFS_ONE_WORD,
+since lone words like "small" or "against" recur by chance), and is not already a term or alias of that
+dimension, becomes a term proposal for the next minor vocabulary version. Proposals are written to
 proposals/term_proposals.json for a person to read; the vocabulary itself is never edited here."""
 
 from __future__ import annotations
@@ -21,11 +22,13 @@ from . import paths, registry
 from .store import Store
 
 MIN_REFS = 3
+MIN_REFS_ONE_WORD = 5
 MAX_NGRAM = 3
 STOPWORDS = frozenset("""a an the and or but of in on at to for from with without by as is are was were be been being it its this that
 these those there here very more most less some any each every both all no not only also just than then so such into onto over under
 up down out off about across through while when where which who whom what how one two three shot shots frame frames scene video clip
-image seems looks appears like feel feels slightly mostly mainly almost quite rather""".split())
+image seems looks appears like feel feels slightly mostly mainly almost quite rather against behind beside near between toward
+towards around along within inside outside beneath above below""".split())
 
 
 def _effective(c: dict[str, Any]) -> str:
@@ -185,7 +188,10 @@ def term_proposals(min_refs: int = MIN_REFS, write: bool = True, workspace: Path
             g["judges"].add(o["judge"])
             if len(g["examples"]) < 5 and o["observation"] not in [e["observation"] for e in g["examples"]]:
                 g["examples"].append({"asset_id": o["asset_id"], "unit_id": o.get("unit_id"), "judge": o["judge"], "observation": o["observation"]})
-    cands = {k: v for k, v in seen.items() if len(v["refs"]) >= min_refs and k[1] not in _known(k[0])}
+    def enough(ph: str, refs: set[str]) -> bool:
+        return len(refs) >= (min_refs if " " in ph else max(min_refs, MIN_REFS_ONE_WORD))
+
+    cands = {k: v for k, v in seen.items() if enough(k[1], v["refs"]) and k[1] not in _known(k[0])}
     # keep the longest phrase: drop a phrase contained in a longer candidate seen in the same references
     keep = []
     for (dim, ph), g in cands.items():
@@ -196,7 +202,7 @@ def term_proposals(min_refs: int = MIN_REFS, write: bool = True, workspace: Path
     keep.sort(key=lambda x: (-x["n_refs"], x["dimension"], x["phrase"]))
     version = registry.vocabulary_version()
     doc = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "vocabulary_version": version,
-           "proposed_for": _next_minor(version), "min_refs": min_refs, "observations": len(obs),
+           "proposed_for": _next_minor(version), "min_refs": min_refs, "min_refs_one_word": max(min_refs, MIN_REFS_ONE_WORD), "observations": len(obs),
            "references_with_observations": len({o["asset_id"] for o in obs}), "proposals": keep,
            "note": "proposals only: a person decides, writes the term card (definition, cues, counterexamples) and bumps the vocabulary"}
     if write:

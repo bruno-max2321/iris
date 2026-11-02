@@ -305,6 +305,12 @@ def cmd_selftest(args: argparse.Namespace) -> int:
             results["freeze"] = golden.freeze(args.freeze, name=args.name, workspace=_ws(args))
         except Exception as exc:  # unknown asset or nothing analysed
             return _emit(exit_codes.error_payload(exit_codes.USAGE, str(exc)), exit_codes.USAGE)
+    if args.freeze_fixtures:
+        from . import golden
+
+        results["freeze_fixtures"] = golden.freeze_fixtures(workspace=_ws(args))
+        if not results["freeze_fixtures"]["ok"]:
+            rc_total = exit_codes.VALIDATION
     if args.golden:
         from . import golden
 
@@ -329,9 +335,10 @@ def build_parser() -> argparse.ArgumentParser:
     lx.set_defaults(func=cmd_lexicon)
 
     st = sub.add_parser("selftest", help="Validate registry, schemas and run unit tests")
-    st.add_argument("--golden", action="store_true", help="re-run every fixtures/golden reference and diff the frozen facts")
+    st.add_argument("--golden", action="store_true", help="re-run every golden (fixtures/golden and <workspace>/golden) and diff the frozen facts")
     st.add_argument("--only", nargs="+", metavar="NAME", help="with --golden: only these golden names")
-    st.add_argument("--freeze", metavar="ASSET_ID", help="freeze an analysed asset into fixtures/golden/<name>/golden.json")
+    st.add_argument("--freeze", metavar="ASSET_ID", help="freeze an analysed asset into <workspace>/golden/<name>/golden.json")
+    st.add_argument("--freeze-fixtures", action="store_true", help="freeze this machine's goldens for the synthetic fixtures")
     st.add_argument("--name", help="with --freeze: golden name (default: fixture stem or asset id)")
     st.add_argument("--no-tests", action="store_true")
     st.add_argument("--workspace")

@@ -12,6 +12,7 @@ refs/
 styles/*/build_log.json
 checks/
 ledger/
+/golden/
 # generated fixtures (regenerate with tools/make_fixtures.sh)
 fixtures/synthetic/*.mp4
 fixtures/synthetic/*.png

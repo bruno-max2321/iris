@@ -91,6 +91,10 @@ def test_observations_recurring_in_three_references_become_a_proposal(ws):
     assert ("light.scheme", "tungsten practicals") in props
     assert ("light.scheme", "tungsten") not in props and ("light.scheme", "practicals") not in props  # folded into the longer phrase
     assert not any(d == "camera.movement" for d, _ in props)
+    for r in ("ref_a", "ref_b", "ref_c"):
+        _obs(ws, r, "composition", "pale sky against a wall")  # lone words recur by chance in three references
+    props = [(p["dimension"], p["phrase"]) for p in query.term_proposals(workspace=ws)["proposals"]]
+    assert ("composition", "pale sky") in props and ("composition", "wall") not in props
     doc = json.loads((ws / "proposals" / "term_proposals.json").read_text())
     assert doc["proposed_for"].endswith(".0") and doc["proposals"][0]["n_refs"] == 3
 
@@ -174,3 +178,21 @@ def test_golden_skips_stage_with_another_backend_and_missing_sources(ws, judged,
     (gdir / "real" / "golden.json").write_text(json.dumps({"name": "real", "source": {"sha256": "0" * 64}, "facts": {}}))
     res = golden.check(workspace=ws, golden_dir=gdir)
     assert res["skipped"][0]["reason"] == "reference not in this workspace"
+
+
+def test_golden_freezes_into_the_workspace_and_skips_a_fixture_rendered_by_another_ffmpeg(ws, judged, tmp_path, monkeypatch):
+    from iris import golden
+
+    repo = tmp_path / "repo_golden"
+    monkeypatch.setattr(golden, "GOLDEN_DIR", repo)
+    fr = golden.freeze(judged, name="cap", workspace=ws)
+    assert Path(fr["path"]) == ws / "golden" / "cap" / "golden.json"
+    g = json.loads(Path(fr["path"]).read_text())
+    other = dict(g, source=dict(g["source"], sha256="0" * 64))
+    (repo / "cap").mkdir(parents=True)
+    (repo / "cap" / "golden.json").write_text(json.dumps(other))
+    res = golden.check(workspace=ws)  # the workspace golden replaces the repository one
+    assert res["ok"] and res["goldens"] == 1 and res["passed"] == 1, res
+    Path(fr["path"]).unlink()
+    res = golden.check(workspace=ws)
+    assert not res["ok"] and res["checked"] == 0 and "--freeze-fixtures" in res["skipped"][0]["reason"]
