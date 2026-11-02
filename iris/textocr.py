@@ -18,6 +18,7 @@ import importlib.util
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -29,13 +30,14 @@ import numpy as np
 
 from . import decode, worker
 
-METHOD_VERSION = "textocr@0.4.1"
+METHOD_VERSION = "textocr@0.4.2"
 OCR_LONG_SIDE = int(os.environ.get("IRIS_OCR_LONG_SIDE", "960"))
 ECONOMY_STEP = 6
 MISS_FRAMES_FACTOR = 2      # a track survives this many sampling steps without a matching detection
 MIN_FREE_MATCH_CHARS = 4    # identical text this long continues a track wherever it moved
 BLOCK_MAX_GAP_LINES = 1.2   # stacked lines of one caption block leave at most this many line heights between them
 BLOCK_MAX_HEIGHT_RATIO = 1.8  # and their letters differ in height by at most this factor
+NUMBER_RE = re.compile(r"[$€£]?\d[\d.,]*[%+]?")  # a year, a count, a price or a percentage held on screen is text
 CONF_MIN = 0.6              # tracks whose best reading is less confident than this are dropped
 FRAGMENT_MAX_SPAN_STEPS = 1  # a track lasting at most this many steps that begins a track starting right after is its reveal
 LINE_JOIN_GAP = 0.6         # boxes on one line closer than this share of the line height are one piece of text
@@ -492,16 +494,18 @@ def _absorb_fragments(tracks: list[dict[str, Any]], step: int) -> list[dict[str,
 
 def drop_reason(track: dict[str, Any], lang: str = "en") -> str | None:
     """Why a finished track is not text worth keeping: nothing read, unconfident, no letters (stray digits
-    on a cut frame), a script other than the video's language (scene signage), or a lone character."""
+    on a cut frame; a number of two or more digits held for several samples, like a year card or a price,
+    is kept, a timecode is not),
+    a script other than the video's language (scene signage), or a lone character."""
     norm = _norm(track["text"])
     if not norm:
         return "empty"
     if track["conf"] < CONF_MIN:
         return "low_confidence"
     letters = [ch for ch in track["text"] if ch.isalpha()]
-    if not letters:
+    if not letters and not (NUMBER_RE.fullmatch(track["text"].strip()) and len(norm) >= 2 and track["samples"] >= 2):
         return "no_letters"
-    if lang.startswith("en") and not any(ch.isascii() for ch in letters):
+    if lang.startswith("en") and letters and not any(ch.isascii() for ch in letters):
         return "other_script"
     if len(norm) == 1 and track["samples"] <= 1:
         return "single_character"

@@ -324,13 +324,13 @@ def test_junk_is_dropped_and_reveal_fragments_join_their_line():
         252: [d("Elisha Otis", 256, 449, 560), d("has a problem", 264, 431, 610), d("", 270, 290, 490, conf=0.0)],
         # one word split in two boxes; scene signage in another script; a stray digit
         372: [d("cal", 225, 281, 484), d("es", 288, 330, 484), d("萬兴镜", 317, 378, 272, conf=0.69), d("118", 397, 454, 779, conf=0.24)],
-        378: [d("cales", 228, 333, 484)],
-        384: [d("cales", 228, 333, 484)],
+        378: [d("cales", 228, 333, 484), d("1852", 200, 340, 300)],
+        384: [d("cales", 228, 333, 484), d("1852", 200, 340, 300)],
     }
     dropped = []
     tracks = textocr.build_tracks(dets, W, H, step=6, n_frames=400, dropped_out=dropped)
     texts = sorted(t["text"] for t in tracks)
-    assert texts == ["Elisha Otis", "cales", "has a problem"], texts
+    assert texts == ["1852", "Elisha Otis", "cales", "has a problem"], texts  # a held year card is text
     by = {t["text"]: t for t in tracks}
     assert by["has a problem"]["frame_first_seen"] == 228 and by["has a problem"].get("absorbed_fragments") == 1
     assert by["cales"]["frame_first_seen"] == 372
