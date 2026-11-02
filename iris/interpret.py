@@ -575,6 +575,7 @@ def run(asset_id: str, provider: str, model: str | None = None, max_usd: float =
                 answer_part = res["json"]
                 state["status"] = "ok"
                 break
+            state["attempts"][-1]["validation_errors"] = errors[:10]  # kept even when the repair succeeds: repairs double the cost
             previous = res["text"]
         if answer_part is not None:
             merged["shots"].extend(answer_part.get("shots", []))
