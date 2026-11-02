@@ -243,3 +243,76 @@ def test_window_schema_uses_only_keywords_the_api_accepts(ws, analyzed):
     text = json.dumps(interpret._window_schema(pk["windows"][0], pk, True))
     for kw in ("maxItems", "maxLength", "minLength", "pattern", "maximum", "minimum"):
         assert f'"{kw}"' not in text, kw
+
+
+def test_window_schema_is_compact_with_no_term_enums(ws, analyzed):
+    interpret.prepare(analyzed, workspace=ws)
+    pk = interpret.load_packet(analyzed, ws)
+    schema = interpret._window_schema(pk["windows"][0], pk, True)
+    text = json.dumps(schema)
+    assert text.count('"enum"') == 1 and len(text) < 2500  # only the window's shot ids
+    assert "composition" in text and "centralbias" not in text
+
+
+def _fake_anthropic(monkeypatch, reject_schema=True):
+    import sys
+    import types
+
+    mod = types.ModuleType("anthropic")
+
+    class APIStatusError(Exception):
+        def __init__(self, message, status_code=400):
+            super().__init__(message)
+            self.message, self.status_code = message, status_code
+
+    class BadRequestError(APIStatusError):
+        pass
+
+    class RateLimitError(APIStatusError):
+        pass
+
+    class APIConnectionError(Exception):
+        pass
+
+    mod.APIStatusError, mod.BadRequestError, mod.RateLimitError, mod.APIConnectionError = APIStatusError, BadRequestError, RateLimitError, APIConnectionError
+    monkeypatch.setitem(sys.modules, "anthropic", mod)
+    calls = []
+
+    class Messages:
+        def create(self, **kw):
+            calls.append(kw)
+            if reject_schema and "format" in kw.get("output_config", {}):
+                raise BadRequestError("The compiled grammar is too large, which would cause performance issues.")
+            usage = types.SimpleNamespace(input_tokens=1000, output_tokens=200, cache_read_input_tokens=0, cache_creation_input_tokens=0)
+            block = types.SimpleNamespace(type="text", text='```json\n{"shots": []}\n```')
+            return types.SimpleNamespace(usage=usage, content=[block], stop_reason="end_turn", model=kw["model"], _request_id="req_fake")
+
+    return types.SimpleNamespace(messages=Messages()), calls
+
+
+def test_schema_rejection_falls_back_to_plain_json_at_no_extra_cost(monkeypatch):
+    client, calls = _fake_anthropic(monkeypatch)
+    res = anthropic_adapter.judge_window(client, "claude-sonnet-5-5", [], [{"type": "text", "text": "window"}], {"type": "object"})
+    assert len(calls) == 2 and "format" in calls[0]["output_config"] and "format" not in calls[1]["output_config"]
+    assert res["structured"] is False and res["json"] == {"shots": []} and res["error"] is None
+    assert any(b.get("text") == anthropic_adapter.PLAIN_JSON_INSTRUCTION for b in calls[1]["messages"][-1]["content"])
+    # any other 400 is not swallowed
+    client2, calls2 = _fake_anthropic(monkeypatch, reject_schema=False)
+    import sys
+
+    def bad(**kw):
+        raise sys.modules["anthropic"].BadRequestError("messages: roles must alternate")
+    client2.messages.create = bad
+    with pytest.raises(anthropic_adapter.AdapterError) as exc:
+        anthropic_adapter.judge_window(client2, "claude-sonnet-5-5", [], [{"type": "text", "text": "w"}], {"type": "object"})
+    assert not exc.value.retryable
+
+
+def test_failed_api_run_is_not_a_judge(ws, analyzed):
+    interpret.prepare(analyzed, "grok", workspace=ws)
+    assert interpret.ingest_answer(analyzed, _grok_answer(ws, analyzed, {}), "grok", workspace=ws)["ok"]
+    pk = interpret.load_packet(analyzed, ws)
+    (ws / "refs" / analyzed / "interpret" / "anthropic.json").write_text(json.dumps(
+        {"judge": "anthropic", "packet_hash": pk["packet_hash"], "shots": [], "video": {"dimensions": {}}, "windows": [{"window_id": "w00", "status": "needs_input"}]}))
+    rep = claims.validate_asset(analyzed, workspace=ws)
+    assert rep["judges_present"] == ["grok"] and rep["agreement"] is None

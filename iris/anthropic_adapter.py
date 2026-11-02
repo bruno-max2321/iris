@@ -105,11 +105,22 @@ def judge_window(client: Any, model: str, system: list[dict[str, Any]], user_con
         messages.append({"role": "assistant", "content": [{"type": "text", "text": previous_json}]})
         messages.append({"role": "user", "content": [{"type": "text", "text": "Your previous answer failed validation:\n- " + "\n- ".join(repair_errors)
                                                       + "\nReturn a corrected answer. Only term ids from the lexicon or 'unclear'; only evidence ids listed in the packet."}]})
+    structured = True
     try:
-        resp = client.messages.create(
-            model=model, max_tokens=MAX_TOKENS, system=system, messages=messages,
-            output_config={"effort": EFFORT, "format": {"type": "json_schema", "schema": schema}},
-        )
+        try:
+            resp = client.messages.create(
+                model=model, max_tokens=MAX_TOKENS, system=system, messages=messages,
+                output_config={"effort": EFFORT, "format": {"type": "json_schema", "schema": schema}},
+            )
+        except anthropic.BadRequestError as exc:
+            if not _schema_rejected(exc):
+                raise
+            # the endpoint refused to compile the schema (a 400 costs nothing): same request without
+            # structured outputs, shape given in words, answer validated locally exactly as before
+            structured = False
+            plain = [dict(m) for m in messages]
+            plain[-1] = {"role": plain[-1]["role"], "content": list(plain[-1]["content"]) + [{"type": "text", "text": PLAIN_JSON_INSTRUCTION}]}
+            resp = client.messages.create(model=model, max_tokens=MAX_TOKENS, system=system, messages=plain, output_config={"effort": EFFORT})
     except anthropic.RateLimitError as exc:
         raise AdapterError(f"rate limited: {exc.message}", retryable=True) from exc
     except anthropic.APIStatusError as exc:
@@ -118,7 +129,7 @@ def judge_window(client: Any, model: str, system: list[dict[str, Any]], user_con
         raise AdapterError(f"connection error: {exc}", retryable=True) from exc
     usage = {k: int(getattr(resp.usage, k, 0) or 0) for k in ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")}
     out = {"json": None, "text": "", "usage": usage, "request_id": getattr(resp, "_request_id", None), "model": resp.model,
-           "stop_reason": resp.stop_reason, "error": None}
+           "stop_reason": resp.stop_reason, "error": None, "structured": structured}
     if resp.stop_reason == "refusal":
         details = getattr(resp, "stop_details", None)
         out["error"] = f"refusal ({getattr(details, 'category', None)}): {getattr(details, 'explanation', '')}"
@@ -129,10 +140,32 @@ def judge_window(client: Any, model: str, system: list[dict[str, Any]], user_con
         out["error"] = "max_tokens reached before the answer was complete"
         return out
     try:
-        out["json"] = json.loads(text)
+        out["json"] = json.loads(_strip_fences(text))
     except json.JSONDecodeError as exc:
         out["error"] = f"answer is not JSON: {exc}"
     return out
+
+
+PLAIN_JSON_INSTRUCTION = (
+    "Return ONLY one JSON object, no prose and no code fences, with this exact shape: "
+    '{"shots": [{"shot_id": "<a shot id of this window>", "dimensions": {"<each requested dimension>": '
+    '{"terms": ["<term id>"], "evidence_ids": ["<evidence id>"], "alternatives": [], "observation": ""}}}]'
+    ', plus "video": {"dimensions": {...}} with the same label shape when video-level dimensions are requested. '
+    'Every shot of the window and every requested dimension must appear; use ["unclear"] with empty evidence_ids to abstain.')
+
+
+def _schema_rejected(exc: Any) -> bool:
+    msg = str(getattr(exc, "message", "") or exc).lower()
+    return any(k in msg for k in ("grammar", "schema", "output_config", "json_schema"))
+
+
+def _strip_fences(text: str) -> str:
+    t = text.strip()
+    if t.startswith("```"):
+        t = t.split("\n", 1)[1] if "\n" in t else t
+        if t.rstrip().endswith("```"):
+            t = t.rstrip()[:-3]
+    return t.strip()
 
 
 def make_client(api_key: str) -> Any:

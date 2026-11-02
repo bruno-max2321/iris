@@ -26,7 +26,7 @@ from typing import Any
 
 from . import anthropic_adapter, decode, evidence, ingest, ledger, paths, registry
 
-METHOD_VERSION = "interpret@0.2.0"
+METHOD_VERSION = "interpret@0.2.1"
 SHOT_DIMENSIONS = ["composition", "light.direction", "light.scheme", "optics", "material.surface",
                    "typography.family_class", "narrative.function", "style.medium"]
 VIDEO_DIMENSIONS = ["narrative.hook_type"]
@@ -412,37 +412,33 @@ def _record_observations(ref_dir: Path, asset_id: str, judge: str, answer: dict[
 
 # ------------------------------------------------------------------------------------------ run (J2)
 def _window_schema(window: dict[str, Any], packet: dict[str, Any], include_video: bool) -> dict[str, Any]:
-    """Structured-output schema for one window: fixed shot ids, fixed dimensions, enum-constrained terms.
-    The API rejects maxItems and maxLength; term counts and observation length are enforced by
-    validate_answer, and a violation goes back to the model in the one repair round."""
-    def dim_props(dims: list[str]) -> dict[str, Any]:
-        props = {}
-        for did in dims:
-            terms = registry.term_ids(did) + ["unclear"]
-            props[did] = {
-                "type": "object", "additionalProperties": False, "required": ["terms", "evidence_ids", "alternatives", "observation"],
-                "properties": {
-                    "terms": {"type": "array", "minItems": 1, "items": {"type": "string", "enum": terms}},
-                    "evidence_ids": {"type": "array", "items": {"type": "string"}},
-                    "alternatives": {"type": "array", "items": {"type": "string", "enum": terms}},
-                    "observation": {"type": "string"},
-                },
-            }
-        return props
-    shot_props = dim_props(packet["shot_dimensions"])
+    """Structured-output schema for one window: fixed shot ids and fixed dimensions, one shared label shape.
+
+    Term ids are deliberately NOT enums: nine dimensions x (terms + alternatives) inlined per shot compiled
+    into a grammar the API refused as too large. The lexicon in the cached system prompt lists the valid
+    ids; validate_answer rejects anything else and the one repair round sends the exact errors back. The
+    API also rejects maxItems / maxLength / pattern, so counts and lengths are enforced the same way."""
+    label = {"type": "object", "additionalProperties": False, "required": ["terms", "evidence_ids", "alternatives", "observation"],
+             "properties": {"terms": {"type": "array", "items": {"type": "string"}},
+                            "evidence_ids": {"type": "array", "items": {"type": "string"}},
+                            "alternatives": {"type": "array", "items": {"type": "string"}},
+                            "observation": {"type": "string"}}}
+
+    def dims_obj(dims: list[str]) -> dict[str, Any]:
+        return {"type": "object", "additionalProperties": False, "required": list(dims), "properties": {d: {"$ref": "#/$defs/label"} for d in dims}}
+
     schema: dict[str, Any] = {
         "type": "object", "additionalProperties": False, "required": ["shots"] + (["video"] if include_video else []),
+        "$defs": {"label": label},
         "properties": {
             "shots": {"type": "array", "items": {
                 "type": "object", "additionalProperties": False, "required": ["shot_id", "dimensions"],
-                "properties": {"shot_id": {"type": "string", "enum": window["shot_ids"]},
-                               "dimensions": {"type": "object", "additionalProperties": False, "required": list(shot_props), "properties": shot_props}}}},
+                "properties": {"shot_id": {"type": "string", "enum": window["shot_ids"]}, "dimensions": dims_obj(packet["shot_dimensions"])}}},
         },
     }
     if include_video:
-        vprops = dim_props(packet["video_dimensions"])
         schema["properties"]["video"] = {"type": "object", "additionalProperties": False, "required": ["dimensions"],
-                                         "properties": {"dimensions": {"type": "object", "additionalProperties": False, "required": list(vprops), "properties": vprops}}}
+                                         "properties": {"dimensions": dims_obj(packet["video_dimensions"])}}
     return schema
 
 
@@ -563,10 +559,10 @@ def run(asset_id: str, provider: str, model: str | None = None, max_usd: float =
             cost = anthropic_adapter.cost_usd(res["model"], res["usage"])
             total_cost += cost
             ledger.record({"asset_id": asset_id, "stage": "interpret", "window_id": w["window_id"], "attempt": attempt, "model": res["model"],
-                           "request_id": res["request_id"], "usage": res["usage"], "cost_usd": cost, "stop_reason": res["stop_reason"],
+                           "request_id": res["request_id"], "usage": res["usage"], "cost_usd": cost, "stop_reason": res["stop_reason"], "structured": res.get("structured"),
                            "system_hash": system_hash, "packet_hash": packet["packet_hash"],
                            "image_hashes": [img["sha256"] for img in w["images"]], "error": res["error"]}, ws)
-            state["attempts"].append({"request_id": res["request_id"], "usage": res["usage"], "cost_usd": cost, "stop_reason": res["stop_reason"], "error": res["error"]})
+            state["attempts"].append({"request_id": res["request_id"], "usage": res["usage"], "cost_usd": cost, "stop_reason": res["stop_reason"], "structured": res.get("structured"), "error": res["error"]})
             if res["error"] or res["json"] is None:
                 errors = [res["error"] or "empty answer"]
                 previous = res["text"] or "{}"
@@ -619,7 +615,10 @@ def load_answers(ref_dir: Path) -> dict[str, dict[str, Any]]:
     for judge in ("grok", "anthropic", "fixture"):
         p = ref_dir / "interpret" / f"{judge}.json"
         if p.exists():
-            out[judge] = _read(p)
+            ans = _read(p)
+            # an API run whose every window failed answered nothing: it is not a judge for fusion or agreement
+            if ans.get("shots") or ((ans.get("video") or {}).get("dimensions")):
+                out[judge] = ans
     return out
 
 
