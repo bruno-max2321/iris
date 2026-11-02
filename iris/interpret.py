@@ -412,7 +412,9 @@ def _record_observations(ref_dir: Path, asset_id: str, judge: str, answer: dict[
 
 # ------------------------------------------------------------------------------------------ run (J2)
 def _window_schema(window: dict[str, Any], packet: dict[str, Any], include_video: bool) -> dict[str, Any]:
-    """Structured-output schema for one window: fixed shot ids, fixed dimensions, enum-constrained terms."""
+    """Structured-output schema for one window: fixed shot ids, fixed dimensions, enum-constrained terms.
+    The API rejects maxItems and maxLength; term counts and observation length are enforced by
+    validate_answer, and a violation goes back to the model in the one repair round."""
     def dim_props(dims: list[str]) -> dict[str, Any]:
         props = {}
         for did in dims:
@@ -420,10 +422,10 @@ def _window_schema(window: dict[str, Any], packet: dict[str, Any], include_video
             props[did] = {
                 "type": "object", "additionalProperties": False, "required": ["terms", "evidence_ids", "alternatives", "observation"],
                 "properties": {
-                    "terms": {"type": "array", "minItems": 1, "maxItems": 5, "items": {"type": "string", "enum": terms}},
+                    "terms": {"type": "array", "minItems": 1, "items": {"type": "string", "enum": terms}},
                     "evidence_ids": {"type": "array", "items": {"type": "string"}},
-                    "alternatives": {"type": "array", "maxItems": 4, "items": {"type": "string", "enum": terms}},
-                    "observation": {"type": "string", "maxLength": 160},
+                    "alternatives": {"type": "array", "items": {"type": "string", "enum": terms}},
+                    "observation": {"type": "string"},
                 },
             }
         return props

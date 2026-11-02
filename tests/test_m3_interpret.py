@@ -235,3 +235,11 @@ def test_budget_reserve_never_passes_cap(ws):
     assert ledger.check_budget("ref_000000000003", 1.5, ws, reserve_usd=0.05)[0]
     ok, reason = ledger.check_budget("ref_000000000003", 1.5, ws, reserve_usd=0.11)
     assert not ok and "reserved" in reason
+
+
+def test_window_schema_uses_only_keywords_the_api_accepts(ws, analyzed):
+    interpret.prepare(analyzed, workspace=ws)
+    pk = interpret.load_packet(analyzed, ws)
+    text = json.dumps(interpret._window_schema(pk["windows"][0], pk, True))
+    for kw in ("maxItems", "maxLength", "minLength", "pattern", "maximum", "minimum"):
+        assert f'"{kw}"' not in text, kw
