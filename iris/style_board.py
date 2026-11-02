@@ -199,7 +199,10 @@ def _summary(bible: dict[str, Any], section: str) -> list[str]:
     def line(label: str, v: Any) -> str | None:
         if v in (None, "", [], {}):
             return None
-        s = _fmt(v) if isinstance(v, (dict, list, bool, float)) else str(v)
+        if isinstance(v, dict) and v and all(isinstance(x, (str, bool)) for x in v.values()):
+            s = ", ".join(f"{k.replace('_', ' ')} {_fmt(x)}" for k, x in v.items())
+        else:
+            s = _fmt(v) if isinstance(v, (dict, list, bool, float)) else str(v)
         return f"{label}: {s}" if s else None
 
     rows: list[str | None] = []
@@ -234,6 +237,13 @@ def _swatches(bible: dict[str, Any]) -> str:
     return "".join(out)
 
 
+def _caption_swatches(bible: dict[str, Any]) -> str:
+    pl = (bible.get("typography") or {}).get("placement") or {}
+    out = [f'<span class="pal"><b>{_e(k.replace("_", " "))}</b> <i class="sw" style="background:{_e(pl[k])}" title="{_e(pl[k])}"></i> {_e(pl[k])}</span>'
+           for k in ("text_color", "box_color") if pl.get(k)]
+    return f'<div class="pals">{"".join(out)}</div>' if out else ""
+
+
 def render(bible: dict[str, Any], picks: dict[str, list[dict[str, Any]]], vis: Path) -> str:
     sid = bible["style_id"]
     ident = (bible.get("identity") or {}).get("one_line")
@@ -256,7 +266,7 @@ def render(bible: dict[str, Any], picks: dict[str, list[dict[str, Any]]], vis: P
         rows = [f'<div class="grid">{"".join(figs)}</div>'] if figs else []
         if not rows:
             continue
-        extra = f'<div class="pals">{_swatches(bible)}</div>' if name == "color" else ""
+        extra = f'<div class="pals">{_swatches(bible)}</div>' if name == "color" else (_caption_swatches(bible) if name == "captions" else "")
         rules = "".join(f"<li>{_e(s)}</li>" for s in summ)
         parts.append(f'<section id="{name}"><h2>{_e(title)}</h2><p class="sub">{_e(blurb)}</p>'
                      + (f'<ul class="rules">{rules}</ul>' if rules else "") + extra + "".join(rows) + "</section>")

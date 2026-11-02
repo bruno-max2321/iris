@@ -87,6 +87,9 @@ def test_caption_one_frame_cue_within_two_frames(ws):
     t = tracks[0]
     assert t["frame_first_seen"] == 60 and t["one_frame_candidate"] is True
     assert t["frame_first_candidate"] <= 60 <= t["frame_last_candidate"]
+    # how it looks: dark letters on a white card over the cream background
+    st = t["style"]
+    assert st["text_hex"] < "#404040" and st["back_hex"] > "#E0E0E0" and st["backing"] == "solid", st
 
 
 def test_regions_and_light_on_colour_blocks(ws):

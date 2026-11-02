@@ -207,6 +207,63 @@ def _blocks(rd) -> list[dict[str, Any]] | None:
     return continuity.caption_blocks(rd["docs"])
 
 
+def _color_clusters(hexes: list[str], max_de: float = 12.0) -> list[list[str]]:
+    """Greedy grouping of colours closer than max_de (CIEDE2000), largest group first."""
+    from .measure import srgb_to_lab
+    from .regions import ciede2000
+
+    groups: list[tuple[np.ndarray, list[str]]] = []
+    for h in sorted(hexes):
+        lab = srgb_to_lab(np.array([[int(h[i:i + 2], 16) for i in (1, 3, 5)]], dtype=np.uint8))[0]
+        for center, members in groups:
+            if ciede2000(center, lab) < max_de:
+                members.append(h)
+                break
+        else:
+            groups.append((lab, [h]))
+    return sorted((m for _, m in groups), key=lambda m: (-len(m), m[0]))
+
+
+def _median_hex(hexes: list[str]) -> str:
+    rgb = np.median(np.array([[int(h[i:i + 2], 16) for i in (1, 3, 5)] for h in hexes], dtype=float), axis=0)
+    return "#" + "".join(f"{int(round(v)):02X}" for v in rgb)
+
+
+def caption_look(caps: list[tuple[dict, dict]], cues: list[tuple[dict, dict]]) -> tuple[dict[str, Any], str | None]:
+    """Text colour, backing box and horizontal alignment of the caption lines (textocr 0.5.0 `style`)."""
+    look: dict[str, Any] = {}
+    note = None
+    styled = [c["style"] for _, c in caps if c.get("style")]
+    if styled:
+        groups = _color_clusters([st["text_hex"] for st in styled])
+        look["text_color"] = _median_hex(groups[0])
+        accents = [g for g in groups[1:] if len(g) >= max(2, 0.15 * len(styled))]
+        if accents:
+            note = "secondary caption colour " + ", ".join(f"{_median_hex(g)} on {round(100 * len(g) / len(styled))}% of lines" for g in accents[:2])
+        solid = [st for st in styled if st.get("backing") == "solid"]
+        look["box"] = "solid" if len(solid) * 2 > len(styled) else "none"
+        if look["box"] == "solid":
+            look["box_color"] = _median_hex(_color_clusters([st["back_hex"] for st in solid])[0])
+    votes: dict[str, int] = {}
+    tracks = {c["track_id"]: c for _, c in caps}
+    for _, b in cues:
+        lines = [tracks[i] for i in b.get("track_ids") or [] if i in tracks]
+        if len(lines) >= 2:
+            lefts = np.array([t["box_norm"][0] for t in lines]); centers = np.array([(t["box_norm"][0] + t["box_norm"][2]) / 2 for t in lines])
+            rights = np.array([t["box_norm"][2] for t in lines])
+            spread = {"left": float(np.ptp(lefts)), "center": float(np.ptp(centers)), "right": float(np.ptp(rights))}
+            a = min(spread, key=spread.get)
+        elif lines:
+            cx = (lines[0]["box_norm"][0] + lines[0]["box_norm"][2]) / 2
+            a = "left" if cx < 0.4 else ("right" if cx > 0.6 else "center")
+        else:
+            continue
+        votes[a] = votes.get(a, 0) + 1
+    if votes:
+        look["x_align"] = max(votes.items(), key=lambda kv: (kv[1], kv[0] == "center"))[0]
+    return look, note
+
+
 def _cap_duration_s(t, fps) -> float:
     return (int(t["frame_last_seen"]) - int(t["frame_first_seen"]) + 1) / fps
 
@@ -670,8 +727,11 @@ def build(asset_ids: list[str], style_id: str, workspace: Path | None = None) ->
         for _, c in caps:
             zones[c["zone"]] = zones.get(c["zone"], 0) + 1
         zone = max(zones.items(), key=lambda kv: (kv[1], kv[0]))[0]
-        ty.measured("placement", {"zone": ZONE_TO_PLACEMENT.get(zone, "center")}, text_refs)
         cues = [(rd, b) for rd in text_refs for b in _blocks(rd) or []]
+        look, look_note = caption_look(caps, cues)
+        ty.measured("placement", {"zone": ZONE_TO_PLACEMENT.get(zone, "center"), **look}, text_refs)
+        if look_note:
+            ty.notes.append(look_note)
         max_lines = max([b["lines"] for _, b in cues], default=1)
         cpl = [len(c.get("text") or "") for _, c in caps]
         ty.measured("lines", {"max": int(min(4, max_lines)), "chars_per_line_p90": int(np.percentile(cpl, 90))}, text_refs)

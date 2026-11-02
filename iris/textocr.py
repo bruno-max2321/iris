@@ -30,7 +30,7 @@ import numpy as np
 
 from . import decode, worker
 
-METHOD_VERSION = "textocr@0.4.2"
+METHOD_VERSION = "textocr@0.5.0"
 OCR_LONG_SIDE = int(os.environ.get("IRIS_OCR_LONG_SIDE", "960"))
 ECONOMY_STEP = 6
 MISS_FRAMES_FACTOR = 2      # a track survives this many sampling steps without a matching detection
@@ -638,6 +638,73 @@ def repair_with_transcript(text_doc: dict[str, Any], audio_doc: dict[str, Any] |
     return text_doc["transcript_repair"]
 
 
+# ----------------------------------------------------------------------------------------------- caption look
+STYLE_MIN_TEXT_SHARE = 0.04   # the text class must cover at least this share of its box
+BACKING_MAX_STD_L = 10.0      # a backing box is flat: robust lightness spread of the non-text pixels inside the box
+BACKING_MIN_DE = 6.0          # and differs from the picture around it (a white card on cream is about 7)
+
+
+def _hex(rgb: np.ndarray) -> str:
+    r, g, b = (int(round(float(x))) for x in np.clip(rgb, 0, 255))
+    return f"#{r:02X}{g:02X}{b:02X}"
+
+
+def _track_style(track: dict[str, Any], files: dict[int, Path]) -> dict[str, Any] | None:
+    """How a caption line looks, from the last sampled frame where it is fully shown: text colour, the colour
+    behind it, and whether that is a flat backing box (one colour inside the box, another around it) or the
+    picture. Letters and background are split by lightness (Otsu); the letters are the smaller class."""
+    from PIL import Image
+
+    from .measure import srgb_to_lab
+    from .regions import ciede2000
+
+    fid = track.get("frame_full_text_seen") if track.get("frame_full_text_seen") in files else track["frame_last_seen"]
+    if fid not in files:
+        return None
+    try:
+        img = np.asarray(Image.open(files[fid]).convert("RGB"))
+    except OSError:
+        return None
+    H, W = img.shape[:2]
+    x0, y0, x1, y1 = track["box_norm"]
+    bx0, by0, bx1, by1 = int(x0 * W), int(y0 * H), int(np.ceil(x1 * W)), int(np.ceil(y1 * H))
+    h = max(1, by1 - by0)
+    crop = img[max(0, by0):min(H, by1), max(0, bx0):min(W, bx1)].reshape(-1, 3).astype(np.float32)
+    if crop.shape[0] < 30:
+        return None
+    L = srgb_to_lab(crop.astype(np.uint8))[:, 0]
+    hist, edges = np.histogram(L, bins=64, range=(0, 100))
+    w = np.cumsum(hist); m = np.cumsum(hist * (edges[:-1] + edges[1:]) / 2)
+    tot_w, tot_m = w[-1], m[-1]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        between = (tot_m * w / tot_w - m) ** 2 / (w * (tot_w - w))
+    thr = edges[1:][int(np.nanargmax(np.nan_to_num(between)))]
+    dark = L <= thr
+    text = dark if dark.mean() < 0.5 else ~dark
+    if not STYLE_MIN_TEXT_SHARE <= text.mean() <= 0.5:
+        return None
+    text_rgb, back_rgb = np.median(crop[text], axis=0), np.median(crop[~text], axis=0)
+    back_L = L[~text]
+    back_L_std = float(1.4826 * np.median(np.abs(back_L - np.median(back_L))))  # robust: letter edges are anti-aliased
+    # the picture around the box: a ring one line height wide outside a margin of half a line height
+    pad, ring = int(0.5 * h), int(1.5 * h)
+    oy0, oy1, ox0, ox1 = max(0, by0 - ring), min(H, by1 + ring), max(0, bx0 - ring), min(W, bx1 + ring)
+    mask = np.ones((oy1 - oy0, ox1 - ox0), dtype=bool)
+    mask[max(0, by0 - pad - oy0):max(0, by1 + pad - oy0), max(0, bx0 - pad - ox0):max(0, bx1 + pad - ox0)] = False
+    around = img[oy0:oy1, ox0:ox1][mask].astype(np.float32)
+    lab = srgb_to_lab(np.array([text_rgb, back_rgb], dtype=np.uint8))
+    out: dict[str, Any] = {"frame": int(fid), "text_hex": _hex(text_rgb), "back_hex": _hex(back_rgb),
+                           "contrast_dL": round(float(abs(lab[0, 0] - lab[1, 0])), 1), "backing": "none"}
+    if around.shape[0] >= 30:
+        around_rgb = np.median(around, axis=0)
+        de = ciede2000(lab[1], srgb_to_lab(np.array([around_rgb], dtype=np.uint8))[0])
+        out["around_hex"] = _hex(around_rgb)
+        out["back_vs_around_de"] = round(float(de), 1)
+        if back_L_std <= BACKING_MAX_STD_L and de >= BACKING_MIN_DE:
+            out["backing"] = "solid"
+    return out
+
+
 # ----------------------------------------------------------------------------------------------- stage
 def run(src: Path, ref_dir: Path, shots: list[dict[str, Any]], n_frames: int, display_w: int, display_h: int,
         index_frames: list[dict[str, Any]], mode: str = "economy") -> dict[str, Any]:
@@ -655,6 +722,7 @@ def run(src: Path, ref_dir: Path, shots: list[dict[str, Any]], n_frames: int, di
                                                             dedup=os.environ.get("IRIS_OCR_DEDUP", "1") == "1")
         timing["extract_s"] = round(time.time() - t0, 3)
         if len(files) != len(ids):
+            shutil.rmtree(tmp, ignore_errors=True)
             return {**base, "status": "failed", "backend": backend, "sampled_frames": len(ids), "tracks": [],
                     "reason": f"frame extraction returned {len(files)} of {len(ids)} frames: {extract_err or 'unknown'}"}
         key_ids = [i for i in ids if i not in reuse_of]
@@ -669,8 +737,9 @@ def run(src: Path, ref_dir: Path, shots: list[dict[str, Any]], n_frames: int, di
                 res["detections"][fid] = tess.detect(files[fid])
                 res["timings"].append(time.time() - t1)
         timing["ocr_s"] = round(time.time() - t0, 3)
-    finally:
+    except BaseException:
         shutil.rmtree(tmp, ignore_errors=True)
+        raise
 
     detections: dict[int, list[dict[str, Any]]] = {}
     for fid in ids:
@@ -680,7 +749,16 @@ def run(src: Path, ref_dir: Path, shots: list[dict[str, Any]], n_frames: int, di
     img_w, img_h = size or (1, 1)
     dropped: list[dict[str, Any]] = []
     lang = os.environ.get("IRIS_OCR_LANG", "en")
-    tracks = build_tracks(detections, img_w, img_h, step, n_frames, lang=lang, dropped_out=dropped) if detections else []
+    try:
+        tracks = build_tracks(detections, img_w, img_h, step, n_frames, lang=lang, dropped_out=dropped) if detections else []
+        t0 = time.time()
+        for tr in tracks:
+            st = _track_style(tr, files)
+            if st:
+                tr["style"] = st
+        timing["style_s"] = round(time.time() - t0, 3)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
     pts = {f["frame_id"]: f.get("pts_time") for f in index_frames}
     for tr in tracks:
         tr["t_first_seen"] = pts.get(tr["frame_first_seen"])

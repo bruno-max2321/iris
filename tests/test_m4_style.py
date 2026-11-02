@@ -226,6 +226,8 @@ def test_caption_cadence_counts_blocks_not_lines(ws):
                 "frame_first_seen": f0, "frame_last_seen": f1, "class": "subtitle_candidate", "animation": "build_on" if i == 0 else "static_or_cut",
                 "reveal_steps": 2 if i == 0 else 0, "block_id": "b0000" if i < 2 else "b0001"}
     tracks = [tr(0, "He climbed onto a", 0, 54, 0.70), tr(1, "platform,", 24, 54, 0.75), tr(2, "and waited.", 60, 110, 0.72)]
+    for t_, hexes in zip(tracks, [("#FFFFFF", "#101010"), ("#FAFAFA", "#121212"), ("#FFD400", "#111111")]):
+        t_["style"] = {"text_hex": hexes[0], "back_hex": hexes[1], "backing": "solid"}
     blocks = [{"block_id": "b0000", "track_ids": ["t0000", "t0001"], "text": "He climbed onto a platform,", "lines": 2, "words": 5,
                "frame_first_seen": 0, "frame_last_seen": 54, "zone": "lower_third", "caption_like": True},
               {"block_id": "b0001", "track_ids": ["t0002"], "text": "and waited.", "lines": 1, "words": 2,
@@ -238,6 +240,8 @@ def test_caption_cadence_counts_blocks_not_lines(ws):
     t = _bible(ws, "caption-v1")["typography"]
     assert rep["ok"] and t["lines"]["max"] == 2 and t["placement"]["zone"] == "lower_third" and t["case"] == "sentence"
     assert t["caption_cadence"]["words_per_cue"]["typical"] == 3.5
+    assert t["placement"]["text_color"] == "#FCFCFC" and t["placement"]["box"] == "solid" and t["placement"]["x_align"] == "center"
+    assert t["placement"]["box_color"] == "#111111"
     assert t["emphasis"] == {"word_reveal": round(1 / 3, 3)} and "cr_caption_zone" in rep["rules"]
 
 
