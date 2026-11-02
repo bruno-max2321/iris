@@ -27,10 +27,16 @@ def judged(ws):
     fx["judge"] = "grok"
     fx["shots"][0]["dimensions"]["style.medium"] = {"terms": ["motion_graphics"], "evidence_ids": ["shot:s001"]}
     fx["shots"][0]["dimensions"]["optics"] = {"terms": ["deep_focus"], "evidence_ids": ["shot:s001"]}
+    fx["shots"][0]["dimensions"]["light.direction"] = {"terms": ["side_light"], "evidence_ids": ["shot:s001"]}
     p = ws / "grok.json"
     p.write_text(json.dumps(fx))
     assert interpret.ingest_answer(asset_id, p, "grok", workspace=ws)["ok"]
-    interpret.run(asset_id, "fixture", workspace=ws)  # photorealistic vs motion_graphics; unclear on optics
+    second = interpret._fixture_answer(interpret.load_packet(asset_id, ws), None)
+    second["shots"][0]["dimensions"]["light.direction"] = {"terms": ["side_light"], "evidence_ids": ["shot:s001"]}
+    f2 = ws / "second.json"
+    f2.write_text(json.dumps(second))
+    # photorealistic vs motion_graphics; both say side light; unclear on optics
+    interpret.run(asset_id, "fixture", fixture_file=f2, workspace=ws)
     assert claims.validate_asset(asset_id, workspace=ws)["ok"]
     return asset_id
 
@@ -94,3 +100,51 @@ def test_dispute_that_cannot_change_the_summary_is_not_asked(monkeypatch):
     assert ("question", "light.direction") not in kinds and ("statement", "light.direction") in kinds
     assert ("question", "style.medium") in kinds
     assert {x["dimension"] for x in sheet["not_asked"]} == {"light.direction", "optics"}
+
+
+def test_both_only_where_the_dimension_takes_several_terms(ws, judged):
+    sheet = review_sheet.build_items(judged, workspace=ws)
+    q = next(i for i in sheet["items"] if i["kind"] == "question")
+    assert q["dimension"] == "style.medium" and q["allow_both"] is False  # single-term dimension
+    assert set(q["a_by"] + q["b_by"]) == {"Grok", "Fixture"}
+    codes = "".join("z" if i["kind"] == "question" else "s" for i in sheet["items"])
+    with pytest.raises(review_sheet.SheetError, match="takes a, b, x or s"):
+        review_sheet.apply_answer(f"iris-review {judged} {sheet['sheet_id']} {codes}", "bruno", workspace=ws)
+    html = Path(review_sheet.make_sheet(judged, workspace=ws)["html"]).read_text()
+    assert "Fixture and Grok looked at the same shot and gave different answers" in html and "chose this" in html and 'data-v="z"' not in html
+
+
+def test_both_accepts_both_terms_in_a_multi_term_dimension(monkeypatch):
+    rows = [_c("c_000001", "composition", "symmetry", "s001")]
+    for i in range(2, 5):
+        rows += [dict(_c(f"c_0000{i}0", "composition", "centralbias", f"s00{i}", "needs_review", group=f"s00{i}|composition"), judges={"grok": "centralbias", "anthropic": "leadinglines"}),
+                 dict(_c(f"c_0000{i}1", "composition", "leadinglines", f"s00{i}", "needs_review", group=f"s00{i}|composition"), judges={"grok": "centralbias", "anthropic": "leadinglines"})]
+    monkeypatch.setattr(review_sheet.claims_mod, "list_claims", lambda asset_id, workspace=None: rows)
+    applied = []
+    monkeypatch.setattr(review_sheet.claims_mod, "apply_decisions", lambda d, author, workspace=None: applied.extend(d) or {"ok": True, "recorded": [], "errors": []})
+    sheet = review_sheet.build_items("ref_x")
+    q = next(i for i in sheet["items"] if i["kind"] == "question")
+    assert q["allow_both"] and q["a_by"] == ["Grok"] and q["b_by"] == ["Claude"]
+    codes = "".join("z" if i["kind"] == "question" else "s" for i in sheet["items"])
+    res = review_sheet.apply_answer(f"iris-review ref_x {sheet['sheet_id']} {codes}", "bruno")
+    assert res["answers"]["both"] == 1 and len(applied) == 6 and all(d["status"] == "accepted" for d in applied)
+
+
+def test_judge_agreement_is_accepted_without_asking(ws, judged):
+    agreed = [c["claim_id"] for c in claims.list_claims(judged, workspace=ws) if review_sheet.judges_agree(c)]
+    assert agreed
+    res = review_sheet.make_sheet(judged, workspace=ws)
+    assert res["ok"] and res["auto_accepted"] == len(agreed)
+    rows = {c["claim_id"]: c for c in claims.list_claims(judged, workspace=ws)}
+    assert all(rows[c]["review_status"] == "accepted" for c in agreed)
+    sheet = json.loads((ws / "refs" / judged / "review" / "sheet.json").read_text())
+    assert all(i["source"] == "code" for i in sheet["items"] if i["kind"] == "statement")  # nothing the judges agreed on is asked again
+    assert sheet["settled"] and "Already accepted" in Path(res["html"]).read_text()
+    from iris.store import Store
+    st = Store(ws)
+    try:
+        authors = {e["author"] for e in st.review_events(agreed[0])}
+    finally:
+        st.close()
+    assert authors == {review_sheet.POLICY_AUTHOR}
+    assert review_sheet.make_sheet(judged, workspace=ws)["auto_accepted"] == 0  # idempotent
