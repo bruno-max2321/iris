@@ -1,0 +1,91 @@
+{
+  "schema_version": "1.0.0",
+  "method_version": "check@0.1.0",
+  "check_id": "chk_0123456789ab",
+  "generated_at": "2026-11-01T00:00:00+00:00",
+  "clip": {
+    "asset_id": "ref_00000000c11p",
+    "source": "clip.mp4",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "duration_s": 12.0
+  },
+  "style": {
+    "style_id": "example-editorial-v1",
+    "status": "draft",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "status": "fail",
+  "counts": {
+    "pass": 2,
+    "warn": 0,
+    "fail": 1,
+    "not_applicable": 2
+  },
+  "coverage": {
+    "decode": "full",
+    "measurement": "full",
+    "stages": {
+      "shots": "ok",
+      "text": "ok",
+      "audio": "absent"
+    }
+  },
+  "rules": [
+    {
+      "rule_id": "cr_background_delta_e",
+      "scope": "every_shot",
+      "region": "background",
+      "metric": "color.delta_e2000_vs_style",
+      "tolerance": "<= 4.5",
+      "severity": "fail",
+      "status": "fail",
+      "units_evaluated": 4,
+      "violations_total": 1,
+      "violations": [
+        {
+          "value": 12.4,
+          "shot_id": "s003",
+          "frame": 141,
+          "t": "4.20-5.10"
+        }
+      ]
+    },
+    {
+      "rule_id": "cr_shot_length",
+      "scope": "every_shot",
+      "metric": "rhythm.shot_length_s",
+      "tolerance": "<= 3.9",
+      "severity": "warn",
+      "status": "pass",
+      "units_evaluated": 4,
+      "violations_total": 0,
+      "violations": []
+    },
+    {
+      "rule_id": "cr_loudness",
+      "scope": "audio",
+      "metric": "audio.integrated_lufs",
+      "tolerance": "within [-15.6, -12.6]",
+      "severity": "fail",
+      "status": "not_applicable",
+      "reason": "the clip has none of the data this rule needs",
+      "units_evaluated": 0,
+      "violations": []
+    }
+  ],
+  "never": [
+    {
+      "block": "camera",
+      "term": "camera.movement.whip_pan",
+      "status": "pass",
+      "units_evaluated": 4,
+      "violations": []
+    },
+    {
+      "block": "never_global",
+      "term": "montage.transition.wipe",
+      "status": "not_applicable",
+      "reason": "the code does not estimate montage.transition on this clip; a judge is needed"
+    }
+  ]
+}

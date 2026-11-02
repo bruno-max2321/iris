@@ -58,7 +58,7 @@ class _Tesseract:
         self.lang = os.environ.get("IRIS_OCR_LANG_TESS", "eng")
 
     def detect(self, image_path: Path) -> list[dict[str, Any]]:
-        p = subprocess.run([self.exe, str(image_path), "-", "--psm", "11", "-l", self.lang, "tsv"], capture_output=True, text=True, timeout=120)
+        p = subprocess.run([self.exe, str(image_path), "-", "--psm", "11", "-l", self.lang, "tsv"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
         if p.returncode != 0:
             return []
         rows = list(csv.DictReader(io.StringIO(p.stdout), delimiter="\t"))

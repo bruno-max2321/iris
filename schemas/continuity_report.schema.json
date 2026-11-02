@@ -1,0 +1,319 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iris.calorico.local/schemas/continuity_report.schema.json",
+  "title": "Iris continuity report",
+  "description": "Output of `iris check <clip> --against <style_id>`: one result per continuity rule and per never term. not_applicable means the clip lacks the data the rule needs; a rule never passes by absence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "method_version",
+    "check_id",
+    "generated_at",
+    "clip",
+    "style",
+    "status",
+    "counts",
+    "coverage",
+    "rules",
+    "never"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "method_version": {
+      "type": "string"
+    },
+    "check_id": {
+      "type": "string",
+      "pattern": "^chk_[a-f0-9]{12}$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "clip": {
+      "type": "object",
+      "required": [
+        "asset_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "type": "string",
+          "pattern": "^ref_[a-z0-9]{4,}$"
+        },
+        "source": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "duration_s": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "style": {
+      "type": "object",
+      "required": [
+        "style_id",
+        "status",
+        "sha256"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "style_id": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "approved",
+            "deprecated"
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "status": {
+      "enum": [
+        "pass",
+        "warn",
+        "fail",
+        "not_applicable"
+      ]
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pass",
+        "warn",
+        "fail",
+        "not_applicable"
+      ],
+      "properties": {
+        "pass": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "not_applicable": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "decode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "measurement": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stages": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rule_id",
+          "metric",
+          "tolerance",
+          "status",
+          "units_evaluated",
+          "violations"
+        ],
+        "properties": {
+          "rule_id": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "metric": {
+            "type": "string"
+          },
+          "tolerance": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "fail",
+              "warn"
+            ]
+          },
+          "status": {
+            "enum": [
+              "pass",
+              "warn",
+              "fail",
+              "not_applicable"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "units_evaluated": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "violations_total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "violations": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "required": [
+                "frame",
+                "t"
+              ],
+              "properties": {
+                "value": {},
+                "shot_id": {
+                  "type": "string"
+                },
+                "track_id": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "frame": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "t": {
+                  "type": "string"
+                },
+                "claim_kind": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      }
+    },
+    "never": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "block",
+          "term",
+          "status"
+        ],
+        "properties": {
+          "block": {
+            "type": "string"
+          },
+          "term": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pass",
+              "warn",
+              "fail",
+              "not_applicable"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "units_evaluated": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "violations": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "required": [
+                "frame",
+                "t"
+              ],
+              "properties": {
+                "value": {},
+                "shot_id": {
+                  "type": "string"
+                },
+                "track_id": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "frame": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "t": {
+                  "type": "string"
+                },
+                "claim_kind": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

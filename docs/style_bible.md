@@ -1,6 +1,17 @@
 # Iris Style Bible — the Phase 1 output contract
 
-Status: specification, 2026-11-01. Nothing here has been produced from a real video yet.
+Status: implemented in milestone 4 (schema 1.1.0, `iris style build|lint|approve`, `iris check`). Not yet built from a real reference.
+
+## Schema 1.1.0 (what changed from 1.0.0 and why)
+
+Schema 1.0.0 required fields that no stage measures and no reviewed claim supplies (shot size, camera angle and support, typography weight, the visual concept, environment settings, and others), while its own description allowed values to be absent. A build that had to fill them would have to invent them. In 1.1.0:
+
+- Each block requires only `meta` (and `never` for visual blocks). A field without evidence is left out and named in `meta.missing`, so a consumer never mistakes absence for a default.
+- `meta.provisional` marks blocks backed by fewer than 3 references; their ranges are widened by `provenance.default_tolerances`.
+- Prose comes from a reviewer's brief (`styles/<style_id>/brief.json`, `schemas/style_brief.schema.json`). Prose may not contain digits; numbers come from measurement only. Blocks fed by the brief stay `pending` until the brief names `reviewed_by`.
+- `color.regions` gains `subject` and `frame` (the regions the code actually segments); continuity rules gain `source` (`derived` or `brief`).
+- `provenance` gains `inputs_sha256` (per reference: the stage outputs and decided claims the build read) and `brief_sha256`.
+- `exemplars` requires only `color_master`; the others appear when their evidence exists.
 
 ## Decision
 
@@ -57,7 +68,13 @@ Plus `never_global`, `exemplars`, `provenance` and `token_budget`.
 9. **Neutral.** No brand, product, platform or marketing angle is hardcoded. Any brand rules are applied downstream on top of the bible, not inside it.
 10. **Literal downstream.** Downstream consumers treat `continuity_rules` and `never_*` as law, distributions and ranges as the space they may move in, and `concept` / `narrative` as the brief.
 
-## How it is built
+## How it is built (as implemented)
+
+`iris style build --from ref_a,ref_b,ref_c --style-id <id>` reads each reference's stage outputs and its claims. Measured fields (durations, cut rates, shot lengths, loudness, per-region Lab, contrast, caption size, zone, lines, cadence, hold) come straight from the measurements. Estimated and interpreted terms come only from claims a human accepted or corrected, and a term is carried only when it appears in at least 2 of 3 references (all of them with fewer than 3). Continuity rules are derived from the tightest measured ranges: the colour rule anchors on the background when it covers at least 20 % of the frame (otherwise the whole frame) and only exists when the references' ΔE spread is tight (p90 ≤ 8); its tolerance is never tighter than 4 (6 with fewer than 3 references) and never looser than 10. The build reports a membership warning when a reference falls outside the others' ranges in more than 30 % of the measured facts. Budget: tokens are measured as compact JSON characters / 3.2; over the limit, palettes, region shares, notes, rule rationales and secondary exemplars are dropped in that order, never rhythm, rules or prohibitions. The bible is always written as `draft`; `iris style approve <id> --author <name>` promotes it only with ≥ 3 references and no provisional or pending block. `iris style lint` re-checks schema, vocabulary, distribution keys, rules, exemplars, budget, the Markdown round trip and the stored hash.
+
+`iris check <clip> --against <id>` ingests and analyses the clip without any model call and writes `checks/<check_id>/continuity_report.json` (`schemas/continuity_report.schema.json`). Rule metrics: `color.delta_e2000_vs_style`, `color.L_mean`, `light.side`, `light.key`, `rhythm.shot_length_s`, `montage.cuts_per_s`, `typography.zone`, `typography.size_rel_frame_h`, `audio.integrated_lufs`, `audio.true_peak_dbtp`. A rule whose data the clip lacks is `not_applicable`, never `pass`. `never` terms are checked against the code's own estimates (camera movement, light key, side and quality, pacing, caption cadence); terms of other dimensions are `not_applicable` because they need a judge.
+
+## Original build outline (specification)
 
 ```
 iris style build --from ref_a,ref_b,ref_c --style-id <id>

@@ -62,20 +62,23 @@ Input: the user's decisions in chat, e.g. "accept c_000012-c_000040; reject c_00
 2. Run `iris review --batch <file> --author <user name>` and echo back exactly what was recorded (`recorded` and `errors` from the CLI output), not your reading of the message. Decisions are append-only; a later decision supersedes an earlier one without deleting it.
 
 ### Build style
-Input: a style id and the asset ids to aggregate.
-1. `iris style build --from <ids> --style-id <id> --json`.
-2. Report status (draft or approved), any membership warnings, the token count, and attach style_bible.md.
+Input: a style id (lowercase words joined by hyphens, ending in a version, e.g. `kinetic-editorial-v1`) and the asset ids to aggregate.
+1. `iris style build --from <id1>,<id2>,<id3> --style-id <style_id> --json`. Only claims the user accepted or corrected are used; review comes first.
+2. If the output says `"brief": "absent"`, tell the user which blocks are pending and that the prose (identity, concept, settings, asset families, voice and CTA treatment, prohibitions) comes from a brief they write or approve. You may draft `styles/<style_id>/brief.json` from the template the output names, in the exact shape of that template, with no digits in prose fields; never set `reviewed_by` yourself. Only the user sets it after reading the draft. Then run the build again.
+3. `iris style lint <style_id> --json`.
+4. Report: status, n_refs, provisional, tokens of 3500, the continuity rule ids, `pending_blocks`, `membership_warnings` (and which facts fell outside), `trimmed_for_budget` if present, lint issues if any. Attach style_bible.md.
+5. `iris style approve <style_id> --author <user name>` only when the user tells you to approve. It refuses with fewer than 3 references, provisional blocks or pending blocks; report its `blockers` exactly.
 
 ### Check clip
-Input: a clip path and a style id.
-1. `iris check <clip> --against <style_id> --json`.
-2. Report pass / warn / fail / not_applicable per rule with frame ids and times.
+Input: a clip path or URL and a style id.
+1. `iris check <clip> --against <style_id> --json`. It ingests and analyses the clip (a few minutes for a 30 s clip) and calls no model.
+2. Report the overall status and counts first, then every rule and never term with status fail or warn: rule id, metric, tolerance, the violating values with shot or track, frame and time. List not_applicable items in one line with their reason. A not_applicable is not a pass; never describe it as one.
 
 ## How to answer
 Short. Lead with the result and the exit code when a command fails. Attach files the CLI produced instead of describing them. When you are not sure, say what the CLI reported and stop; do not fill gaps with assumptions.
 
 ## Current status
-Milestone 3: `version`, `doctor`, `lexicon`, `selftest`, `ingest`, `analyze` (all measurement stages), `jobs`, `interpret prepare|ingest|run`, `validate`, `claims list`, `review` and `ledger summary` work. `style` and `check` arrive in milestone 4 and exit with code 9. The Analyze reference procedure now runs to step 7; step 5 (`interpret run --provider anthropic`) spends API money and needs the user's explicit authorization for that reference and the key at secrets/anthropic.key (mode 600). Before analysing real references, install the extras once: `uv pip install -e ".[media,text,audio,people,interpret]"`. The only OpenCV allowed in the venv is `opencv-contrib-python` (pinned by paddlex and mediapipe); if `opencv.single_variant` fails, run `uv pip uninstall opencv-python opencv-python-headless` and never uninstall `opencv-contrib-python`. Keep the repository up to date with `git pull` followed by `uv pip install -e ".[dev]"`; after a pull that changes stage code, `iris analyze <asset_id> --force` recomputes derived stages (`--stages text,audio` for a subset).
+Milestone 4: `version`, `doctor`, `lexicon`, `selftest`, `ingest`, `analyze` (all measurement stages), `jobs`, `interpret prepare|ingest|estimate|run`, `validate`, `claims list`, `review`, `ledger summary`, `style build|lint|approve` and `check` work. `query`, `report` and `gc` arrive in milestone 5 and exit with code 9. The Analyze reference procedure now runs to step 7; step 5 (`interpret run --provider anthropic`) spends API money and needs the user's explicit authorization for that reference and the key at secrets/anthropic.key (mode 600). Before analysing real references, install the extras once: `uv pip install -e ".[media,text,audio,people,interpret]"`. The only OpenCV allowed in the venv is `opencv-contrib-python` (pinned by paddlex and mediapipe); if `opencv.single_variant` fails, run `uv pip uninstall opencv-python opencv-python-headless` and never uninstall `opencv-contrib-python`. Keep the repository up to date with `git pull` followed by `uv pip install -e ".[dev]"`; after a pull that changes stage code, `iris analyze <asset_id> --force` recomputes derived stages (`--stages text,audio` for a subset).
 ```
 
 ---

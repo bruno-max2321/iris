@@ -1,0 +1,407 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iris.calorico.local/schemas/style_brief.schema.json",
+  "title": "Iris style brief",
+  "description": "The reviewer's input to `iris style build`: prose the measurement cannot produce, terms judged by a person, prohibitions and extra continuity rules. Prose fields may not contain digits: numbers come from measurement only. Blocks fed by the brief stay `pending` until `reviewed_by` is set.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "style_id"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "style_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*-v[0-9]+$"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "one_line": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240,
+          "pattern": "^[^0-9]*$"
+        },
+        "tone_words": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 6,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24,
+            "pattern": "^[^0-9]*$"
+          }
+        },
+        "iris_operations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "dominant"
+          ],
+          "properties": {
+            "dominant": {
+              "enum": [
+                "differentiate",
+                "group",
+                "sequence",
+                "infer"
+              ]
+            },
+            "secondary": {
+              "enum": [
+                "differentiate",
+                "group",
+                "sequence",
+                "infer"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "concept": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "visual_concept": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400,
+          "pattern": "^[^0-9]*$"
+        },
+        "metaphor_language": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[^0-9]*$"
+          }
+        },
+        "subject_treatment": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "person": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160,
+              "pattern": "^[^0-9]*$"
+            },
+            "food": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160,
+              "pattern": "^[^0-9]*$"
+            },
+            "product": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160,
+              "pattern": "^[^0-9]*$"
+            },
+            "interface": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160,
+              "pattern": "^[^0-9]*$"
+            },
+            "graphics": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160,
+              "pattern": "^[^0-9]*$"
+            }
+          }
+        },
+        "viewer_promise": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[^0-9]*$"
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "settings": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[^0-9]*$"
+          }
+        },
+        "props_recurring": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "pattern": "^[^0-9]*$"
+          }
+        },
+        "clutter_level": {
+          "enum": [
+            "minimal",
+            "moderate",
+            "dense"
+          ]
+        }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "families": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "family_id",
+              "role",
+              "visual_spec"
+            ],
+            "properties": {
+              "family_id": {
+                "type": "string",
+                "pattern": "^[a-z_]+$"
+              },
+              "role": {
+                "enum": [
+                  "hero",
+                  "detail",
+                  "broll",
+                  "insert",
+                  "transition",
+                  "graphic",
+                  "interface",
+                  "person"
+                ]
+              },
+              "visual_spec": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300,
+                "pattern": "^[^0-9]*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "color": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "grade_family": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+        },
+        "temperature": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+        }
+      }
+    },
+    "sound": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "voice_treatment": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "pattern": "^[^0-9]*$"
+        }
+      }
+    },
+    "narrative": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cta_treatment": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^[^0-9]*$"
+        }
+      }
+    },
+    "never": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "camera": {
+          "type": "array",
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+          }
+        },
+        "light": {
+          "type": "array",
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+          }
+        },
+        "color": {
+          "type": "array",
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+          }
+        },
+        "composition": {
+          "type": "array",
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+          }
+        },
+        "environment": {
+          "type": "array",
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+          }
+        },
+        "typography": {
+          "type": "array",
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+          }
+        },
+        "animation": {
+          "type": "array",
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+          }
+        },
+        "montage": {
+          "type": "array",
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+          }
+        },
+        "sound": {
+          "type": "array",
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+          }
+        }
+      }
+    },
+    "never_global": {
+      "type": "array",
+      "maxItems": 10,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+      }
+    },
+    "continuity_rules": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rule_id",
+          "scope",
+          "metric",
+          "tolerance",
+          "severity"
+        ],
+        "properties": {
+          "rule_id": {
+            "type": "string",
+            "pattern": "^cr_[a-z0-9_]+$"
+          },
+          "scope": {
+            "enum": [
+              "every_shot",
+              "adjacent_shots",
+              "sequence",
+              "text_layers",
+              "audio"
+            ]
+          },
+          "region": {
+            "enum": [
+              "background",
+              "subject",
+              "skin",
+              "graphics",
+              "frame"
+            ]
+          },
+          "metric": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "tolerance": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "severity": {
+            "enum": [
+              "fail",
+              "warn"
+            ]
+          },
+          "rationale": {
+            "type": "string",
+            "maxLength": 160
+          }
+        }
+      }
+    }
+  }
+}

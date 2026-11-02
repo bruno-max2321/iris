@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0.0",
+  "style_id": "example-editorial-v1",
+  "reviewed_by": "reviewer name",
+  "identity": {
+    "one_line": "Calm editorial close-ups on a warm off-white canvas, captions revealed word by word.",
+    "tone_words": [
+      "calm",
+      "precise",
+      "warm"
+    ],
+    "iris_operations": {
+      "dominant": "differentiate",
+      "secondary": "sequence"
+    }
+  },
+  "concept": {
+    "visual_concept": "Each claim is shown as one isolated object on a quiet field, then named by a caption.",
+    "metaphor_language": [
+      "the caption names what the image shows"
+    ],
+    "subject_treatment": {
+      "food": "single hero item, centred, soft side light"
+    },
+    "viewer_promise": "A clear answer to one question, shown before it is said."
+  },
+  "environment": {
+    "settings": [
+      "seamless off-white studio"
+    ],
+    "props_recurring": [
+      "ceramic plate"
+    ],
+    "clutter_level": "minimal"
+  },
+  "assets": {
+    "families": [
+      {
+        "family_id": "hero_food",
+        "role": "hero",
+        "visual_spec": "centred close-up, soft side light, slow push"
+      }
+    ]
+  },
+  "color": {
+    "grade_family": "color.grade_family.naturalistic_clean"
+  },
+  "sound": {
+    "voice_treatment": "close, dry voiceover"
+  },
+  "narrative": {
+    "cta_treatment": "spoken, never on screen"
+  },
+  "never": {
+    "camera": [
+      "camera.movement.whip_pan"
+    ],
+    "light": [
+      "light.key.low_key"
+    ]
+  },
+  "never_global": [
+    "montage.transition.wipe"
+  ],
+  "continuity_rules": [
+    {
+      "rule_id": "cr_peak_ceiling",
+      "scope": "audio",
+      "metric": "audio.true_peak_dbtp",
+      "tolerance": "<= -1",
+      "severity": "warn",
+      "rationale": "house delivery ceiling"
+    }
+  ]
+}

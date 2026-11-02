@@ -269,7 +269,7 @@ class Store:
 
     def review_events(self, claim_id: str | None = None) -> list[dict[str, Any]]:
         if claim_id:
-            rows = self.conn.execute("SELECT * FROM review_events WHERE claim_id=? ORDER BY ts", (claim_id,)).fetchall()
+            rows = self.conn.execute("SELECT * FROM review_events WHERE claim_id=? ORDER BY ts, rowid", (claim_id,)).fetchall()
         else:
-            rows = self.conn.execute("SELECT * FROM review_events ORDER BY ts").fetchall()
+            rows = self.conn.execute("SELECT * FROM review_events ORDER BY ts, rowid").fetchall()
         return [dict(r) for r in rows]

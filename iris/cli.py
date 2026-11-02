@@ -8,13 +8,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from typing import Any
 
 from . import __version__, doctor, exit_codes, paths, registry
 
-MILESTONE = {"style": 4, "check": 4, "query": 5, "report": 5, "gc": 5}
+MILESTONE = {"query": 5, "report": 5, "gc": 5}
 
 _CODE_BY_NAME = {v: k for k, v in exit_codes.NAMES.items()}
 
@@ -194,6 +195,42 @@ def cmd_ledger(args: argparse.Namespace) -> int:
     return _emit({"ok": True, **ledger.summary(workspace=_ws(args), month=args.month)})
 
 
+def cmd_style(args: argparse.Namespace) -> int:
+    from . import style
+
+    try:
+        if args.action == "build":
+            sid = args.style_id_opt or args.style_id
+            if not args.from_refs or not sid:
+                return _emit(exit_codes.error_payload(exit_codes.USAGE, "style build needs --from <asset ids> and --style-id <id>"), exit_codes.USAGE)
+            res = style.build([a.strip() for a in args.from_refs.split(",") if a.strip()], sid, workspace=_ws(args))
+            return _emit(res, exit_codes.OK if res["ok"] else exit_codes.VALIDATION)
+        if not args.style_id:
+            return _emit(exit_codes.error_payload(exit_codes.USAGE, f"style {args.action} needs a style id"), exit_codes.USAGE)
+        if args.action == "lint":
+            res = style.lint(args.style_id, workspace=_ws(args))
+            return _emit(res, exit_codes.OK if res["ok"] else exit_codes.VALIDATION)
+        if args.action == "approve":
+            author = args.author or os.environ.get("IRIS_REVIEWER", "")
+            res = style.approve(args.style_id, author, workspace=_ws(args))
+            return _emit(res, exit_codes.OK if res["ok"] else exit_codes.VALIDATION)
+    except style.StyleError as exc:
+        code = _CODE_BY_NAME.get(exc.code, exit_codes.VALIDATION)
+        return _emit(exit_codes.error_payload(code, str(exc)), code)
+    return _emit(exit_codes.error_payload(exit_codes.USAGE, "unknown style action"), exit_codes.USAGE)
+
+
+def cmd_check(args: argparse.Namespace) -> int:
+    from . import check, style
+
+    try:
+        res = check.check(args.clip, args.against, rights=args.rights, mode=args.mode, workspace=_ws(args))
+    except (check.CheckError, style.StyleError) as exc:
+        code = _CODE_BY_NAME.get(exc.code, exit_codes.VALIDATION)
+        return _emit(exit_codes.error_payload(code, str(exc)), code)
+    return _emit({"ok": True, **res})
+
+
 def cmd_selftest(args: argparse.Namespace) -> int:
     """Run the registry validator, the Style Bible example validation and the unit tests."""
     results: dict[str, Any] = {}
@@ -308,9 +345,26 @@ def build_parser() -> argparse.ArgumentParser:
     lg.add_argument("--json", action="store_true")
     lg.set_defaults(func=cmd_ledger)
 
+    st = sub.add_parser("style", help="Build, lint or approve a Style Bible")
+    st.add_argument("action", choices=["build", "lint", "approve"])
+    st.add_argument("style_id", nargs="?", help="(lint, approve) style id, e.g. kinetic-editorial-v1")
+    st.add_argument("--from", dest="from_refs", help="(build) comma-separated asset ids")
+    st.add_argument("--style-id", dest="style_id_opt", help="(build) style id")
+    st.add_argument("--author", help="(approve) who approves; default $IRIS_REVIEWER")
+    st.add_argument("--workspace")
+    st.add_argument("--json", action="store_true")
+    st.set_defaults(func=cmd_style)
+
+    ck = sub.add_parser("check", help="Evaluate a clip against a Style Bible")
+    ck.add_argument("clip", help="local mp4 path or URL")
+    ck.add_argument("--against", required=True, help="style id")
+    ck.add_argument("--rights", choices=["study", "own", "licensed"], default="own")
+    ck.add_argument("--mode", choices=["economy", "strict"], default="economy")
+    ck.add_argument("--workspace")
+    ck.add_argument("--json", action="store_true")
+    ck.set_defaults(func=cmd_check)
+
     for name, helptext in [
-        ("style", "Build or lint a Style Bible"),
-        ("check", "Evaluate a clip against a Style Bible"),
         ("query", "Search accepted claims and references"),
         ("report", "Export the HTML report"),
         ("gc", "Apply the retention policy"),
