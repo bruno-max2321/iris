@@ -642,6 +642,22 @@ def current_proposals(docs: dict[str, Any]) -> dict[str, dict[str, str]]:
             for s in (docs.get("shots") or {}).get("shots", [])}
 
 
+SPAN_TOLERANCE_S = 0.01
+
+
+def shot_remap(packet: dict[str, Any], shots_doc: dict[str, Any]) -> dict[str, str]:
+    """Packet shot id -> today's shot id with the same time span. A re-run of shot detection can renumber
+    shots (a newly found cut shifts every later id) or split them; only an unchanged span keeps its labels."""
+    now = [(float(s["t_in"]), float(s["t_out"]), s["shot_id"]) for s in shots_doc.get("shots", [])]
+    out: dict[str, str] = {}
+    for w in packet.get("windows", []):
+        for s in w.get("shots", []):
+            hit = next((sid for a, b, sid in now if abs(a - float(s["t_in"])) <= SPAN_TOLERANCE_S and abs(b - float(s["t_out"])) <= SPAN_TOLERANCE_S), None)
+            if hit:
+                out[s["shot_id"]] = hit
+    return out
+
+
 def fuse(asset_id: str, packet: dict[str, Any], answers: dict[str, dict[str, Any]], shots_doc: dict[str, Any],
          idx: dict[str, Any], current: dict[str, dict[str, str]] | None = None) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Model claims (without ids) and abstentions from one or two judges.
@@ -650,6 +666,7 @@ def fuse(asset_id: str, packet: dict[str, Any], answers: dict[str, dict[str, Any
     built yields no claim: the judges answered while shown the old estimate, so their label is outdated and the
     current measurement stands alone (recorded as an abstention with reason "outdated_estimate")."""
     shown = {s["shot_id"]: s.get("code_proposals") or {} for w in packet.get("windows", []) for s in w.get("shots", [])}
+    remap = shot_remap(packet, shots_doc)
     judges = [j for j in ("grok", "anthropic", "fixture") if j in answers and answers[j].get("packet_hash") == packet["packet_hash"]]
     labels = {j: _labels(answers[j]) for j in judges}
     shots = {s["shot_id"]: s for s in shots_doc.get("shots", [])}
@@ -657,12 +674,19 @@ def fuse(asset_id: str, packet: dict[str, Any], answers: dict[str, dict[str, Any
     vocab = registry.vocabulary_version()
     claims: list[dict[str, Any]] = []
     abstentions: list[dict[str, Any]] = []
-    for unit_id, did in keys:
-        if current is not None and unit_id and did in shown.get(unit_id, {}) and current.get(unit_id, {}).get(did) != shown[unit_id][did]:
-            abstentions.append({"unit_id": unit_id, "dimension": did, "judges": sorted(j for j in judges if labels[j].get((unit_id, did))),
+    for packet_unit, did in keys:
+        unit_id = packet_unit
+        if packet_unit is not None:
+            unit_id = remap.get(packet_unit)
+            if unit_id is None:
+                # the shot the judges saw no longer exists as such (split or merged by a re-run of shots)
+                abstentions.append({"unit_id": packet_unit, "dimension": did, "judges": sorted(judges), "reason": "shot_changed"})
+                continue
+        if current is not None and unit_id and did in shown.get(packet_unit, {}) and current.get(unit_id, {}).get(did) != shown[packet_unit][did]:
+            abstentions.append({"unit_id": unit_id, "dimension": did, "judges": sorted(j for j in judges if labels[j].get((packet_unit, did))),
                                 "reason": "outdated_estimate"})
             continue
-        per_judge = {j: labels[j].get((unit_id, did)) for j in judges}
+        per_judge = {j: labels[j].get((packet_unit, did)) for j in judges}
         terms_by_judge = {j: (set(l["terms"]) if l and l.get("terms") != ["unclear"] else set()) for j, l in per_judge.items()}
         answered = {j for j, l in per_judge.items() if l is not None}
         proposing = {j for j, t in terms_by_judge.items() if t}

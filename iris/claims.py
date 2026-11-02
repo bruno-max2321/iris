@@ -57,6 +57,16 @@ def check_claim(claim: dict[str, Any], idx: dict[str, Any], validator: Any) -> l
     return errs
 
 
+def _span(c: dict[str, Any]) -> tuple[float, float]:
+    ts = c.get("time_span") or {}
+    return round(float(ts.get("start_seconds", -1.0)), 2), round(float(ts.get("end_seconds", -1.0)), 2)
+
+
+def _same_span(a: dict[str, Any], b: dict[str, Any]) -> bool:
+    (a0, a1), (b0, b1) = _span(a), _span(b)
+    return abs(a0 - b0) <= 0.011 and abs(a1 - b1) <= 0.011
+
+
 def validate_asset(asset_id: str, workspace: Path | None = None) -> dict[str, Any]:
     import jsonschema
 
@@ -81,6 +91,19 @@ def validate_asset(asset_id: str, workspace: Path | None = None) -> dict[str, An
     store = Store(workspace)
     try:
         existing = {c["claim_key"]: c for c in store.list_claims(asset_id)}
+        # a re-run of shots can renumber them: a stored shot claim whose key now names a shot with another
+        # time span is moved out of the way (it becomes stale), and a decision follows the claim with the
+        # same dimension, term, source and span under its new shot id
+        gen_by_key = {c["claim_key"]: c for c in generated}
+        for k, old in list(existing.items()):
+            g = gen_by_key.get(k)
+            if g is not None and old.get("temporal_unit") == "shot" and not _same_span(old, g):
+                nk = f"{k}|was@{_span(old)[0]:.2f}-{_span(old)[1]:.2f}"
+                store.rekey_claim(old["claim_id"], nk)
+                existing[nk] = dict(existing.pop(k), claim_key=nk)
+        decided_by_span = {(c["dimension"], c["term_id"], c["source"], _span(c)): c for c in existing.values()
+                           if c.get("temporal_unit") == "shot" and c.get("review_status") in DECIDED}
+        carried: list[tuple[str, dict[str, Any]]] = []
         new_keys = [c["claim_key"] for c in generated if c["claim_key"] not in existing]
         new_ids = store.next_claim_ids(len(new_keys)) if new_keys else []
         id_for = dict(zip(new_keys, new_ids))
@@ -94,12 +117,22 @@ def validate_asset(asset_id: str, workspace: Path | None = None) -> dict[str, An
             if prev and prev.get("review_status") in DECIDED:
                 c["review_status"] = prev["review_status"]
                 c["corrected_term_id"] = prev.get("corrected_term_id")
+            elif prev is None and c.get("temporal_unit") == "shot":
+                before = decided_by_span.get((c["dimension"], c["term_id"], c["source"], _span(c)))
+                if before is not None:
+                    c["review_status"] = before["review_status"]
+                    c["corrected_term_id"] = before.get("corrected_term_id")
+                    carried.append((c["claim_id"], before))
             errs = check_claim(c, idx, validator)
             if errs:
                 errors[c["claim_id"]] = errs
                 continue
             store.upsert_claim(c)
             final.append(c)
+        stored = {c["claim_id"] for c in final}
+        for cid, before in [x for x in carried if x[0] in stored]:
+            store.add_review_event(cid, before["review_status"], "policy:carried-over", before.get("corrected_term_id"),
+                                   f"same shot span and term as {before['claim_id']} before the shots were renumbered")
         # claims whose source disappeared (stage re-run) stay in the store but are flagged as stale in the report
         stale = sorted(set(existing) - {c["claim_key"] for c in generated})
     finally:
@@ -118,7 +151,9 @@ def validate_asset(asset_id: str, workspace: Path | None = None) -> dict[str, An
         "claims": len(final), "rejected_by_validator": len(errors), "errors": errors, "stale_claim_keys": stale,
         "evidence_count": len(idx), "by_kind": by_kind, "by_status": by_status, "by_source": by_source,
         "judges_present": sorted(answers), "abstentions": len(abstentions),
-        "outdated_judge_labels": sum(1 for a in abstentions if a.get("reason") == "outdated_estimate"), "agreement": agree,
+        "outdated_judge_labels": sum(1 for a in abstentions if a.get("reason") == "outdated_estimate"),
+        "judge_labels_on_changed_shots": sum(1 for a in abstentions if a.get("reason") == "shot_changed"),
+        "decisions_carried_over": len(carried), "agreement": agree,
         "review_queue": [c["claim_id"] for c in final if c["review_status"] in ("needs_review",)] + [c["claim_id"] for c in final if c["review_status"] == "pending" and c["source"] == "model"],
     }
     (ref_dir / "validate.json").write_text(json.dumps(report, indent=1, ensure_ascii=False), encoding="utf-8")

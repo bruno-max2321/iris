@@ -200,3 +200,49 @@ def test_revised_measurement_drops_outdated_judge_labels_and_stale_claims(ws, mo
     assert any(i["kind"] == "statement" and i["dimension"] == "camera.movement" and i["term"] == "pan_right" for i in sheet["items"])
     rd = style.load_reference(asset_id, ws)
     assert not [c for c in rd["decided"] if c["eff_dimension"] == "camera.movement"]
+
+
+def test_renumbered_shots_keep_their_labels_and_decisions(ws, monkeypatch):
+    """A re-run of shots finds a new cut inside the first shot: every later shot id shifts by one. Judge labels
+    and decisions follow the shot with the same time span; the split shot's labels are dropped."""
+    from iris import shots as shots_mod
+
+    asset_id = ingest.ingest(str(FIX / "cfr_30.mp4"), "own", workspace=ws)["asset_id"]
+    analyze.analyze(asset_id, workspace=ws)
+    interpret.prepare(asset_id, workspace=ws)
+    for name in ("grok", "fixture"):
+        fx = interpret._fixture_answer(interpret.load_packet(asset_id, ws), None)
+        for s in fx["shots"]:
+            s["dimensions"]["style.medium"] = {"terms": ["motion_graphics"], "evidence_ids": [f"shot:{s['shot_id']}"]}
+        p = ws / f"{name}.json"
+        fx["judge"] = "grok" if name == "grok" else fx.get("judge")
+        p.write_text(json.dumps(fx))
+        if name == "grok":
+            assert interpret.ingest_answer(asset_id, p, "grok", workspace=ws)["ok"]
+        else:
+            interpret.run(asset_id, "fixture", fixture_file=p, workspace=ws)
+    assert claims.validate_asset(asset_id, workspace=ws)["ok"]
+    review_sheet.auto_accept(asset_id, workspace=ws)
+    medium = lambda: sorted((c["unit_id"], c["time_span"]["start_seconds"], c["review_status"]) for c in claims.list_claims(asset_id, workspace=ws)
+                            if c["dimension"] == "style.medium")
+    before = medium()
+    assert len(before) >= 2 and all(st == "accepted" for _, _, st in before)
+
+    real = shots_mod.detect
+
+    def with_extra_cut(frames, index, **kw):
+        doc, ev = real(frames, index, **kw)
+        s0 = doc["shots"][0]
+        mid = (s0["frame_first"] + s0["frame_last_inclusive"]) // 2
+        frames = [dict(f) for f in frames]
+        frames[mid]["hist_diff_prev"] = 0.99
+        return real(frames, index, **kw)
+
+    monkeypatch.setattr(shots_mod, "detect", with_extra_cut)
+    analyze.analyze(asset_id, workspace=ws, force=True, stages=["shots"])
+    rep = claims.validate_asset(asset_id, workspace=ws)
+    assert rep["ok"] and rep["judge_labels_on_changed_shots"] >= 1 and rep["decisions_carried_over"] >= len(before) - 1
+    after = medium()
+    # the first shot was split: its label is gone; every other shot keeps its accepted label under its new id
+    assert [(t, st) for _, t, st in after] == [(t, st) for _, t, st in before[1:]]
+    assert [u for u, _, _ in after] != [u for u, _, _ in before[1:]]

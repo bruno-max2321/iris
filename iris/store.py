@@ -253,6 +253,16 @@ class Store:
                  claim.get("created_at") or now_iso(), claim.get("updated_at") or now_iso()),
             )
 
+    def rekey_claim(self, claim_id: str, new_key: str) -> None:
+        """Move a claim out of the way of a key that now names another unit (shots renumbered by a re-run)."""
+        row = self.conn.execute("SELECT body FROM claims WHERE claim_id=?", (claim_id,)).fetchone()
+        if not row:
+            return
+        body = json.loads(row["body"])
+        body["claim_key"] = new_key
+        with self.conn:
+            self.conn.execute("UPDATE claims SET claim_key=?, body=? WHERE claim_id=?", (new_key, json.dumps(body, ensure_ascii=False), claim_id))
+
     def list_claims(self, asset_id: str | None = None) -> list[dict[str, Any]]:
         if asset_id:
             rows = self.conn.execute("SELECT body FROM claims WHERE asset_id=? ORDER BY claim_id", (asset_id,)).fetchall()
