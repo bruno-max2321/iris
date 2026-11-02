@@ -166,12 +166,24 @@ def judges_agree(c: dict[str, Any]) -> bool:
     return c["source"] == "model" and c["review_status"] == "pending" and not c.get("single_judge")
 
 
+def code_and_judge_agree(c: dict[str, Any], rows: list[dict[str, Any]]) -> bool:
+    """A pending measurement-based label that a judge also proposed for the same unit: two independent
+    sources agree, the same standing rule as two judges agreeing."""
+    if c["source"] != "code" or c["review_status"] != "pending":
+        return False
+    return any(o["source"] == "model" and o["review_status"] != "rejected" and o.get("unit_id") == c.get("unit_id")
+               and _term(o) == _term(c) and o["dimension"] == c["dimension"] for o in rows)
+
+
 def auto_accept(asset_id: str, workspace: Path | None = None) -> dict[str, Any]:
-    """The user's standing rule: when Grok and Claude agree, the label is accepted without asking."""
-    todo = [c for c in claims_mod.list_claims(asset_id, workspace=workspace) if judges_agree(c)]
+    """The user's standing rule: when two sources agree (Grok and Claude, or the measurement and a judge),
+    the label is accepted without asking."""
+    rows = claims_mod.list_claims(asset_id, workspace=workspace)
+    todo = [c for c in rows if judges_agree(c) or code_and_judge_agree(c, rows)]
     if not todo:
         return {"accepted": 0, "errors": []}
-    res = claims_mod.apply_decisions([{"claim_id": c["claim_id"], "status": "accepted", "value": None, "reason": "Grok and Claude agree"} for c in todo],
+    res = claims_mod.apply_decisions([{"claim_id": c["claim_id"], "status": "accepted", "value": None,
+                                      "reason": "Grok and Claude agree" if c["source"] == "model" else "measurement and a judge agree"} for c in todo],
                                      POLICY_AUTHOR, workspace=workspace)
     return {"accepted": len(res["recorded"]), "errors": res["errors"]}
 

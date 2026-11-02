@@ -131,14 +131,17 @@ def test_both_accepts_both_terms_in_a_multi_term_dimension(monkeypatch):
 
 
 def test_judge_agreement_is_accepted_without_asking(ws, judged):
-    agreed = [c["claim_id"] for c in claims.list_claims(judged, workspace=ws) if review_sheet.judges_agree(c)]
+    rows0 = claims.list_claims(judged, workspace=ws)
+    agreed = [c["claim_id"] for c in rows0 if review_sheet.judges_agree(c)]
+    with_code = [c["claim_id"] for c in rows0 if review_sheet.code_and_judge_agree(c, rows0)]
     assert agreed
     res = review_sheet.make_sheet(judged, workspace=ws)
-    assert res["ok"] and res["auto_accepted"] == len(agreed)
+    assert res["ok"] and res["auto_accepted"] == len(agreed) + len(with_code)
     rows = {c["claim_id"]: c for c in claims.list_claims(judged, workspace=ws)}
     assert all(rows[c]["review_status"] == "accepted" for c in agreed)
     sheet = json.loads((ws / "refs" / judged / "review" / "sheet.json").read_text())
     assert all(i["source"] == "code" for i in sheet["items"] if i["kind"] == "statement")  # nothing the judges agreed on is asked again
+    assert not set(with_code) & {cid for i in sheet["items"] for cid in i.get("claim_ids") or []}  # nor a measurement a judge confirmed
     assert sheet["settled"] and "Already accepted" in Path(res["html"]).read_text()
     from iris.store import Store
     st = Store(ws)
@@ -148,3 +151,12 @@ def test_judge_agreement_is_accepted_without_asking(ws, judged):
         st.close()
     assert authors == {review_sheet.POLICY_AUTHOR}
     assert review_sheet.make_sheet(judged, workspace=ws)["auto_accepted"] == 0  # idempotent
+
+
+def test_a_measurement_a_judge_confirms_is_accepted_without_asking():
+    code = {"claim_id": "c1", "source": "code", "review_status": "pending", "unit_id": "s001", "dimension": "camera.movement",
+            "term_id": "camera.movement=tilt_down"}
+    judge = dict(code, claim_id="c2", source="model", review_status="needs_review")
+    assert review_sheet.code_and_judge_agree(code, [code, judge])
+    assert not review_sheet.code_and_judge_agree(code, [code, dict(judge, term_id="camera.movement=static")])
+    assert not review_sheet.code_and_judge_agree(code, [code, dict(judge, review_status="rejected")])

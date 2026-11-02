@@ -581,6 +581,45 @@ def _plain_word(w: str) -> str:
     return w.strip().strip("\"“”«»()[]")
 
 
+def _spoken_words(audio_doc: dict[str, Any] | None) -> list[tuple[str, str, float]]:
+    words = (((audio_doc or {}).get("transcript") or {}).get("words")) or []
+    return [(_plain_word(w.get("w", "")), _norm(w.get("w", "")), float(w["start"])) for w in words
+            if w.get("start") is not None and _norm(w.get("w", ""))]
+
+
+def _spoken_match(t: dict[str, Any], ocr: str, spoken: list[tuple[str, str, float]]) -> tuple[float, int, int, int] | None:
+    """The run of spoken words near the track's span whose letters best match the OCR letters, when close."""
+    target = _norm(ocr)
+    if not spoken or len(target) < 4 or t.get("t_first_seen") is None:
+        return None
+    lo = float(t["t_first_seen"]) - REPAIR_WINDOW_S
+    hi = float(t.get("t_last_seen") if t.get("t_last_seen") is not None else t["t_first_seen"]) + REPAIR_WINDOW_S
+    best = None
+    for a in range(len(spoken)):
+        if not lo <= spoken[a][2] <= hi:
+            continue
+        cat = ""
+        for b in range(a, len(spoken)):
+            if spoken[b][2] > hi:
+                break
+            cat += spoken[b][1]
+            if len(cat) > len(target) + 3:
+                break
+            r = difflib.SequenceMatcher(None, target, cat).ratio()
+            if best is None or r > best[0]:
+                best = (r, a, b, len(cat))
+    if best is None or best[0] < REPAIR_MIN_RATIO or abs(best[3] - len(target)) > max(2, 0.2 * len(target)):
+        return None
+    return best
+
+
+def spoken_track_ids(text_doc: dict[str, Any], audio_doc: dict[str, Any] | None) -> set[str]:
+    """Tracks whose letters spell the voice-over around them: the captions proper, as opposed to text that is
+    part of the picture (document headlines, signs, posters, title cards)."""
+    spoken = _spoken_words(audio_doc)
+    return {t["track_id"] for t in text_doc.get("tracks") or [] if _spoken_match(t, t.get("text_ocr") or t["text"], spoken)}
+
+
 def repair_with_transcript(text_doc: dict[str, Any], audio_doc: dict[str, Any] | None) -> dict[str, Any]:
     """Caption lines in short-form video usually spell the voice-over. The OCR of tight display fonts drops
     spaces and slips letters ("He climbedontoa", "PTBarmum"), which breaks words-per-cue and caption-to-speech
@@ -589,34 +628,14 @@ def repair_with_transcript(text_doc: dict[str, Any], audio_doc: dict[str, Any] |
     is kept in `text_ocr` and `text_source` says "transcript". Idempotent: it always starts from `text_ocr`.
     Without a transcript every track keeps its OCR text."""
     tracks = text_doc.get("tracks") or []
-    words = (((audio_doc or {}).get("transcript") or {}).get("words")) or []
-    spoken = [(_plain_word(w.get("w", "")), _norm(w.get("w", "")), float(w["start"])) for w in words
-              if w.get("start") is not None and _norm(w.get("w", ""))]
+    spoken = _spoken_words(audio_doc)
     repaired = 0
     for t in tracks:
         ocr = t.pop("text_ocr", None) or t["text"]
         t.pop("text_source", None)
         t["text"] = ocr
-        target = _norm(ocr)
-        if not spoken or len(target) < 4 or t.get("t_first_seen") is None:
-            continue
-        lo = float(t["t_first_seen"]) - REPAIR_WINDOW_S
-        hi = float(t.get("t_last_seen") if t.get("t_last_seen") is not None else t["t_first_seen"]) + REPAIR_WINDOW_S
-        best = None
-        for a in range(len(spoken)):
-            if not lo <= spoken[a][2] <= hi:
-                continue
-            cat = ""
-            for b in range(a, len(spoken)):
-                if spoken[b][2] > hi:
-                    break
-                cat += spoken[b][1]
-                if len(cat) > len(target) + 3:
-                    break
-                r = difflib.SequenceMatcher(None, target, cat).ratio()
-                if best is None or r > best[0]:
-                    best = (r, a, b, len(cat))
-        if best is None or best[0] < REPAIR_MIN_RATIO or abs(best[3] - len(target)) > max(2, 0.2 * len(target)):
+        best = _spoken_match(t, ocr, spoken)
+        if best is None:
             continue
         new = " ".join(spoken[i][0] for i in range(best[1], best[2] + 1) if spoken[i][0])
         tail = ocr.rstrip()[-1:] if ocr.rstrip()[-1:] in ".,!?;:" else ""

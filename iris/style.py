@@ -207,6 +207,24 @@ def _blocks(rd) -> list[dict[str, Any]] | None:
     return continuity.caption_blocks(rd["docs"])
 
 
+MIN_SPOKEN_LINES = 5
+LOUDNESS_MIN_HALF_WIDTH = 1.0  # LU
+
+
+def _spoken_caps(rd) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool]:
+    """(caption tracks, caption cues, filtered) restricted to the lines that spell the voice-over when a
+    reference has at least MIN_SPOKEN_LINES of them: text that is part of the picture (document headlines,
+    signs, title cards) is not the caption style. Without a transcript, every caption line counts."""
+    from .textocr import spoken_track_ids
+
+    caps, blocks = _caps(rd) or [], _blocks(rd) or []
+    ids = spoken_track_ids(rd["docs"].get("text") or {}, rd["docs"].get("audio"))
+    keep = [c for c in caps if c["track_id"] in ids]
+    if len(keep) < MIN_SPOKEN_LINES:
+        return caps, blocks, False
+    return keep, [b for b in blocks if set(b.get("track_ids") or []) & ids], True
+
+
 def _color_clusters(hexes: list[str], max_de: float = 12.0) -> list[list[str]]:
     """Greedy grouping of colours closer than max_de (CIEDE2000), largest group first."""
     from .measure import srgb_to_lab
@@ -712,7 +730,11 @@ def build(asset_ids: list[str], style_id: str, workspace: Path | None = None) ->
     ty.from_terms("family_class", _q_term("typography.family_class", t) if t else None, s)
     text_refs = [rd for rd in refs if _caps(rd)]
     if text_refs:
-        caps = [(rd, c) for rd in text_refs for c in _caps(rd)]
+        spoken = {rd["asset_id"]: _spoken_caps(rd) for rd in text_refs}
+        caps = [(rd, c) for rd in text_refs for c in spoken[rd["asset_id"]][0]]
+        n_filtered = sum(1 for v in spoken.values() if v[2])
+        if n_filtered:
+            ty.notes.append(f"caption look from the lines that spell the voice-over in {n_filtered} of {len(text_refs)} references")
         letters = "".join(ch for _, c in caps for ch in (c.get("text") or "") if ch.isalpha())
         if letters:
             up = sum(ch.isupper() for ch in letters) / len(letters)
@@ -727,7 +749,7 @@ def build(asset_ids: list[str], style_id: str, workspace: Path | None = None) ->
         for _, c in caps:
             zones[c["zone"]] = zones.get(c["zone"], 0) + 1
         zone = max(zones.items(), key=lambda kv: (kv[1], kv[0]))[0]
-        cues = [(rd, b) for rd in text_refs for b in _blocks(rd) or []]
+        cues = [(rd, b) for rd in text_refs for b in spoken[rd["asset_id"]][1]]
         look, look_note = caption_look(caps, cues)
         ty.measured("placement", {"zone": ZONE_TO_PLACEMENT.get(zone, "center"), **look}, text_refs)
         if look_note:
@@ -859,7 +881,11 @@ def build(asset_ids: list[str], style_id: str, workspace: Path | None = None) ->
                                "caption line height stays in the style's band"))
     lufs = so.data.get("loudness_lufs")
     if lufs:
-        rules.append(_rule("cr_loudness", "audio", "audio.integrated_lufs", f"within [{lufs['min']:g}, {lufs['max']:g}]", "fail", "integrated loudness matches the style"))
+        # platforms normalise loudness: a cut or a remix lands within about a loudness unit of the master,
+        # so the band is never narrower than LOUDNESS_MIN_HALF_WIDTH around its centre, and a miss is a warning
+        mid = (lufs["min"] + lufs["max"]) / 2
+        lo, hi = min(lufs["min"], mid - LOUDNESS_MIN_HALF_WIDTH), max(lufs["max"], mid + LOUDNESS_MIN_HALF_WIDTH)
+        rules.append(_rule("cr_loudness", "audio", "audio.integrated_lufs", f"within [{lo:.1f}, {hi:.1f}]", "warn", "integrated loudness matches the style"))
     if "true_peak_dbtp_max" in so.data:
         rules.append(_rule("cr_true_peak", "audio", "audio.true_peak_dbtp", f"<= {so.data['true_peak_dbtp_max']:g}", "warn", "true peak stays under the style's ceiling"))
     seen = {r["rule_id"] for r in rules}
@@ -891,7 +917,7 @@ def build(asset_ids: list[str], style_id: str, workspace: Path | None = None) ->
         rd, c = min(cr_items, key=lambda x: abs(x[1]["light"]["contrast_ratio_p95_p5"] - med))
         ex["light_master"] = [_exemplar(rd, next(s_ for s_ in _shots(rd) if s_["shot_id"] == c["shot_id"]))]
     if text_refs:
-        caps_all = [(rd, c) for rd in text_refs for c in _caps(rd)]
+        caps_all = [(rd, c) for rd in text_refs for c in _spoken_caps(rd)[0]]
         med = float(np.median([c["rel_height"] for _, c in caps_all]))
         rd, c = min(caps_all, key=lambda x: abs(x[1]["rel_height"] - med))
         shot = next((s_ for s_ in _shots(rd) if s_["frame_first"] <= c["frame_first_seen"] <= s_["frame_last_inclusive"]), _shots(rd)[0])

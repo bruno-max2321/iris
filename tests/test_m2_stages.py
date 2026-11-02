@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from iris import analyze, ingest, paths
+from iris import analyze, ingest, paths, textocr
 
 FIX = paths.FIXTURES_DIR / "synthetic"
 MANIFEST = json.loads((paths.FIXTURES_DIR / "manifest.json").read_text(encoding="utf-8"))["fixtures"]
@@ -403,3 +403,10 @@ def test_outputs_of_an_older_method_version_are_recomputed(ws, capsys):
     capsys.readouterr()
     assert main(["analyze", a]) == 0
     assert json.loads(capsys.readouterr().out)["recomputed_stale_stages"] == ["motion"]
+
+
+def test_spoken_tracks_are_the_captions_not_the_picture_text():
+    text = {"tracks": [{"track_id": "t0", "text": "He climbedontoa", "t_first_seen": 0.0, "t_last_seen": 1.5},
+                       {"track_id": "t1", "text": "THE COMMISSION", "t_first_seen": 0.5, "t_last_seen": 2.0}]}
+    audio = {"transcript": {"words": [{"w": w, "start": 0.2 + 0.25 * k} for k, w in enumerate("He climbed onto a platform".split())]}}
+    assert textocr.spoken_track_ids(text, audio) == {"t0"}

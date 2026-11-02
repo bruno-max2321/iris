@@ -33,6 +33,7 @@ from . import continuity, ingest
 METHOD_VERSION = "style_board@0.1.0"
 FRAME_LONG_SIDE = 720
 OPENING_SHOTS = 3
+CAPTION_MIN_CONF = 0.85
 LONGEST_SHOTS = 4
 SECTIONS = [
     ("opening", "Opening", "The first shots of each reference: what the viewer sees before deciding to stay."),
@@ -87,7 +88,9 @@ def select(bible: dict[str, Any], refs: list[dict[str, Any]]) -> dict[str, list[
     contrasts = [c["light"]["contrast_ratio_p95_p5"] for rd in refs for c in (rd["docs"].get("color") or {}).get("shots", [])
                  if c.get("status") == "ok" and (c.get("light") or {}).get("contrast_ratio_p95_p5") is not None]
     cr_med = float(np.median(contrasts)) if contrasts else None
-    blocks_all = [(rd, b) for rd in refs for b in continuity.caption_blocks(rd["docs"]) or []]
+    from .style import _spoken_caps
+
+    blocks_all = [(rd, b) for rd in refs for b in _spoken_caps(rd)[1]]
     words_med = float(np.median([b.get("words") or 0 for _, b in blocks_all])) if blocks_all else None
     movement = _dominant_movement(bible)
     from .style import _claim_weight
@@ -113,10 +116,13 @@ def select(bible: dict[str, Any], refs: list[dict[str, Any]]) -> dict[str, list[
                 light = c.get("light") or {}
                 desc = ", ".join(str(light[k]) for k in ("key", "side", "edge") if light.get(k))
                 out["light"].append(_pick(rd, s, _key(s), f"contrast {light['contrast_ratio_p95_p5']:g} (style median {cr_med:.3g})" + (f"; {desc}" if desc else "")))
-        blocks = continuity.caption_blocks(rd["docs"]) or []
+        tracks = {t["track_id"]: t for t in (rd["docs"].get("text") or {}).get("tracks") or []}
+        _, blocks, _ = _spoken_caps(rd)
+        # a cue the OCR read with confidence, of typical length; captions that spell the voice-over come first
+        blocks = [b for b in blocks if min(((tracks[i].get("conf") or 0.0) for i in b.get("track_ids") or [] if i in tracks), default=0.0) >= CAPTION_MIN_CONF
+                  and len((b.get("text") or "").split()) >= 2] if blocks else []
         if blocks and words_med is not None:
             b = min(blocks, key=lambda x: (abs((x.get("words") or 0) - words_med), -(x.get("lines") or 1), x["frame_first_seen"]))
-            tracks = {t["track_id"]: t for t in (rd["docs"].get("text") or {}).get("tracks") or []}
             full = [tracks[i].get("frame_full_text_seen") for i in b.get("track_ids") or [] if i in tracks and tracks[i].get("frame_full_text_seen") is not None]
             f0, f1 = int(b["frame_first_seen"]), int(b["frame_last_seen"])
             frame = min(max(max(full) if full else (f0 + f1) // 2, f0), f1)
