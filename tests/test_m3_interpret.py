@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from iris import analyze, claims, ingest, interpret, ledger, registry
+from iris import analyze, anthropic_adapter, claims, ingest, interpret, ledger, registry
 from iris.cli import main
 
 FIX = Path(__file__).resolve().parents[1] / "fixtures" / "synthetic"
@@ -43,9 +43,14 @@ def test_prepare_writes_packet_with_images_and_evidence(ws, analyzed):
         assert (ws / "refs" / analyzed / img["path"]).exists() and len(img["sha256"]) == 64
     assert set(pk["lexicon"]) == set(interpret.SHOT_DIMENSIONS + interpret.VIDEO_DIMENSIONS)
     assert (ws / "refs" / analyzed / "evidence.json").exists()
-    # grok profile: fewer images
+    assert all(i["width"] > 0 and i["height"] > 0 for i in w["images"])
+    assert res["anthropic_estimate"]["worst_case_usd"] >= res["anthropic_estimate"]["expected_usd"] > 0
+    # one packet serves both judges: the grok profile reads a subset and the hash does not change
     res_g = interpret.prepare(analyzed, "grok", workspace=ws)
-    assert res_g["images"] <= interpret.MAX_IMAGES_GROK
+    assert res_g["packet_hash"] == res["packet_hash"] and res_g["image_list"] == "images_grok"
+    pk = interpret.load_packet(analyzed, ws)
+    assert all(len(w["images_grok"]) <= interpret.MAX_IMAGES_GROK for w in pk["windows"])
+    assert all(i in w["images"] for w in pk["windows"] for i in w["images_grok"])
 
 
 def test_run_requires_grok_unless_skipped_and_fixture_spends_nothing(ws, analyzed):
@@ -180,3 +185,53 @@ def test_cli_interpret_and_validate_exit_codes(ws, analyzed, capsys):
     assert '"count"' in out
     assert main(["ledger", "summary", "--workspace", str(ws)]) == 0
     assert main(["interpret", "run", "ref_000000000000", "--provider", "fixture", "--skip-grok", "--workspace", str(ws)]) in (3, 8)
+
+
+def _fake_api(monkeypatch, ws, asset_id, calls):
+    monkeypatch.setattr(anthropic_adapter, "load_api_key", lambda w: "sk-test-not-a-key")
+    monkeypatch.setattr(anthropic_adapter, "make_client", lambda key: object())
+
+    def judge(client, model, system, content, schema, repair_errors=None, previous_json=None):
+        calls.append({"model": model, "images": sum(1 for b in content if b["type"] == "image"), "repair": bool(repair_errors)})
+        fx = interpret._fixture_answer(interpret.load_packet(asset_id, ws), None)
+        body = {"shots": fx["shots"], "video": fx["video"]}
+        return {"json": body, "text": json.dumps(body), "usage": {"input_tokens": 6000, "output_tokens": 1500, "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 2000}, "request_id": "req_test", "model": model, "stop_reason": "end_turn", "error": None}
+
+    monkeypatch.setattr(anthropic_adapter, "judge_window", judge)
+
+
+def test_anthropic_branch_budget_rerun_and_stale_grok(ws, analyzed, monkeypatch):
+    interpret.prepare(analyzed, "grok", workspace=ws)
+    p = _grok_answer(ws, analyzed, {})
+    assert interpret.ingest_answer(analyzed, p, "grok", workspace=ws)["ok"]
+    calls: list[dict] = []
+    _fake_api(monkeypatch, ws, analyzed, calls)
+    # a cap below the ceiling of one call refuses before any request is sent
+    with pytest.raises(interpret.InterpretError) as exc:
+        interpret.run(analyzed, "anthropic", max_usd=0.01, workspace=ws)
+    assert exc.value.code == "budget_exhausted" and calls == []
+    res = interpret.run(analyzed, "anthropic", workspace=ws)
+    assert res["ok"] and res["calls"] == 1 and res["model"] == "claude-sonnet-5-5"
+    pk = interpret.load_packet(analyzed, ws)
+    assert calls[0]["images"] == len(pk["windows"][0]["images"])  # the API judge sees the full image list
+    rows = ledger.entries(ws)
+    assert len(rows) == 1 and rows[0]["cost_usd"] == res["cost_usd"] > 0 and "sk-test" not in json.dumps(rows)
+    # paying twice for the same packet needs --rerun
+    with pytest.raises(interpret.InterpretError):
+        interpret.run(analyzed, "anthropic", workspace=ws)
+    rep = claims.validate_asset(analyzed, workspace=ws)
+    assert rep["judges_present"] == ["anthropic", "grok"] and rep["agreement"]["units_compared"] == 9
+    # a grok answer to an older packet blocks the paid judge
+    g = ws / "refs" / analyzed / "interpret" / "grok.json"
+    doc = json.loads(g.read_text()); doc["packet_hash"] = "f" * 64; g.write_text(json.dumps(doc))
+    with pytest.raises(interpret.InterpretError) as exc:
+        interpret.run(analyzed, "anthropic", rerun=True, workspace=ws)
+    assert "older packet" in str(exc.value) and len(calls) == 1
+
+
+def test_budget_reserve_never_passes_cap(ws):
+    ledger.record({"asset_id": "ref_000000000003", "model": "claude-sonnet-5-5", "cost_usd": 1.40, "usage": {}}, ws)
+    assert ledger.check_budget("ref_000000000003", 1.5, ws, reserve_usd=0.05)[0]
+    ok, reason = ledger.check_budget("ref_000000000003", 1.5, ws, reserve_usd=0.11)
+    assert not ok and "reserved" in reason

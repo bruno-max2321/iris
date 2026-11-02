@@ -3,6 +3,8 @@
 - `prepare` builds interpret/packet.json: windows of at most 8 shots, keyframes at 768 px, a numeric
   summary per shot (what the code measured or proposed), lexicon cards for the model dimensions, and
   the exact list of evidence ids a judge may cite. The packet hash binds every answer to one packet.
+  One packet serves both judges: `windows[].images` is what the API judge sees and
+  `windows[].images_grok` the smaller subset for the Grok bot, so both answers share one hash.
 - `ingest` validates a judge's answer (the Grok bot answers blind, first) and stores it.
 - `run` calls the second judge (Claude through the API, or a fixture that spends nothing), one window
   per call, with budget caps, one repair round, and a ledger line per call.
@@ -24,7 +26,7 @@ from typing import Any
 
 from . import anthropic_adapter, decode, evidence, ingest, ledger, paths, registry
 
-METHOD_VERSION = "interpret@0.1.0"
+METHOD_VERSION = "interpret@0.2.0"
 SHOT_DIMENSIONS = ["composition", "light.direction", "light.scheme", "optics", "material.surface",
                    "typography.family_class", "narrative.function", "style.medium"]
 VIDEO_DIMENSIONS = ["narrative.hook_type"]
@@ -161,11 +163,15 @@ def prepare(asset_id: str, for_judge: str = "anthropic", workspace: Path | None 
             name = eid.replace(":", "_") + ".jpg"
             p = img_dir / name
             Image.fromarray(rgb).save(p, quality=90)
-            image_files[eid] = {"evidence_id": eid, "path": f"interpret/images/{name}", "sha256": hashlib.sha256(p.read_bytes()).hexdigest(), "frame_id": fid, "kind": "keyframe"}
+            image_files[eid] = {"evidence_id": eid, "path": f"interpret/images/{name}", "sha256": hashlib.sha256(p.read_bytes()).hexdigest(), "frame_id": fid,
+                                "kind": "keyframe", "width": int(rgb.shape[1]), "height": int(rgb.shape[0])}
     for page in (sheets.get("shots") or {}).get("pages", []):
         p = ref_dir / "sheets" / page
         if p.exists():
-            image_files[f"sheet:{page}"] = {"evidence_id": f"sheet:{page}", "path": f"sheets/{page}", "sha256": hashlib.sha256(p.read_bytes()).hexdigest(), "kind": "sheet"}
+            with Image.open(p) as im:
+                sw, sh = im.size
+            image_files[f"sheet:{page}"] = {"evidence_id": f"sheet:{page}", "path": f"sheets/{page}", "sha256": hashlib.sha256(p.read_bytes()).hexdigest(), "kind": "sheet",
+                                            "width": int(sw), "height": int(sh)}
 
     windows = []
     for w0 in range(0, len(shots), WINDOW_SHOTS):
@@ -191,15 +197,14 @@ def prepare(asset_id: str, for_judge: str = "anthropic", workspace: Path | None 
         pages = (sheets.get("shots") or {}).get("pages", [])
         if page_idx < len(pages) and image_files.get(f"sheet:{pages[page_idx]}") and len(images) < MAX_IMAGES_PER_WINDOW:
             images.append(image_files[f"sheet:{pages[page_idx]}"])
-        if for_judge == "grok":
-            # protect the bot's quota: sheets plus the ambiguous shots only, max 12 images
-            keep = [i for i in images if i["kind"] == "sheet"]
-            amb = {s["shot_id"] for s in wshots if s["ambiguous"]}
-            keep += [i for i in images if i["kind"] == "keyframe" and i["evidence_id"].split(":")[1] in amb]
-            keep += [i for i in images if i not in keep and i["kind"] == "keyframe" and i["evidence_id"].endswith(":mid")]
-            images = keep[:MAX_IMAGES_GROK]
+        # the Grok bot's quota: sheets, then the ambiguous shots, then mid keyframes, max 12 images
+        keep = [i for i in images if i["kind"] == "sheet"]
+        amb = {s["shot_id"] for s in wshots if s["ambiguous"]}
+        keep += [i for i in images if i["kind"] == "keyframe" and i["evidence_id"].split(":")[1] in amb and i not in keep]
+        keep += [i for i in images if i not in keep and i["kind"] == "keyframe" and i["evidence_id"].endswith(":mid")]
+        images_grok = keep[:MAX_IMAGES_GROK]
         windows.append({"window_id": f"w{w0 // WINDOW_SHOTS:02d}", "shot_ids": [s["shot_id"] for s in chunk], "images": images,
-                        "shots": wshots, "evidence_ids": sorted(evidence_ids | {i["evidence_id"] for i in images})})
+                        "images_grok": images_grok, "shots": wshots, "evidence_ids": sorted(evidence_ids | {i["evidence_id"] for i in images})})
 
     audio = docs.get("audio") or {}
     tr = (audio.get("transcript") or {})
@@ -212,17 +217,76 @@ def prepare(asset_id: str, for_judge: str = "anthropic", workspace: Path | None 
     }
     dims = SHOT_DIMENSIONS + VIDEO_DIMENSIONS
     packet = {
-        "schema_version": "1.0.0", "method_version": METHOD_VERSION, "asset_id": asset_id, "for": for_judge,
+        "schema_version": "1.0.0", "method_version": METHOD_VERSION, "asset_id": asset_id,
         "vocabulary_version": registry.vocabulary_version(), "shot_dimensions": SHOT_DIMENSIONS, "video_dimensions": VIDEO_DIMENSIONS,
         "answer_schema": "schemas/interpret_answer.schema.json", "rules": RULES, "lexicon": compact_lexicon(dims),
         "windows": windows, "video": video, "images_total": sum(len(w["images"]) for w in windows),
+        "images_total_grok": sum(len(w["images_grok"]) for w in windows),
     }
     packet["packet_hash"] = _canonical_hash({k: v for k, v in packet.items() if k != "created_at"})
     packet["created_at"] = _now()
     _write(ref_dir / "interpret" / "packet.json", packet)
-    return {"asset_id": asset_id, "for": for_judge, "windows": len(windows), "shots": len(shots), "images": packet["images_total"],
-            "packet_hash": packet["packet_hash"], "packet": str(ref_dir / "interpret" / "packet.json"),
-            "lexicon_tokens_estimate": len(json.dumps(packet["lexicon"])) // 4}
+    out = {"asset_id": asset_id, "for": for_judge, "windows": len(windows), "shots": len(shots),
+           "image_list": "images_grok" if for_judge == "grok" else "images",
+           "images": packet["images_total_grok"] if for_judge == "grok" else packet["images_total"],
+           "packet_hash": packet["packet_hash"], "packet": str(ref_dir / "interpret" / "packet.json"),
+           "lexicon_tokens_estimate": len(json.dumps(packet["lexicon"])) // 4}
+    if for_judge == "anthropic":
+        out["anthropic_estimate"] = estimate_anthropic(packet)
+    return out
+
+
+# ------------------------------------------------------------------------------------ cost estimate
+CHARS_PER_TOKEN = 3.0          # conservative for JSON-heavy English text
+EXPECTED_OUTPUT_TOKENS = 3000  # per window: structured answer plus adaptive thinking at medium effort
+
+
+def _image_tokens(width: int, height: int) -> int:
+    """Claude vision cost: images are scaled to fit 1568 px on the long side and about 1.15 MP, then ~w*h/750 tokens."""
+    w, h = float(width or 768), float(height or 768)
+    scale = min(1.0, 1568.0 / max(w, h), (1_150_000.0 / (w * h)) ** 0.5)
+    return int(w * scale * h * scale / 750.0) + 1
+
+
+def window_input_tokens(window: dict[str, Any], packet: dict[str, Any], include_video: bool) -> int:
+    images = sum(_image_tokens(i.get("width", 0), i.get("height", 0)) for i in window["images"])
+    labels = 12 * len(window["images"])
+    text = len(_window_text(window, packet, include_video)) / CHARS_PER_TOKEN
+    schema = len(json.dumps(_window_schema(window, packet, include_video))) / CHARS_PER_TOKEN
+    return int(images + labels + text + schema) + 50
+
+
+def system_tokens(packet: dict[str, Any]) -> int:
+    return int(len(json.dumps(anthropic_adapter.build_system(packet["lexicon"], packet["rules"]))) / CHARS_PER_TOKEN)
+
+
+def call_ceiling_usd(window: dict[str, Any], packet: dict[str, Any], include_video: bool, model: str, first_call: bool) -> float:
+    """Upper bound for one call: every input token uncached, the system prompt written to cache on the
+    first call, and the whole max_tokens budget used as output. The budget guard reserves this before
+    each call so a reference can never end above its cap."""
+    sys_t = system_tokens(packet)
+    usage = {"input_tokens": window_input_tokens(window, packet, include_video), "output_tokens": anthropic_adapter.MAX_TOKENS,
+             "cache_creation_input_tokens": sys_t if first_call else 0, "cache_read_input_tokens": 0 if first_call else sys_t}
+    return anthropic_adapter.cost_usd(model, usage)
+
+
+def estimate_anthropic(packet: dict[str, Any], model: str | None = None) -> dict[str, Any]:
+    model = model or os.environ.get("IRIS_ANTHROPIC_MODEL") or anthropic_adapter.DEFAULT_MODEL
+    n = len(packet["windows"])
+    sys_t = system_tokens(packet)
+    expected = 0.0
+    ceiling = 0.0
+    inputs = 0
+    for i, w in enumerate(packet["windows"]):
+        video = i == n - 1
+        it = window_input_tokens(w, packet, video)
+        inputs += it
+        expected += anthropic_adapter.cost_usd(model, {"input_tokens": it, "output_tokens": EXPECTED_OUTPUT_TOKENS,
+                                                        "cache_creation_input_tokens": sys_t if i == 0 else 0, "cache_read_input_tokens": 0 if i == 0 else sys_t})
+        ceiling += 2 * call_ceiling_usd(w, packet, video, model, i == 0)  # one call plus one repair, all at max_tokens
+    return {"model": model, "windows": n, "images": packet["images_total"], "input_tokens_est": inputs, "system_tokens_est": sys_t,
+            "expected_usd": round(expected, 3), "worst_case_usd": round(ceiling, 3),
+            "note": "estimate from image sizes and text length; the ledger records the real cost per call"}
 
 
 def load_packet(asset_id: str, workspace: Path | None = None) -> dict[str, Any]:
@@ -424,7 +488,7 @@ def _fixture_answer(packet: dict[str, Any], fixture_file: Path | None) -> dict[s
 
 
 def run(asset_id: str, provider: str, model: str | None = None, max_usd: float = ledger.DEFAULT_PER_REFERENCE_USD,
-        skip_grok: bool = False, fixture_file: Path | None = None, workspace: Path | None = None) -> dict[str, Any]:
+        skip_grok: bool = False, fixture_file: Path | None = None, workspace: Path | None = None, rerun: bool = False) -> dict[str, Any]:
     if provider not in ("anthropic", "fixture"):
         raise InterpretError("--provider must be anthropic or fixture", "usage")
     ws = workspace or paths.workspace_root()
@@ -433,6 +497,9 @@ def run(asset_id: str, provider: str, model: str | None = None, max_usd: float =
     grok_path = ref_dir / "interpret" / "grok.json"
     if not grok_path.exists() and not skip_grok:
         raise InterpretError("the Grok judge has not answered yet (interpret/grok.json missing); pass --skip-grok to proceed without it", "validation")
+    if grok_path.exists() and not skip_grok and _read(grok_path).get("packet_hash") != packet["packet_hash"]:
+        raise InterpretError("interpret/grok.json answers an older packet (prepare ran again or a stage was recomputed); the Grok judge must "
+                             "answer the current packet and be ingested again before the API judge runs", "validation")
     if provider == "fixture":
         answer = _fixture_answer(packet, fixture_file)
         errors = validate_answer(answer, packet)
@@ -446,11 +513,17 @@ def run(asset_id: str, provider: str, model: str | None = None, max_usd: float =
         _patch_coverage_exposure(ref_dir, exposure)
         return {"ok": True, "judge": "fixture", "cost_usd": 0.0, "windows": len(packet["windows"]), **_label_counts(answer)}
 
-    ok, reason = ledger.check_budget(asset_id, max_usd, ws)
+    model = model or os.environ.get("IRIS_ANTHROPIC_MODEL") or anthropic_adapter.DEFAULT_MODEL
+    prev_path = ref_dir / "interpret" / "anthropic.json"
+    if prev_path.exists() and not rerun:
+        prev = _read(prev_path)
+        if prev.get("packet_hash") == packet["packet_hash"] and all(w.get("status") == "ok" for w in prev.get("windows") or []):
+            raise InterpretError("the API judge already answered this packet (interpret/anthropic.json); pass --rerun to pay for a new answer", "validation")
+    first_reserve = call_ceiling_usd(packet["windows"][0], packet, len(packet["windows"]) == 1, model, True) if packet["windows"] else 0.0
+    ok, reason = ledger.check_budget(asset_id, max_usd, ws, reserve_usd=first_reserve)
     if not ok:
         raise InterpretError(reason or "budget exhausted", "budget_exhausted")
     api_key = anthropic_adapter.load_api_key(ws)
-    model = model or os.environ.get("IRIS_ANTHROPIC_MODEL") or anthropic_adapter.DEFAULT_MODEL
     client = anthropic_adapter.make_client(api_key)
     system = anthropic_adapter.build_system(packet["lexicon"], packet["rules"])
     system_hash = anthropic_adapter.sha256_text(json.dumps(system, sort_keys=True))
@@ -463,10 +536,6 @@ def run(asset_id: str, provider: str, model: str | None = None, max_usd: float =
     calls = 0
     for i, w in enumerate(packet["windows"]):
         include_video = i == len(packet["windows"]) - 1
-        ok, reason = ledger.check_budget(asset_id, max_usd, ws)
-        if not ok:
-            windows_state.append({"window_id": w["window_id"], "status": "budget_exhausted", "reason": reason})
-            break
         schema = _window_schema(w, packet, include_video)
         text = _window_text(w, packet, include_video)
         content = anthropic_adapter.build_user_content(w, image_paths, text)
@@ -475,6 +544,12 @@ def run(asset_id: str, provider: str, model: str | None = None, max_usd: float =
         errors: list[str] = []
         previous = None
         for attempt in range(2):  # one call plus one repair round
+            reserve = call_ceiling_usd(w, packet, include_video, model, calls == 0)
+            ok, reason = ledger.check_budget(asset_id, max_usd, ws, reserve_usd=reserve)
+            if not ok:
+                state["status"] = "budget_exhausted"
+                state["reason"] = reason
+                break
             try:
                 res = anthropic_adapter.judge_window(client, model, system, content, schema, repair_errors=errors or None, previous_json=previous)
             except anthropic_adapter.AdapterError as exc:
@@ -510,6 +585,8 @@ def run(asset_id: str, provider: str, model: str | None = None, max_usd: float =
         else:
             state["errors"] = errors[:10]
         windows_state.append(state)
+        if state["status"] == "budget_exhausted":
+            break
     merged["ingested_at"] = _now()
     merged["windows"] = windows_state
     _write(ref_dir / "interpret" / "anthropic.json", merged)

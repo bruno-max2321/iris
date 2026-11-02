@@ -77,12 +77,14 @@ def summary(workspace: Path | None = None, month: str | None = None) -> dict[str
             "exhausted": bool(cap and total >= cap), "by_asset": by_asset, "by_model": by_model}
 
 
-def check_budget(asset_id: str, max_usd: float, workspace: Path | None = None) -> tuple[bool, str | None]:
-    """(ok, reason). The monthly cap is a local guard; the hard cap lives in the Anthropic console."""
+def check_budget(asset_id: str, max_usd: float, workspace: Path | None = None, reserve_usd: float = 0.0) -> tuple[bool, str | None]:
+    """(ok, reason). `reserve_usd` is the ceiling of the call about to be made: the call is refused when
+    spent + reserve would pass a cap, so a cap is never exceeded. The monthly cap is a local guard; the
+    hard cap lives in the Anthropic console."""
     month_total = spent(workspace)
-    if DEFAULT_MONTHLY_CAP_USD and month_total >= DEFAULT_MONTHLY_CAP_USD:
-        return False, f"monthly cap reached: {month_total:.2f} of {DEFAULT_MONTHLY_CAP_USD:.2f} USD"
+    if DEFAULT_MONTHLY_CAP_USD and month_total + reserve_usd > DEFAULT_MONTHLY_CAP_USD:
+        return False, f"monthly cap: {month_total:.2f} spent + {reserve_usd:.3f} reserved for the next call > {DEFAULT_MONTHLY_CAP_USD:.2f} USD"
     ref_total = spent(workspace, asset_id=asset_id)
-    if ref_total >= max_usd:
-        return False, f"per-reference cap reached for {asset_id}: {ref_total:.3f} of {max_usd:.2f} USD"
+    if ref_total + reserve_usd > max_usd or ref_total >= max_usd:
+        return False, f"per-reference cap for {asset_id}: {ref_total:.3f} spent + {reserve_usd:.3f} reserved for the next call > {max_usd:.2f} USD"
     return True, None

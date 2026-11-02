@@ -121,6 +121,10 @@ def cmd_interpret(args: argparse.Namespace) -> int:
     try:
         if args.action == "prepare":
             return _emit({"ok": True, **interpret.prepare(args.asset_id, for_judge=args.for_judge, workspace=_ws(args))})
+        if args.action == "estimate":
+            pk = interpret.load_packet(args.asset_id, _ws(args))
+            return _emit({"ok": True, "asset_id": args.asset_id, "packet_hash": pk["packet_hash"], "max_usd": args.max_usd,
+                          **interpret.estimate_anthropic(pk, args.model)})
         if args.action == "ingest":
             if not args.answer:
                 return _emit(exit_codes.error_payload(exit_codes.USAGE, "ingest needs the answer file path"), exit_codes.USAGE)
@@ -128,7 +132,7 @@ def cmd_interpret(args: argparse.Namespace) -> int:
             return _emit(res, exit_codes.OK if res["ok"] else exit_codes.VALIDATION)
         if args.action == "run":
             res = interpret.run(args.asset_id, args.provider, model=args.model, max_usd=args.max_usd, skip_grok=args.skip_grok,
-                                fixture_file=Path(args.fixture) if args.fixture else None, workspace=_ws(args))
+                                fixture_file=Path(args.fixture) if args.fixture else None, workspace=_ws(args), rerun=args.rerun)
             return _emit(res, exit_codes.OK if res["ok"] else exit_codes.PARTIAL)
     except interpret.InterpretError as exc:
         code = _CODE_BY_NAME.get(exc.code, exit_codes.VALIDATION)
@@ -254,15 +258,16 @@ def build_parser() -> argparse.ArgumentParser:
     jb.set_defaults(func=cmd_jobs)
 
     ip = sub.add_parser("interpret", help="Prepare a packet, ingest a judge's answer, or run the API judge")
-    ip.add_argument("action", choices=["prepare", "ingest", "run"])
+    ip.add_argument("action", choices=["prepare", "ingest", "estimate", "run"])
     ip.add_argument("asset_id")
     ip.add_argument("answer", nargs="?", help="(ingest) path to the judge's answer JSON")
-    ip.add_argument("--for", dest="for_judge", choices=["grok", "anthropic"], default="anthropic", help="(prepare) image budget profile")
+    ip.add_argument("--for", dest="for_judge", choices=["grok", "anthropic"], default="anthropic", help="(prepare) which judge will read it; both share one packet")
     ip.add_argument("--judge", choices=["grok", "anthropic", "fixture"], default="grok", help="(ingest) which judge wrote the answer")
     ip.add_argument("--provider", choices=["anthropic", "fixture"], default="anthropic", help="(run)")
     ip.add_argument("--model", help="(run) exact model id; default claude-sonnet-5-5")
     ip.add_argument("--max-usd", type=float, default=1.5, help="(run) per-reference cap in USD")
     ip.add_argument("--skip-grok", action="store_true", help="(run) proceed without the Grok judge's answer")
+    ip.add_argument("--rerun", action="store_true", help="(run) pay again for a packet the API judge already answered")
     ip.add_argument("--fixture", help="(run --provider fixture) answer file to replay")
     ip.add_argument("--workspace")
     ip.add_argument("--json", action="store_true")
