@@ -171,6 +171,15 @@ def cmd_review(args: argparse.Namespace) -> int:
     from . import claims
 
     author = args.author or os.environ.get("IRIS_REVIEWER", "user")
+    if args.answer:
+        from . import review_sheet
+
+        try:
+            res = review_sheet.apply_answer(args.answer, author, workspace=_ws(args))
+        except review_sheet.SheetError as exc:
+            code = exit_codes.USAGE if exc.code == "usage" else exit_codes.VALIDATION
+            return _emit(exit_codes.error_payload(code, str(exc)), code)
+        return _emit(res, exit_codes.OK if res["ok"] else exit_codes.VALIDATION)
     try:
         if args.batch:
             decisions = []
@@ -187,6 +196,16 @@ def cmd_review(args: argparse.Namespace) -> int:
         return _emit(exit_codes.error_payload(exit_codes.USAGE, str(exc)), exit_codes.USAGE)
     res = claims.apply_decisions(decisions, author, workspace=_ws(args))
     return _emit(res, exit_codes.OK if res["ok"] else exit_codes.VALIDATION)
+
+
+def cmd_review_sheet(args: argparse.Namespace) -> int:
+    from . import claims, review_sheet
+
+    try:
+        res = review_sheet.make_sheet(args.asset_id, workspace=_ws(args))
+    except (review_sheet.SheetError, claims.ClaimsError) as exc:
+        return _emit(exit_codes.error_payload(exit_codes.VALIDATION, str(exc)), exit_codes.VALIDATION)
+    return _emit(res)
 
 
 def cmd_ledger(args: argparse.Namespace) -> int:
@@ -333,10 +352,17 @@ def build_parser() -> argparse.ArgumentParser:
     rv.add_argument("--value", help="(corrected) dimension=term")
     rv.add_argument("--reason")
     rv.add_argument("--batch", help="file with one decision per line: accept/reject/correct ...")
+    rv.add_argument("--answer", help="the line the review sheet printed: iris-review <asset_id> <sheet_id> <codes>")
     rv.add_argument("--author")
     rv.add_argument("--workspace")
     rv.add_argument("--json", action="store_true")
     rv.set_defaults(func=cmd_review)
+
+    rs = sub.add_parser("review-sheet", help="Write the review-by-exception sheet (HTML) for an asset")
+    rs.add_argument("asset_id")
+    rs.add_argument("--workspace")
+    rs.add_argument("--json", action="store_true")
+    rs.set_defaults(func=cmd_review_sheet)
 
     lg = sub.add_parser("ledger", help="Summarize model calls and cost")
     lg.add_argument("action", choices=["summary"])
