@@ -188,6 +188,11 @@ def run_derived_stages(src: Path, ref_dir: Path, manifest: dict[str, Any], index
         for name, fut in futures.items():
             records[name] = fut.result()
     text_doc = _read(ref_dir / "text.json") if (ref_dir / "text.json").exists() else {"tracks": []}
+    if text_doc.get("status") == "ok" and (ref_dir / "audio.json").exists():
+        # caption lines spell the voice-over: glued or misread words are repaired from the transcript
+        # (idempotent, keeps text_ocr); runs whenever text or audio was recomputed or not
+        textocr.repair_with_transcript(text_doc, _read(ref_dir / "audio.json"))
+        _write(ref_dir / "text.json", text_doc)
 
     def do_regions():
         doc = regions.run(src, ref_dir, shot_list, dw, dh, text_doc.get("tracks"))

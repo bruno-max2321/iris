@@ -252,9 +252,11 @@ def test_noisy_cut_frame_and_reflow_do_not_fragment_a_caption_block():
         42: [{"text": "hadamo", "conf": 0.90, "box": box(200, 340, 240)}, {"text": "cut the only", "conf": 0.97, "box": box(150, 390, 290)},
              {"text": "cable", "conf": 0.99, "box": box(220, 320, 340)}, {"text": "holding him up,", "conf": 0.95, "box": box(130, 410, 390)}],
     }
-    tracks = textocr.build_tracks(dets, W, H, step=6, n_frames=60)
+    dropped = []
+    tracks = textocr.build_tracks(dets, W, H, step=6, n_frames=60, dropped_out=dropped)
     texts = sorted(t["text"] for t in tracks)
-    assert texts == sorted(["He climbed onto a", "platform,", "Hc clmbd", "hadamn", "cut the only", "cable", "holding him up,"]), texts
+    assert texts == sorted(["He climbed onto a", "platform,", "hadamn", "cut the only", "cable", "holding him up,"]), texts
+    assert [(d["text"], d["reason"]) for d in dropped] == [("Hc clmbd", "low_confidence")]
     by = {t["text"]: t for t in tracks}
     assert by["He climbed onto a"]["frame_first_seen"] == 0 and by["He climbed onto a"]["frame_last_seen"] == 18
     assert by["cable"]["frame_first_seen"] == 30 and by["cable"]["frame_last_seen"] == 42
@@ -279,3 +281,55 @@ def test_forced_recompute_that_fails_keeps_previous_output(ws, monkeypatch):
     rec = out3["stages"]["audio"]
     assert rec["status"] == "failed" and rec.get("kept_previous_output") is True
     assert (ref / "audio.json").read_bytes() == before
+
+
+def test_junk_is_dropped_and_reveal_fragments_join_their_line():
+    from iris import textocr
+
+    W, H = 540, 960
+    def d(text, x0, x1, y, conf=0.95):
+        return {"text": text, "conf": conf, "box": [x0, y, x1, y + 40]}
+    dets = {
+        # first reveal caught mid-slide elsewhere, then the line settles
+        228: [d("Elisha", 425, 540, 560), d("hasay", 433, 512, 610)],
+        234: [d("Elisha Otis", 317, 510, 560), d("hasa problem", 323, 495, 610)],
+        240: [d("Elisha Otis", 281, 472, 560), d("has a problem", 286, 454, 610)],
+        246: [d("Elisha Otis", 263, 455, 560), d("has a problem", 269, 438, 610), d("8", 76, 140, 438, conf=0.8)],
+        252: [d("Elisha Otis", 256, 449, 560), d("has a problem", 264, 431, 610), d("", 270, 290, 490, conf=0.0)],
+        # one word split in two boxes; scene signage in another script; a stray digit
+        372: [d("cal", 225, 281, 484), d("es", 288, 330, 484), d("萬兴镜", 317, 378, 272, conf=0.69), d("118", 397, 454, 779, conf=0.24)],
+        378: [d("cales", 228, 333, 484)],
+        384: [d("cales", 228, 333, 484)],
+    }
+    dropped = []
+    tracks = textocr.build_tracks(dets, W, H, step=6, n_frames=400, dropped_out=dropped)
+    texts = sorted(t["text"] for t in tracks)
+    assert texts == ["Elisha Otis", "cales", "has a problem"], texts
+    by = {t["text"]: t for t in tracks}
+    assert by["has a problem"]["frame_first_seen"] == 228 and by["has a problem"].get("absorbed_fragments") == 1
+    assert by["cales"]["frame_first_seen"] == 372
+    assert {x["reason"] for x in dropped} == {"empty", "low_confidence", "other_script", "no_letters"}
+    assert not any(t["text"] in ("8", "118", "") for t in tracks)
+    assert [t["track_id"] for t in tracks] == [f"t{k:04d}" for k in range(len(tracks))]
+
+
+def test_transcript_repairs_glued_words_and_is_idempotent():
+    from iris import textocr
+
+    doc = {"status": "ok",
+           "tracks": [{"track_id": "t0000", "text": "He climbedontoa", "t_first_seen": 0.0, "t_last_seen": 1.5},
+                      {"track_id": "t0001", "text": "PTBarmum", "t_first_seen": 31.25, "t_last_seen": 32.5},
+                      {"track_id": "t0002", "text": "hadamn", "t_first_seen": 1.75, "t_last_seen": 2.5}],
+           "blocks": [{"block_id": "b0000", "track_ids": ["t0000"], "text": "He climbedontoa", "words": 2}]}
+    words = [{"w": w, "start": s} for w, s in [("He", 0.1), ("climbed", 0.3), ("onto", 0.6), ("a", 0.8), ("platform,", 1.0),
+                                               ("So", 31.0), ("he", 31.2), ("writes", 31.4), ("to", 31.6), ("P.T.", 31.8), ("Barnum,", 32.0)]]
+    rep = textocr.repair_with_transcript(doc, {"transcript": {"words": words}})
+    t = {x["track_id"]: x for x in doc["tracks"]}
+    assert t["t0000"]["text"] == "He climbed onto a" and t["t0000"]["text_ocr"] == "He climbedontoa" and t["t0000"]["text_source"] == "transcript"
+    assert t["t0001"]["text"] == "P.T. Barnum,"
+    assert t["t0002"]["text"] == "hadamn" and "text_ocr" not in t["t0002"]  # nothing spoken matches: OCR stays
+    assert doc["blocks"][0]["words"] == 4 and rep["repaired_tracks"] == 2
+    textocr.repair_with_transcript(doc, {"transcript": {"words": words}})
+    assert t["t0000"]["text_ocr"] == "He climbedontoa" and t["t0000"]["text"] == "He climbed onto a"
+    textocr.repair_with_transcript(doc, None)  # transcript gone: back to the OCR reading
+    assert t["t0000"]["text"] == "He climbedontoa" and "text_source" not in t["t0000"]

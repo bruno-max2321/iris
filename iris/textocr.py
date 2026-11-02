@@ -29,12 +29,16 @@ import numpy as np
 
 from . import decode, worker
 
-METHOD_VERSION = "textocr@0.3.0"
+METHOD_VERSION = "textocr@0.4.0"
 OCR_LONG_SIDE = int(os.environ.get("IRIS_OCR_LONG_SIDE", "960"))
 ECONOMY_STEP = 6
 MISS_FRAMES_FACTOR = 2      # a track survives this many sampling steps without a matching detection
 MIN_FREE_MATCH_CHARS = 4    # identical text this long continues a track wherever it moved
 BLOCK_MAX_DY = 0.35         # lines of one caption block sit within this share of the frame height
+CONF_MIN = 0.6              # tracks whose best reading is less confident than this are dropped
+FRAGMENT_MAX_SPAN_STEPS = 1  # a track lasting at most this many steps that begins a track starting right after is its reveal
+LINE_JOIN_GAP = 0.6         # boxes on one line closer than this share of the line height are one piece of text
+MOVED_GROW_MIN_CHARS = 5    # a line that grows or is re-read while the block moves continues across one gap
 FIRST_FRAME_BUDGET_S = float(os.environ.get("IRIS_OCR_FIRST_FRAME_BUDGET_S", "180"))   # model load + first frame
 FRAME_BUDGET_S = float(os.environ.get("IRIS_OCR_FRAME_BUDGET_S", "20"))                 # stall budget per frame
 MAX_RESTARTS = 3
@@ -264,7 +268,32 @@ def _match_score(tr: dict[str, Any], d_norm: str, nb: list[float]) -> tuple[floa
     return None
 
 
-def build_tracks(detections: dict[int, list[dict[str, Any]]], img_w: int, img_h: int, step: int, n_frames: int) -> list[dict[str, Any]]:
+def join_line_pieces(dets: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Boxes on the same line that almost touch are one piece of text the detector split ("cal" + "es").
+    Joined left to right, without a space when the gap is under a quarter of the line height."""
+    items = sorted(dets, key=lambda d: (d["box"][1], d["box"][0]))
+    out: list[dict[str, Any]] = []
+    for d in sorted(items, key=lambda d: d["box"][0]):
+        host = None
+        for o in out:
+            h = min(o["box"][3] - o["box"][1], d["box"][3] - d["box"][1])
+            v = min(o["box"][3], d["box"][3]) - max(o["box"][1], d["box"][1])
+            gap = d["box"][0] - o["box"][2]
+            if h > 0 and v >= 0.6 * h and -0.2 * h <= gap <= LINE_JOIN_GAP * h and _norm(o["text"]) and _norm(d["text"]):
+                host = (o, gap, h)
+                break
+        if host is None:
+            out.append({"text": d["text"], "conf": d["conf"], "box": list(d["box"])})
+            continue
+        o, gap, h = host
+        o["text"] = o["text"] + ("" if gap < 0.25 * h else " ") + d["text"]
+        o["conf"] = min(o["conf"], d["conf"])
+        o["box"] = [min(o["box"][0], d["box"][0]), min(o["box"][1], d["box"][1]), max(o["box"][2], d["box"][2]), max(o["box"][3], d["box"][3])]
+    return out
+
+
+def build_tracks(detections: dict[int, list[dict[str, Any]]], img_w: int, img_h: int, step: int, n_frames: int,
+                 lang: str = "en", dropped_out: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
     """Group per-frame detections into text tracks, one per caption line. A line revealed word by word is one
     track (growth steps counted in `reveal_steps`). Robust to the failure modes of short-form video:
 
@@ -274,7 +303,12 @@ def build_tracks(detections: dict[int, list[dict[str, Any]]], img_w: int, img_h:
       detection that belongs to a later one;
     - identical text (>= MIN_FREE_MATCH_CHARS characters) continues a track even when the block re-flows
       and the line jumps elsewhere;
-    - after tracking, temporally adjacent tracks with the same or similar text in the same place merge.
+    - after tracking, temporally adjacent tracks with the same or similar text in the same place merge, and
+      across one gap a line that grew or was re-read while the block moved continues;
+    - boxes the detector split on one line are joined before tracking;
+    - a short fragment that begins a track starting right after, or duplicates a line inside its span,
+      is absorbed by it;
+    - finished tracks with nothing worth keeping (see drop_reason) are left out and reported in `dropped_out`.
 
     Lines that are on screen together and leave together form a block (`block_id`): one caption cue."""
     tracks: list[dict[str, Any]] = []
@@ -285,7 +319,7 @@ def build_tracks(detections: dict[int, list[dict[str, Any]]], img_w: int, img_h:
         for tr in open_tracks:
             (alive if fid - tr["last_sampled_frame"] <= gap else tracks).append(tr)
         open_tracks = alive
-        dets = detections[fid]
+        dets = join_line_pieces(detections[fid])
         norm_dets = [(_norm(d["text"]), [d["box"][0] / img_w, d["box"][1] / img_h, d["box"][2] / img_w, d["box"][3] / img_h]) for d in dets]
         pairs = []
         for ti, tr in enumerate(open_tracks):
@@ -325,6 +359,7 @@ def build_tracks(detections: dict[int, list[dict[str, Any]]], img_w: int, img_h:
                                 "readings": [(d["text"], d["conf"], d_norm, fid)]})
     tracks.extend(open_tracks)
     tracks = _merge_adjacent(sorted(tracks, key=lambda t: (t["first_sampled_frame"], t["box"][1])), gap)
+    tracks = _absorb_fragments(tracks, step)
     out = []
     for k, tr in enumerate(tracks):
         # final text: majority vote over normalised readings that are at least 80% as long as the longest
@@ -355,9 +390,21 @@ def build_tracks(detections: dict[int, list[dict[str, Any]]], img_w: int, img_h:
             "animation": "build_on" if tr["reveal_steps"] >= 2 else ("step" if tr["reveal_steps"] == 1 else "static_or_cut"),
             "readings": len(tr["readings"]),
             "one_frame_candidate": len(tr["samples"]) == 1,
+            **({"absorbed_fragments": tr["absorbed"]} if tr.get("absorbed") else {}),
         })
-    _assign_blocks(out, step)
-    return out
+    kept, dropped = [], []
+    for t in out:
+        reason = drop_reason(t, lang)
+        if reason:
+            dropped.append({"text": t["text"], "conf": t["conf"], "frame_first_seen": t["frame_first_seen"], "frame_last_seen": t["frame_last_seen"], "reason": reason})
+        else:
+            kept.append(t)
+    for k, t in enumerate(kept):
+        t["track_id"] = f"t{k:04d}"
+    _assign_blocks(kept, step)
+    if dropped_out is not None:
+        dropped_out.extend(dropped)
+    return kept
 
 
 def _merge_adjacent(tracks: list[dict[str, Any]], gap: int) -> list[dict[str, Any]]:
@@ -370,7 +417,8 @@ def _merge_adjacent(tracks: list[dict[str, Any]], gap: int) -> list[dict[str, An
             dt = tr["first_sampled_frame"] - cand["last_sampled_frame"]
             if dt <= 0 or dt > gap:
                 continue
-            if _match_score(cand, tr["norm"], tr["box"]) or any(_match_score(cand, r[2], tr["box"]) for r in tr["readings"][:3]):
+            if (_match_score(cand, tr["norm"], tr["box"]) or any(_match_score(cand, r[2], tr["box"]) for r in tr["readings"][:3])
+                    or any(_moved_continuation(cand["norm"], n) for n in [tr["norm"]] + [r[2] for r in tr["readings"][:3]])):
                 host = cand
                 break
         if host is None:
@@ -386,6 +434,77 @@ def _merge_adjacent(tracks: list[dict[str, Any]], gap: int) -> list[dict[str, An
         host["box"] = tr["box"]
         host["conf"] = max(host["conf"], tr["conf"])
     return merged
+
+
+def _moved_continuation(a: str, b: str) -> bool:
+    """b continues a after the caption block moved: the same line grown ("cuttheon" -> "cuttheonly") or
+    re-read with a slip ("hadamn" -> "hadamo"). Only used across a gap, never inside one sampled frame."""
+    if len(a) < MOVED_GROW_MIN_CHARS or len(b) < MOVED_GROW_MIN_CHARS:
+        return False
+    if b.startswith(a) or a.startswith(b):
+        return True
+    return difflib.SequenceMatcher(None, a, b).ratio() >= 0.8
+
+
+def _begins(fragment: str, text: str) -> bool:
+    """The fragment is the first reveal of `text`, read with at most a slip ("hasay" / "hasaproblem",
+    "newk" / "newyorks", "cotissteps" / "otisstepsonto", "theyre" / "theyveexisted")."""
+    if not fragment or not text or len(fragment) >= len(text) + 2:
+        return False
+    if text.startswith(fragment) or (len(fragment) >= 4 and fragment[1:] in text[: len(fragment) + 1]):
+        return True
+    return len(fragment) >= 3 and difflib.SequenceMatcher(None, fragment, text[: len(fragment)]).ratio() >= 0.75
+
+
+def _absorb_fragments(tracks: list[dict[str, Any]], step: int) -> list[dict[str, Any]]:
+    """A track lasting at most FRAGMENT_MAX_SPAN_STEPS steps is absorbed by a longer track when
+    - its text begins the longer track, which starts within two steps after it: the first reveal, often
+      caught mid-slide in another place ("hasay" before "has a problem");
+    - or it lies inside the longer track's span and reads like it: a duplicate misreading of the same line
+      in a frame where the box split ("Ine crowd" under "The crowd screams.", "Withtin-decades").
+    It extends the host's span instead of standing as a cue of its own."""
+    out = []
+    for f in tracks:
+        host = None
+        if f["last_sampled_frame"] - f["first_sampled_frame"] <= FRAGMENT_MAX_SPAN_STEPS * step:
+            for h in tracks:
+                if h is f or h["last_sampled_frame"] - h["first_sampled_frame"] <= f["last_sampled_frame"] - f["first_sampled_frame"]:
+                    continue
+                norms = [h["norm"]] + [r[2] for r in h["readings"][:3]]
+                starts_after = f["first_sampled_frame"] <= h["first_sampled_frame"] <= f["last_sampled_frame"] + 2 * step
+                inside = h["first_sampled_frame"] - step <= f["first_sampled_frame"] and f["last_sampled_frame"] <= h["last_sampled_frame"] + step
+                if (starts_after or inside) and any(_begins(f["norm"], n) for n in norms):
+                    host = h
+                    break
+                if inside and difflib.SequenceMatcher(None, f["norm"], h["norm"]).ratio() >= 0.75:
+                    host = h
+                    break
+        if host is None:
+            out.append(f)
+            continue
+        host["first_sampled_frame"] = min(host["first_sampled_frame"], f["first_sampled_frame"])
+        host["samples"] = sorted(set(host["samples"]) | set(f["samples"]))
+        host["reveal_steps"] += 1
+        host["absorbed"] = host.get("absorbed", 0) + 1
+    return out
+
+
+def drop_reason(track: dict[str, Any], lang: str = "en") -> str | None:
+    """Why a finished track is not text worth keeping: nothing read, unconfident, no letters (stray digits
+    on a cut frame), a script other than the video's language (scene signage), or a lone character."""
+    norm = _norm(track["text"])
+    if not norm:
+        return "empty"
+    if track["conf"] < CONF_MIN:
+        return "low_confidence"
+    letters = [ch for ch in track["text"] if ch.isalpha()]
+    if not letters:
+        return "no_letters"
+    if lang.startswith("en") and not any(ch.isascii() for ch in letters):
+        return "other_script"
+    if len(norm) == 1 and track["samples"] <= 1:
+        return "single_character"
+    return None
 
 
 def _assign_blocks(tracks: list[dict[str, Any]], step: int) -> None:
@@ -438,6 +557,72 @@ def blocks_from_tracks(tracks: list[dict[str, Any]], pts: dict[int, Any] | None 
     return sorted(out, key=lambda b: (b["frame_first_seen"], b["block_id"]))
 
 
+# ----------------------------------------------------------------------------------------- transcript
+REPAIR_MIN_RATIO = 0.8      # OCR letters vs the spoken words' letters
+REPAIR_WINDOW_S = 2.0       # spoken words this far around the caption's span may be its source
+
+
+def _plain_word(w: str) -> str:
+    return w.strip().strip("\"“”«»()[]")
+
+
+def repair_with_transcript(text_doc: dict[str, Any], audio_doc: dict[str, Any] | None) -> dict[str, Any]:
+    """Caption lines in short-form video usually spell the voice-over. The OCR of tight display fonts drops
+    spaces and slips letters ("He climbedontoa", "PTBarmum"), which breaks words-per-cue and caption-to-speech
+    alignment. For each track, the run of spoken words near its span whose letters best match the OCR letters
+    replaces the text when the match is close (ratio >= REPAIR_MIN_RATIO, length within 20%); the OCR reading
+    is kept in `text_ocr` and `text_source` says "transcript". Idempotent: it always starts from `text_ocr`.
+    Without a transcript every track keeps its OCR text."""
+    tracks = text_doc.get("tracks") or []
+    words = (((audio_doc or {}).get("transcript") or {}).get("words")) or []
+    spoken = [(_plain_word(w.get("w", "")), _norm(w.get("w", "")), float(w["start"])) for w in words
+              if w.get("start") is not None and _norm(w.get("w", ""))]
+    repaired = 0
+    for t in tracks:
+        ocr = t.pop("text_ocr", None) or t["text"]
+        t.pop("text_source", None)
+        t["text"] = ocr
+        target = _norm(ocr)
+        if not spoken or len(target) < 4 or t.get("t_first_seen") is None:
+            continue
+        lo = float(t["t_first_seen"]) - REPAIR_WINDOW_S
+        hi = float(t.get("t_last_seen") if t.get("t_last_seen") is not None else t["t_first_seen"]) + REPAIR_WINDOW_S
+        best = None
+        for a in range(len(spoken)):
+            if not lo <= spoken[a][2] <= hi:
+                continue
+            cat = ""
+            for b in range(a, len(spoken)):
+                if spoken[b][2] > hi:
+                    break
+                cat += spoken[b][1]
+                if len(cat) > len(target) + 3:
+                    break
+                r = difflib.SequenceMatcher(None, target, cat).ratio()
+                if best is None or r > best[0]:
+                    best = (r, a, b, len(cat))
+        if best is None or best[0] < REPAIR_MIN_RATIO or abs(best[3] - len(target)) > max(2, 0.2 * len(target)):
+            continue
+        new = " ".join(spoken[i][0] for i in range(best[1], best[2] + 1) if spoken[i][0])
+        tail = ocr.rstrip()[-1:] if ocr.rstrip()[-1:] in ".,!?;:" else ""
+        if tail and new[-1:] not in ".,!?;:":
+            new += tail
+        if ocr[:1].isupper() and new[:1].islower() and ocr[:1].lower() == new[:1]:
+            new = new[:1].upper() + new[1:]
+        if new != ocr:
+            t["text_ocr"], t["text"], t["text_source"] = ocr, new, "transcript"
+            repaired += 1
+    by_id = {t["track_id"]: t for t in tracks}
+    for b in text_doc.get("blocks") or []:
+        lines = [by_id[i] for i in b.get("track_ids") or [] if i in by_id]
+        if lines:
+            b["text"] = " ".join(t["text"] for t in lines)
+            b["words"] = len(b["text"].split())
+    text_doc["transcript_repair"] = {"repaired_tracks": repaired, "tracks": len(tracks), "transcript_words": len(spoken),
+                                     "min_ratio": REPAIR_MIN_RATIO, "window_s": REPAIR_WINDOW_S}
+    return text_doc["transcript_repair"]
+
+
 # ----------------------------------------------------------------------------------------------- stage
 def run(src: Path, ref_dir: Path, shots: list[dict[str, Any]], n_frames: int, display_w: int, display_h: int,
         index_frames: list[dict[str, Any]], mode: str = "economy") -> dict[str, Any]:
@@ -478,7 +663,9 @@ def run(src: Path, ref_dir: Path, shots: list[dict[str, Any]], n_frames: int, di
         if dets:
             detections[fid] = dets
     img_w, img_h = size or (1, 1)
-    tracks = build_tracks(detections, img_w, img_h, step, n_frames) if detections else []
+    dropped: list[dict[str, Any]] = []
+    lang = os.environ.get("IRIS_OCR_LANG", "en")
+    tracks = build_tracks(detections, img_w, img_h, step, n_frames, lang=lang, dropped_out=dropped) if detections else []
     pts = {f["frame_id"]: f.get("pts_time") for f in index_frames}
     for tr in tracks:
         tr["t_first_seen"] = pts.get(tr["frame_first_seen"])
@@ -494,14 +681,14 @@ def run(src: Path, ref_dir: Path, shots: list[dict[str, Any]], n_frames: int, di
         reason = f"{len(res['timed_out'])} frames exceeded the per-frame budget and were skipped"
     return {
         **base, "status": res["status"], "reason": reason,
-        "backend": backend, "models": res.get("models"), "lang": os.environ.get("IRIS_OCR_LANG", "en"),
+        "backend": backend, "models": res.get("models"), "lang": lang,
         "mode": mode, "step": step, "long_side": OCR_LONG_SIDE,
         "sampled_frames": len(ids), "frames_ocr": len(key_ids), "frames_reused": len(reuse_of),
         "frames_timed_out": res.get("timed_out", []), "worker_restarts": res.get("restarts", 0),
         "seconds_per_frame": round(sum(timings) / len(timings), 3) if timings else None,
         "timing": {**timing, "model_init_s": res.get("init_s")},
         "frames_with_text": len(detections), "detections": sum(len(v) for v in detections.values()),
-        "image_size": [img_w, img_h], "tracks": tracks, "blocks": blocks,
+        "image_size": [img_w, img_h], "tracks": tracks, "blocks": blocks, "dropped": dropped,
         "caption_blocks": sum(1 for b in blocks if b["caption_like"]),
         "cue_timing_uncertainty_frames": step - 1, "dedup_threshold": DEDUP_THRESHOLD,
     }
