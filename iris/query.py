@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from . import claims as claims_mod
 from . import paths, registry
 from .store import Store
 
@@ -95,6 +96,8 @@ def query(term: str | None = None, dimension: str | None = None, status: str | N
         rows = store.list_claims(asset_id)
     finally:
         store.close()
+    stale: dict[str, set[str]] = {}
+    rows = [c for c in rows if c["claim_key"] not in stale.setdefault(c["asset_id"], claims_mod.stale_keys(c["asset_id"], ws))]
     filtered = term or dimension or status or source
     out = []
     for c in rows:

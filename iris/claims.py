@@ -73,7 +73,7 @@ def validate_asset(asset_id: str, workspace: Path | None = None) -> dict[str, An
     agree = None
     if packet_path.exists() and answers:
         packet = json.loads(packet_path.read_text(encoding="utf-8"))
-        model_claims, abstentions = interpret.fuse(asset_id, packet, answers, docs["shots"], idx)
+        model_claims, abstentions = interpret.fuse(asset_id, packet, answers, docs["shots"], idx, interpret.current_proposals(docs))
         generated.extend(model_claims)
         agree = interpret.agreement(packet, answers)
 
@@ -117,17 +117,35 @@ def validate_asset(asset_id: str, workspace: Path | None = None) -> dict[str, An
         "schema_version": "1.0.0", "asset_id": asset_id, "generated_at": _now(), "ok": not errors,
         "claims": len(final), "rejected_by_validator": len(errors), "errors": errors, "stale_claim_keys": stale,
         "evidence_count": len(idx), "by_kind": by_kind, "by_status": by_status, "by_source": by_source,
-        "judges_present": sorted(answers), "abstentions": len(abstentions), "agreement": agree,
+        "judges_present": sorted(answers), "abstentions": len(abstentions),
+        "outdated_judge_labels": sum(1 for a in abstentions if a.get("reason") == "outdated_estimate"), "agreement": agree,
         "review_queue": [c["claim_id"] for c in final if c["review_status"] in ("needs_review",)] + [c["claim_id"] for c in final if c["review_status"] == "pending" and c["source"] == "model"],
     }
     (ref_dir / "validate.json").write_text(json.dumps(report, indent=1, ensure_ascii=False), encoding="utf-8")
     return report
 
 
-def list_claims(asset_id: str, kind: str | None = None, status: str | None = None, source: str | None = None, workspace: Path | None = None) -> list[dict[str, Any]]:
+def stale_keys(asset_id: str, workspace: Path | None = None) -> set[str]:
+    """Claim keys the last validate no longer produced (stage re-run, outdated judge label). They stay in the
+    store with their history but count nowhere: not in review sheets, not in the Style Bible."""
+    p = _ref_dir(asset_id, workspace) / "validate.json"
+    if not p.exists():
+        return set()
+    return set(json.loads(p.read_text(encoding="utf-8")).get("stale_claim_keys") or [])
+
+
+def live(rows: list[dict[str, Any]], asset_id: str, workspace: Path | None = None) -> list[dict[str, Any]]:
+    stale = stale_keys(asset_id, workspace)
+    return [c for c in rows if c["claim_key"] not in stale]
+
+
+def list_claims(asset_id: str, kind: str | None = None, status: str | None = None, source: str | None = None, workspace: Path | None = None,
+                include_stale: bool = False) -> list[dict[str, Any]]:
     store = Store(workspace)
     try:
         rows = store.list_claims(asset_id)
+        if not include_stale:
+            rows = live(rows, asset_id, workspace)
     finally:
         store.close()
     return [c for c in rows if (not kind or c["claim_kind"] == kind) and (not status or c["review_status"] == status) and (not source or c["source"] == source)]

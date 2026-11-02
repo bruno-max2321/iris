@@ -634,9 +634,22 @@ def _labels(answer: dict[str, Any]) -> dict[tuple[str | None, str], dict[str, An
     return out
 
 
+def current_proposals(docs: dict[str, Any]) -> dict[str, dict[str, str]]:
+    """shot_id -> the code estimates a packet built now would show the judges (camera, light)."""
+    motion = {m["shot_id"]: m for m in (docs.get("motion") or {}).get("shots", [])}
+    color = {c["shot_id"]: c for c in (docs.get("color") or {}).get("shots", [])}
+    return {s["shot_id"]: _shot_summary(s, motion.get(s["shot_id"]), color.get(s["shot_id"]), [])[1]
+            for s in (docs.get("shots") or {}).get("shots", [])}
+
+
 def fuse(asset_id: str, packet: dict[str, Any], answers: dict[str, dict[str, Any]], shots_doc: dict[str, Any],
-         idx: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Model claims (without ids) and abstentions from one or two judges."""
+         idx: dict[str, Any], current: dict[str, dict[str, str]] | None = None) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Model claims (without ids) and abstentions from one or two judges.
+
+    With `current` (from current_proposals), a shot dimension whose code estimate changed since the packet was
+    built yields no claim: the judges answered while shown the old estimate, so their label is outdated and the
+    current measurement stands alone (recorded as an abstention with reason "outdated_estimate")."""
+    shown = {s["shot_id"]: s.get("code_proposals") or {} for w in packet.get("windows", []) for s in w.get("shots", [])}
     judges = [j for j in ("grok", "anthropic", "fixture") if j in answers and answers[j].get("packet_hash") == packet["packet_hash"]]
     labels = {j: _labels(answers[j]) for j in judges}
     shots = {s["shot_id"]: s for s in shots_doc.get("shots", [])}
@@ -645,6 +658,10 @@ def fuse(asset_id: str, packet: dict[str, Any], answers: dict[str, dict[str, Any
     claims: list[dict[str, Any]] = []
     abstentions: list[dict[str, Any]] = []
     for unit_id, did in keys:
+        if current is not None and unit_id and did in shown.get(unit_id, {}) and current.get(unit_id, {}).get(did) != shown[unit_id][did]:
+            abstentions.append({"unit_id": unit_id, "dimension": did, "judges": sorted(j for j in judges if labels[j].get((unit_id, did))),
+                                "reason": "outdated_estimate"})
+            continue
         per_judge = {j: labels[j].get((unit_id, did)) for j in judges}
         terms_by_judge = {j: (set(l["terms"]) if l and l.get("terms") != ["unclear"] else set()) for j, l in per_judge.items()}
         answered = {j for j, l in per_judge.items() if l is not None}

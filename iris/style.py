@@ -30,6 +30,7 @@ from typing import Any
 import numpy as np
 
 from . import __version__, continuity, evidence, paths, registry
+from . import claims as claims_mod
 from .store import Store
 
 METHOD_VERSION = "style@0.1.0"
@@ -167,7 +168,7 @@ def load_reference(asset_id: str, workspace: Path | None = None) -> dict[str, An
         raise StyleError(f"{asset_id}: analyze has not completed (shots.json / coverage.json missing)")
     store = Store(workspace)
     try:
-        claims = store.list_claims(asset_id)
+        claims = claims_mod.live(store.list_claims(asset_id), asset_id, workspace)
     finally:
         store.close()
     decided = []

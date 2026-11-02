@@ -160,3 +160,43 @@ def test_a_measurement_a_judge_confirms_is_accepted_without_asking():
     assert review_sheet.code_and_judge_agree(code, [code, judge])
     assert not review_sheet.code_and_judge_agree(code, [code, dict(judge, term_id="camera.movement=static")])
     assert not review_sheet.code_and_judge_agree(code, [code, dict(judge, review_status="rejected")])
+
+
+def test_revised_measurement_drops_outdated_judge_labels_and_stale_claims(ws, monkeypatch):
+    """Judges labelled camera movement while shown the old estimate (static); motion is re-measured as
+    pan_right. The judges' label and the old code claim stop counting; the new measurement is asked."""
+    from iris import style
+
+    # earlier packets asked the judges for camera movement; current ones do not
+    monkeypatch.setattr(interpret, "SHOT_DIMENSIONS", interpret.SHOT_DIMENSIONS + ["camera.movement"])
+    asset_id = ingest.ingest(str(FIX / "caption_1frame.mp4"), "own", workspace=ws)["asset_id"]
+    analyze.analyze(asset_id, workspace=ws)
+    interpret.prepare(asset_id, workspace=ws)
+    for name in ("grok", "fixture"):
+        fx = interpret._fixture_answer(interpret.load_packet(asset_id, ws), None)
+        fx["shots"][0]["dimensions"]["camera.movement"] = {"terms": ["static"], "evidence_ids": ["shot:s001"]}
+        p = ws / f"{name}.json"
+        p.write_text(json.dumps(fx))
+        if name == "grok":
+            fx["judge"] = "grok"
+            p.write_text(json.dumps(fx))
+            assert interpret.ingest_answer(asset_id, p, "grok", workspace=ws)["ok"]
+        else:
+            interpret.run(asset_id, "fixture", fixture_file=p, workspace=ws)
+    assert claims.validate_asset(asset_id, workspace=ws)["ok"]
+    assert review_sheet.auto_accept(asset_id, workspace=ws)["accepted"] >= 2  # judges agree; code+judge agree
+    cam = lambda rows: sorted((c["source"], c["term_id"].split("=")[1], c["review_status"]) for c in rows if c["dimension"] == "camera.movement")
+    assert cam(claims.list_claims(asset_id, workspace=ws)) == [("code", "static", "accepted"), ("model", "static", "accepted")]
+
+    mp = ws / "refs" / asset_id / "motion.json"
+    motion = json.loads(mp.read_text())
+    motion["shots"][0]["class"] = "pan_right"
+    mp.write_text(json.dumps(motion))
+    rep = claims.validate_asset(asset_id, workspace=ws)
+    assert rep["ok"] and rep["outdated_judge_labels"] == 1 and len(rep["stale_claim_keys"]) == 2
+    assert cam(claims.list_claims(asset_id, workspace=ws)) == [("code", "pan_right", "pending")]
+    assert len(cam(claims.list_claims(asset_id, workspace=ws, include_stale=True))) == 3
+    sheet = review_sheet.build_items(asset_id, workspace=ws)
+    assert any(i["kind"] == "statement" and i["dimension"] == "camera.movement" and i["term"] == "pan_right" for i in sheet["items"])
+    rd = style.load_reference(asset_id, ws)
+    assert not [c for c in rd["decided"] if c["eff_dimension"] == "camera.movement"]

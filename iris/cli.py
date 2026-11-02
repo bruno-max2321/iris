@@ -153,7 +153,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
 def cmd_claims(args: argparse.Namespace) -> int:
     from . import claims
 
-    rows = claims.list_claims(args.asset_id, kind=args.kind, status=args.status, source=args.source, workspace=_ws(args))
+    rows = claims.list_claims(args.asset_id, kind=args.kind, status=args.status, source=args.source, workspace=_ws(args), include_stale=args.include_stale)
     brief = [{k: c.get(k) for k in ("claim_id", "term_id", "claim_kind", "source", "unit_id", "review_status", "single_judge", "disagreement_group", "corrected_term_id")} for c in rows]
     return _emit({"ok": True, "asset_id": args.asset_id, "count": len(rows), "claims": brief if not args.full else rows})
 
@@ -404,6 +404,7 @@ def build_parser() -> argparse.ArgumentParser:
     cl.add_argument("--status", choices=["pending", "needs_review", "accepted", "corrected", "rejected"])
     cl.add_argument("--source", choices=["code", "model"])
     cl.add_argument("--full", action="store_true")
+    cl.add_argument("--include-stale", action="store_true", help="also list claims the last validate no longer produced")
     cl.add_argument("--workspace")
     cl.add_argument("--json", action="store_true")
     cl.set_defaults(func=cmd_claims)
