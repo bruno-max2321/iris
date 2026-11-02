@@ -16,10 +16,12 @@ import numpy as np
 
 from . import decode
 
-METHOD_VERSION = "motion_phasecorr@0.2.0"
+METHOD_VERSION = "motion_phasecorr@0.3.0"
 ANALYSIS_WIDTH = 192
 GRID = (4, 3)  # rows, cols
 TRIM_SHARE = 0.1            # largest-magnitude pairs left out of a shot's averages (a stray glitch, not the move)
+BLOCK_MAJORITY = 0.5        # share of grid blocks that must agree to overrule the full-frame shift
+BLOCK_AGREE_PX = 1.0        # a block agrees when its shift is this close to the blocks' median
 
 
 def _hann2d(h: int, w: int) -> np.ndarray:
@@ -57,6 +59,12 @@ def pair_metrics(prev: np.ndarray, cur: np.ndarray, cache: dict[str, Any]) -> di
         dx, dy, _ = phase_shift(prev[y:y + bh, x:x + bw], cur[y:y + bh, x:x + bw], cache["win_block"])
         vecs.append((dx, dy))
     v = np.array(vecs, dtype=np.float32)
+    # a fixed overlay (caption label, logo) gives the full-frame correlation a strong zero-shift peak, so a
+    # pan under a caption reads as static; when most blocks agree on one shift, that is the camera's move
+    med = np.median(v, axis=0)
+    agree = np.linalg.norm(v - med, axis=1) <= BLOCK_AGREE_PX
+    if agree.mean() >= BLOCK_MAJORITY and np.hypot(med[0] - gdx, med[1] - gdy) > BLOCK_AGREE_PX:
+        gdx, gdy = float(med[0]), float(med[1])
     centers = cache["centers"]
     radial = centers / np.maximum(np.linalg.norm(centers, axis=1, keepdims=True), 1e-6)
     tangential = np.stack([-radial[:, 1], radial[:, 0]], axis=1)

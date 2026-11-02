@@ -14,6 +14,8 @@ import numpy as np
 
 from .regions import ciede2000
 
+MIN_SPOKEN_LINES = 5  # same floor as the Style Bible's caption measurement (style.MIN_SPOKEN_LINES)
+
 # bible region name -> region key in color.json
 REGION_KEYS = {"background": "background", "subject": "subject", "skin": "skin", "graphics": "graphics", "frame": "whole_frame"}
 
@@ -87,7 +89,14 @@ def caption_tracks(docs: dict[str, Any]) -> list[dict[str, Any]] | None:
         return None
     tracks = text.get("tracks") or []
     caps = [t for t in tracks if t.get("class") == "subtitle_candidate" or t.get("zone") in ("middle_band", "lower_third")]
-    return caps or tracks
+    caps = caps or tracks
+    # as in the Style Bible: when enough lines spell the voice-over, those are the captions, and text that is
+    # part of the picture (app screens, signs, documents) is not judged against the caption rules
+    from .textocr import spoken_track_ids
+
+    spoken = spoken_track_ids(text, docs.get("audio"))
+    said = [t for t in caps if t["track_id"] in spoken]
+    return said if len(said) >= MIN_SPOKEN_LINES else caps
 
 
 def caption_blocks(docs: dict[str, Any]) -> list[dict[str, Any]] | None:

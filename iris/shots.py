@@ -10,7 +10,18 @@ from typing import Any
 
 import numpy as np
 
-METHOD_VERSION = "shots@0.1.0"
+METHOD_VERSION = "shots@0.2.0"
+
+# same-palette cuts (archival sepia, one grade across a collage): the colour histogram barely moves at the
+# cut, so the histogram threshold misses it; the picture itself changes (pHash) and the pixel difference
+# spikes far above its neighbourhood, and the new picture stays
+SP_HIST_MIN = 0.06          # histogram change still well above the in-shot noise
+SP_DIFF_MIN = 0.05          # mean absolute pixel difference
+SP_DIFF_RATIO = 4.0         # times the median difference of the surrounding frames
+SP_DIFF_WINDOW = 12         # frames each side for that median
+SP_PHASH_JUMP = 22          # of 64 bits: a different picture
+SP_PHASH_STAY = 14          # the new picture three frames later is still the same one
+SP_LOOKAHEAD = 3
 
 
 def _mad(x: np.ndarray) -> float:
@@ -47,6 +58,31 @@ def detect(frames: list[dict[str, Any]], index: dict[str, Any], *, min_shot_fram
     for i in range(1, n):
         if hist[i] > thr and hist[i] >= hist[max(1, i - 1)] and hist[i] >= (hist[i + 1] if i + 1 < n else 0):
             cut_mask[i] = True
+
+    phashes = [r.get("phash") for r in frames]
+
+    def ham(a: int, b: int) -> int | None:
+        if not (0 <= a < n and 0 <= b < n) or not phashes[a] or not phashes[b]:
+            return None
+        return _hamming(phashes[a], phashes[b])
+
+    sp_cuts: list[int] = []
+    sp_hist = max(SP_HIST_MIN, float(np.median(hist[1:]) + 6.0 * _mad(hist[1:]))) if n > 2 else SP_HIST_MIN
+    for i in range(1, n - SP_LOOKAHEAD):
+        if cut_mask[i] or hist[i] <= sp_hist or diff[i] <= SP_DIFF_MIN:
+            continue
+        around = np.concatenate([diff[max(1, i - SP_DIFF_WINDOW):i], diff[i + 1:i + 1 + SP_DIFF_WINDOW]])
+        if around.size and diff[i] < SP_DIFF_RATIO * float(np.median(around)):
+            continue
+        if diff[i] < diff[i - 1] or diff[i] < diff[i + 1]:
+            continue
+        # the new picture differs from every one of the last frames, so a short insert that returns is no cut
+        jump, stay = ham(i - 1, i), ham(i, i + SP_LOOKAHEAD)
+        back = [ham(j, i + SP_LOOKAHEAD) for j in range(max(0, i - 1 - SP_LOOKAHEAD), i)]
+        if None in (jump, stay) or None in back or jump < SP_PHASH_JUMP or stay > SP_PHASH_STAY or min(back) < SP_PHASH_JUMP:
+            continue
+        cut_mask[i] = True
+        sp_cuts.append(i)
 
     events: list[dict[str, Any]] = []
 
@@ -176,7 +212,7 @@ def detect(frames: list[dict[str, Any]], index: dict[str, Any], *, min_shot_fram
                            "max": round(float(lengths.max()), 3), "cv": round(float(lengths.std() / max(1e-6, lengths.mean())), 3)},
         "unique_pictures": len(clusters), "picture_reuse_count": reuse,
         "reuse_factor": round(len(hashes) / max(1, len(clusters)), 3),
-        "cut_threshold": round(thr, 4),
+        "cut_threshold": round(thr, 4), "same_palette_cuts": len(sp_cuts),
     }
     shots_doc = {"schema_version": "1.0.0", "method_version": METHOD_VERSION, "fps_nominal": fps, "frame_count": n,
                  "shots": shots, "montage": montage, "cut_times_s": cut_times}

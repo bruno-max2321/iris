@@ -410,3 +410,83 @@ def test_spoken_tracks_are_the_captions_not_the_picture_text():
                        {"track_id": "t1", "text": "THE COMMISSION", "t_first_seen": 0.5, "t_last_seen": 2.0}]}
     audio = {"transcript": {"words": [{"w": w, "start": 0.2 + 0.25 * k} for k, w in enumerate("He climbed onto a platform".split())]}}
     assert textocr.spoken_track_ids(text, audio) == {"t0"}
+
+
+def _palette_frames(pictures: list[str], per: int = 30) -> tuple[list[dict], dict]:
+    """Frames table of same-palette shots: histogram and pixel changes stay small except at the cuts."""
+    frames = []
+    for k, ph in enumerate(pictures):
+        for j in range(per):
+            cut = k > 0 and j == 0
+            frames.append({"frame_id": len(frames), "L_mean": 60.0, "sharpness": 100.0, "phash": ph,
+                           "hist_diff_prev": None if not frames else (0.11 if cut else 0.003),
+                           "diff_prev": None if not frames else (0.18 if cut else 0.02)})
+    index = {"nominal_fps": 24.0, "frames": [{"pts_time": i / 24, "duration_time": 1 / 24} for i in range(len(frames))]}
+    return frames, index
+
+
+def test_cuts_between_same_palette_shots_are_found():
+    from iris import shots
+
+    a, b, c = "0000000000000000", "ffffffff00000000", "00000000ffffffff"
+    frames, index = _palette_frames([a, b, c])
+    doc, _ = shots.detect(frames, index)
+    assert [s["frame_first"] for s in doc["shots"]] == [0, 30, 60] and doc["montage"]["same_palette_cuts"] == 2
+    # a one-frame different picture that returns to the old one is not a cut
+    frames, index = _palette_frames([a])
+    frames[15].update(phash=b, hist_diff_prev=0.11, diff_prev=0.18)
+    frames[16].update(hist_diff_prev=0.11, diff_prev=0.18)
+    doc, _ = shots.detect(frames, index)
+    assert len(doc["shots"]) == 1
+    # a fast move that changes the picture on every frame has no spike against its neighbours
+    frames, index = _palette_frames([a])
+    for i in range(1, 30):
+        frames[i].update(phash=(b if i % 2 else c), hist_diff_prev=0.09, diff_prev=0.15)
+    doc, _ = shots.detect(frames, index)
+    assert len(doc["shots"]) == 1
+
+
+def test_a_fixed_caption_does_not_turn_a_pan_into_static():
+    import numpy as np
+
+    from iris import motion
+
+    rng = np.random.default_rng(3)
+    box = np.ones(7) / 7
+    texture = rng.normal(128, 10, (342, 400))
+    for axis in (0, 1):                                              # soft archival print: no sharp detail
+        texture = np.apply_along_axis(lambda x: np.convolve(x, box, mode="same"), axis, texture)
+    texture = texture.astype(np.float32)
+    h, w = 342, 192
+    cache: dict = {}
+
+    def frame(k: int) -> np.ndarray:
+        g = texture[:, 2 * k:2 * k + w].copy()
+        g[160:200, 30:160] = 255.0                                   # caption label, fixed on screen
+        g[170:190, 40:150:3] = 0.0                                   # its letters
+        return g
+
+    # the full-frame correlation locks on the label
+    assert motion.phase_shift(frame(0), frame(1), motion._hann2d(h, w))[0] == 0.0
+
+    dx = [motion.pair_metrics(frame(k - 1), frame(k), cache)["dx"] for k in range(1, 10)]
+    assert all(abs(d + 2.0) <= 0.5 for d in dx), dx
+
+
+def test_caption_rules_judge_the_spoken_lines_not_the_text_in_the_picture():
+    from iris import continuity
+
+    said = ["It started with one photo", "A plate of octopus", "and one question", "how many calories", "Calorico looked closer"]
+    words, tracks = [], []
+    for k, line in enumerate(said):
+        for j, w in enumerate(line.split()):
+            words.append({"w": w, "start": 2.0 * k + 0.2 * j})
+        tracks.append({"track_id": f"t{k}", "text": line, "t_first_seen": 2.0 * k, "t_last_seen": 2.0 * k + 1.2,
+                       "zone": "middle_band", "rel_height": 0.043})
+    tracks += [{"track_id": f"u{k}", "text": label, "t_first_seen": 2.0 * k, "t_last_seen": 2.0 * k + 1.5, "zone": "lower_third", "rel_height": 0.015}
+               for k, label in enumerate(["Puré de zapallo", "Escaner", "Proteinas", "Carbohidratos", "Recientemente registrado"])]
+    docs = {"text": {"status": "ok", "tracks": tracks}, "audio": {"transcript": {"words": words}}}
+    assert {t["track_id"] for t in continuity.caption_tracks(docs)} == {f"t{k}" for k in range(5)}
+    # without enough spoken lines every caption-like track still counts
+    docs["audio"] = None
+    assert len(continuity.caption_tracks(docs)) == 10

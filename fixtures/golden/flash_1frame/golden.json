@@ -1,7 +1,7 @@
 {
  "schema_version": "1.0.0",
  "name": "flash_1frame",
- "frozen_at": "2026-11-02T13:58:56+00:00",
+ "frozen_at": "2026-11-02T16:58:08+00:00",
  "iris_version": "0.1.0",
  "pipeline_version": "m2.1",
  "source": {
