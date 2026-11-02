@@ -291,6 +291,8 @@ def _thumbs(asset_id: str, units: set[str | None], workspace: Path | None) -> di
     missing = []
     for sid in sorted(wanted):
         p = ref_dir / "interpret" / "images" / f"keyframe_{sid}_mid.jpg"
+        if not p.exists():
+            p = ref_dir / "evidence_frames" / f"keyframe_{sid}_mid.jpg"  # saved by gc before an original goes
         if p.exists():
             with Image.open(p) as im:
                 put(sid, im)

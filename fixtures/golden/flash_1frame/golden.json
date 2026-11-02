@@ -1,0 +1,65 @@
+{
+ "schema_version": "1.0.0",
+ "name": "flash_1frame",
+ "frozen_at": "2026-11-02T02:27:50+00:00",
+ "iris_version": "0.1.0",
+ "pipeline_version": "m2.1",
+ "source": {
+  "fixture": "synthetic/flash_1frame.mp4",
+  "sha256": "3c63df147dde1369cfe44694a1ae439d61b8dab76515c1ddc4573d0d34d606de"
+ },
+ "backends": {
+  "text": "tesseract-cli",
+  "transcript": null
+ },
+ "facts": {
+  "index.frame_count": 180,
+  "index.vfr": false,
+  "index.nominal_fps": 30.0,
+  "coverage.decode": "full",
+  "coverage.measurement": "full",
+  "shots.count": 1,
+  "shots.cut_times_s": [],
+  "shots.transition_in": [
+   "start"
+  ],
+  "montage.cuts_per_s": 0.0,
+  "events": [
+   "flash@90+1",
+   "freeze@0+90",
+   "freeze@91+89"
+  ],
+  "motion.class": [
+   "static"
+  ],
+  "light.key": [
+   "low_key"
+  ],
+  "light.side": [
+   "key_centred"
+  ],
+  "light.edge": [
+   "soft_light"
+  ],
+  "color.background_lab": [
+   [
+    16.589,
+    0.0,
+    0.0
+   ]
+  ],
+  "text.status": "ok",
+  "audio.status": "absent",
+  "text.blocks": [],
+  "text.block_frames": []
+ },
+ "tolerance": {
+  "shots.cut_times_s": 0.05,
+  "montage.cuts_per_s": 0.05,
+  "color.background_lab": 3.0,
+  "audio.integrated_lufs": 0.5,
+  "audio.true_peak_dbtp": 0.5,
+  "audio.transcript_words": 0.1,
+  "index.nominal_fps": 0.01
+ }
+}

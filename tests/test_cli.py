@@ -24,9 +24,9 @@ def test_lexicon_term_and_unknown():
     assert code == exit_codes.VALIDATION and out["ok"] is False and out["code"] == "validation"
 
 
-def test_unimplemented_commands_report_milestone():
-    code, out = run(["query"])
-    assert code == exit_codes.NOT_IMPLEMENTED and out["milestone"] == 5 and out["retryable"] is False
+def test_query_on_an_empty_workspace_returns_nothing(tmp_path):
+    code, out = run(["query", "--term", "camera.movement.dolly_in", "--workspace", str(tmp_path)])
+    assert code == exit_codes.OK and out["claims_total"] == 0
 
 
 def test_analyze_unknown_asset_is_usage_error():

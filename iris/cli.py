@@ -15,8 +15,6 @@ from typing import Any
 
 from . import __version__, doctor, exit_codes, paths, registry
 
-MILESTONE = {"query": 5, "report": 5, "gc": 5}
-
 _CODE_BY_NAME = {v: k for k, v in exit_codes.NAMES.items()}
 
 
@@ -24,11 +22,6 @@ def _emit(payload: dict[str, Any], code: int = exit_codes.OK) -> int:
     json.dump(payload, sys.stdout, ensure_ascii=False, indent=2)
     sys.stdout.write("\n")
     return code
-
-
-def _not_implemented(cmd: str) -> int:
-    return _emit(exit_codes.error_payload(exit_codes.NOT_IMPLEMENTED, f"'{cmd}' is not implemented yet",
-                                          milestone=MILESTONE.get(cmd)), exit_codes.NOT_IMPLEMENTED)
 
 
 def cmd_version(_: argparse.Namespace) -> int:
@@ -250,6 +243,44 @@ def cmd_check(args: argparse.Namespace) -> int:
     return _emit({"ok": True, **res})
 
 
+def cmd_report(args: argparse.Namespace) -> int:
+    from . import report
+
+    try:
+        res = report.export(args.asset_id, output=args.output, workspace=_ws(args))
+    except report.ReportError as exc:
+        code = _CODE_BY_NAME.get(exc.code, exit_codes.VALIDATION)
+        return _emit(exit_codes.error_payload(code, str(exc)), code)
+    return _emit(res, exit_codes.OK if res["ok"] else exit_codes.VALIDATION)
+
+
+def cmd_query(args: argparse.Namespace) -> int:
+    from . import query
+
+    try:
+        res = query.query(term=args.term, dimension=args.dimension, status=args.review_status, source=args.source,
+                          asset_id=args.asset, fts=args.fts, limit=args.limit, workspace=_ws(args))
+    except ValueError as exc:
+        return _emit(exit_codes.error_payload(exit_codes.USAGE, str(exc)), exit_codes.USAGE)
+    return _emit(res)
+
+
+def cmd_observations(args: argparse.Namespace) -> int:
+    from . import query
+
+    return _emit(query.term_proposals(min_refs=args.min_refs, write=not args.no_write, workspace=_ws(args)))
+
+
+def cmd_gc(args: argparse.Namespace) -> int:
+    from . import gc
+
+    try:
+        res = gc.run(keep_days=args.keep_days, apply=args.apply, workspace=_ws(args))
+    except BlockingIOError:
+        return _emit(exit_codes.error_payload(exit_codes.LOCKED, "another heavy job holds the lock; try again later"), exit_codes.LOCKED)
+    return _emit(res, exit_codes.OK if res["ok"] else exit_codes.PARTIAL)
+
+
 def cmd_selftest(args: argparse.Namespace) -> int:
     """Run the registry validator, the Style Bible example validation and the unit tests."""
     results: dict[str, Any] = {}
@@ -267,8 +298,19 @@ def cmd_selftest(args: argparse.Namespace) -> int:
         results["pytest"] = {"exit": p.returncode, "tail": (p.stdout.strip().splitlines() or [""])[-1]}
         if p.returncode != 0:
             rc_total = exit_codes.VALIDATION
+    if args.freeze:
+        from . import golden
+
+        try:
+            results["freeze"] = golden.freeze(args.freeze, name=args.name, workspace=_ws(args))
+        except Exception as exc:  # unknown asset or nothing analysed
+            return _emit(exit_codes.error_payload(exit_codes.USAGE, str(exc)), exit_codes.USAGE)
     if args.golden:
-        results["golden"] = exit_codes.error_payload(exit_codes.NOT_IMPLEMENTED, "golden reference arrives with milestone 5")
+        from . import golden
+
+        results["golden"] = golden.check(args.only or None, workspace=_ws(args))
+        if not results["golden"]["ok"]:
+            rc_total = exit_codes.VALIDATION
     return _emit({"ok": rc_total == exit_codes.OK, "results": results}, rc_total)
 
 
@@ -287,8 +329,12 @@ def build_parser() -> argparse.ArgumentParser:
     lx.set_defaults(func=cmd_lexicon)
 
     st = sub.add_parser("selftest", help="Validate registry, schemas and run unit tests")
-    st.add_argument("--golden", action="store_true")
+    st.add_argument("--golden", action="store_true", help="re-run every fixtures/golden reference and diff the frozen facts")
+    st.add_argument("--only", nargs="+", metavar="NAME", help="with --golden: only these golden names")
+    st.add_argument("--freeze", metavar="ASSET_ID", help="freeze an analysed asset into fixtures/golden/<name>/golden.json")
+    st.add_argument("--name", help="with --freeze: golden name (default: fixture stem or asset id)")
     st.add_argument("--no-tests", action="store_true")
+    st.add_argument("--workspace")
     st.set_defaults(func=cmd_selftest)
 
     ing = sub.add_parser("ingest", help="Register a reference from a URL or file")
@@ -390,14 +436,36 @@ def build_parser() -> argparse.ArgumentParser:
     ck.add_argument("--json", action="store_true")
     ck.set_defaults(func=cmd_check)
 
-    for name, helptext in [
-        ("query", "Search accepted claims and references"),
-        ("report", "Export the HTML report"),
-        ("gc", "Apply the retention policy"),
-    ]:
-        sp = sub.add_parser(name, help=f"{helptext} (milestone {MILESTONE[name]})")
-        sp.add_argument("rest", nargs=argparse.REMAINDER)
-        sp.set_defaults(func=lambda a, _n=name: _not_implemented(_n))
+    rp = sub.add_parser("report", help="Export the HTML report: every conclusion links to its evidence")
+    rp_sub = rp.add_subparsers(dest="action", required=True)
+    rx = rp_sub.add_parser("export")
+    rx.add_argument("asset_id")
+    rx.add_argument("--output", help="directory for index.html (default refs/<id>/report/)")
+    rx.add_argument("--workspace")
+    rp.set_defaults(func=cmd_report)
+
+    q = sub.add_parser("query", help="Search claims across references, captions, transcripts and observations")
+    q.add_argument("--term", help="dimension=term, dimension.term or a bare term id")
+    q.add_argument("--dimension")
+    q.add_argument("--review-status", choices=["pending", "needs_review", "accepted", "corrected", "rejected"])
+    q.add_argument("--source", choices=["code", "model"])
+    q.add_argument("--asset", help="asset id")
+    q.add_argument("--fts", help="words that must all appear in a caption, the transcript or an observation")
+    q.add_argument("--limit", type=int, default=200)
+    q.add_argument("--workspace")
+    q.set_defaults(func=cmd_query)
+
+    ob = sub.add_parser("observations", help="Summarize judge observations and propose terms recurring in 3+ references")
+    ob.add_argument("--min-refs", type=int, default=3)
+    ob.add_argument("--no-write", action="store_true", help="do not write proposals/term_proposals.json")
+    ob.add_argument("--workspace")
+    ob.set_defaults(func=cmd_observations)
+
+    g = sub.add_parser("gc", help="Apply the retention policy (dry run unless --apply)")
+    g.add_argument("--keep-days", type=int, default=90)
+    g.add_argument("--apply", action="store_true")
+    g.add_argument("--workspace")
+    g.set_defaults(func=cmd_gc)
     return p
 
 

@@ -1,0 +1,78 @@
+{
+ "schema_version": "1.0.0",
+ "name": "duplicate_frames",
+ "frozen_at": "2026-11-02T02:27:56+00:00",
+ "iris_version": "0.1.0",
+ "pipeline_version": "m2.1",
+ "source": {
+  "fixture": "synthetic/duplicate_frames.mp4",
+  "sha256": "7aa837ca3f251488e599842e5445325faf0ebe4fefc7039f00f4023b9575815c"
+ },
+ "backends": {
+  "text": "tesseract-cli",
+  "transcript": null
+ },
+ "facts": {
+  "index.frame_count": 144,
+  "index.vfr": false,
+  "index.nominal_fps": 36.0,
+  "coverage.decode": "full",
+  "coverage.measurement": "full",
+  "shots.count": 1,
+  "shots.cut_times_s": [],
+  "shots.transition_in": [
+   "start"
+  ],
+  "montage.cuts_per_s": 0.0,
+  "events": [],
+  "motion.class": [
+   "handheld"
+  ],
+  "light.key": [
+   "mid_key"
+  ],
+  "light.side": [
+   "key_screen_right"
+  ],
+  "light.edge": [
+   "soft_light"
+  ],
+  "color.background_lab": [
+   [
+    70.557,
+    11.284,
+    15.483
+   ]
+  ],
+  "text.status": "ok",
+  "audio.status": "absent",
+  "text.blocks": [
+   "ag",
+   "we",
+   "Bs"
+  ],
+  "text.block_frames": [
+   [
+    42,
+    42
+   ],
+   [
+    60,
+    60
+   ],
+   [
+    102,
+    102
+   ]
+  ]
+ },
+ "tolerance": {
+  "shots.cut_times_s": 0.05,
+  "montage.cuts_per_s": 0.05,
+  "color.background_lab": 3.0,
+  "audio.integrated_lufs": 0.5,
+  "audio.true_peak_dbtp": 0.5,
+  "audio.transcript_words": 0.1,
+  "index.nominal_fps": 0.01
+ }
+}

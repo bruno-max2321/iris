@@ -1,0 +1,86 @@
+{
+ "schema_version": "1.0.0",
+ "name": "cfr_30",
+ "frozen_at": "2026-11-02T02:27:37+00:00",
+ "iris_version": "0.1.0",
+ "pipeline_version": "m2.1",
+ "source": {
+  "fixture": "synthetic/cfr_30.mp4",
+  "sha256": "fbe4a37e33afc90db9e093df20c435207c11a952f806533c7e95dcf19a0eace9"
+ },
+ "backends": {
+  "text": "tesseract-cli",
+  "transcript": null
+ },
+ "facts": {
+  "index.frame_count": 180,
+  "index.vfr": false,
+  "index.nominal_fps": 30.0,
+  "coverage.decode": "full",
+  "coverage.measurement": "full",
+  "shots.count": 3,
+  "shots.cut_times_s": [
+   2.0,
+   4.0
+  ],
+  "shots.transition_in": [
+   "start",
+   "cut",
+   "cut"
+  ],
+  "montage.cuts_per_s": 0.333,
+  "events": [
+   "freeze@0+60",
+   "freeze@120+60",
+   "freeze@60+60"
+  ],
+  "motion.class": [
+   "static",
+   "static",
+   "static"
+  ],
+  "light.key": [
+   "high_key",
+   "low_key",
+   "mid_key"
+  ],
+  "light.side": [
+   "key_centred",
+   "key_centred",
+   "key_centred"
+  ],
+  "light.edge": [
+   "soft_light",
+   "soft_light",
+   "soft_light"
+  ],
+  "color.background_lab": [
+   [
+    93.512,
+    -0.351,
+    7.498
+   ],
+   [
+    16.589,
+    0.0,
+    0.0
+   ],
+   null
+  ],
+  "text.status": "ok",
+  "audio.status": "ok",
+  "text.blocks": [],
+  "text.block_frames": [],
+  "audio.integrated_lufs": -21.8,
+  "audio.true_peak_dbtp": -16.1
+ },
+ "tolerance": {
+  "shots.cut_times_s": 0.05,
+  "montage.cuts_per_s": 0.05,
+  "color.background_lab": 3.0,
+  "audio.integrated_lufs": 0.5,
+  "audio.true_peak_dbtp": 0.5,
+  "audio.transcript_words": 0.1,
+  "index.nominal_fps": 0.01
+ }
+}
