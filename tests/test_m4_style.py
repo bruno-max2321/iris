@@ -215,3 +215,27 @@ def test_cli_style_and_check_exit_codes(ws, capsys):
     assert main(["style", "build", "--style-id", "cli-v1", "--workspace", str(ws)]) == 2
     assert main(["style", "lint", "missing-v1", "--workspace", str(ws)]) == 3
     assert main(["check", str(FIX / "pan_right.mp4"), "--against", "missing-v1", "--workspace", str(ws)]) == 3
+
+
+def test_caption_cadence_counts_blocks_not_lines(ws):
+    a = _ref(ws, "pan_right.mp4")
+    _decide(ws, a)
+    ref = ws / "refs" / a
+    def tr(i, text, f0, f1, y):
+        return {"track_id": f"t{i:04d}", "text": text, "conf": 0.97, "box_norm": [0.25, y, 0.75, y + 0.04], "zone": "lower_third", "rel_height": 0.04,
+                "frame_first_seen": f0, "frame_last_seen": f1, "class": "subtitle_candidate", "animation": "build_on" if i == 0 else "static_or_cut",
+                "reveal_steps": 2 if i == 0 else 0, "block_id": "b0000" if i < 2 else "b0001"}
+    tracks = [tr(0, "He climbed onto a", 0, 54, 0.70), tr(1, "platform,", 24, 54, 0.75), tr(2, "and waited.", 60, 110, 0.72)]
+    blocks = [{"block_id": "b0000", "track_ids": ["t0000", "t0001"], "text": "He climbed onto a platform,", "lines": 2, "words": 5,
+               "frame_first_seen": 0, "frame_last_seen": 54, "zone": "lower_third", "caption_like": True},
+              {"block_id": "b0001", "track_ids": ["t0002"], "text": "and waited.", "lines": 1, "words": 2,
+               "frame_first_seen": 60, "frame_last_seen": 110, "zone": "lower_third", "caption_like": True}]
+    (ref / "text.json").write_text(json.dumps({"schema_version": "1.0.0", "method_version": "textocr@0.3.0", "status": "ok", "tracks": tracks, "blocks": blocks}))
+    cov = json.loads((ref / "coverage.json").read_text())
+    cov["stages"]["text"] = {"status": "ok"}
+    (ref / "coverage.json").write_text(json.dumps(cov))
+    rep = style.build([a], "caption-v1", workspace=ws)
+    t = _bible(ws, "caption-v1")["typography"]
+    assert rep["ok"] and t["lines"]["max"] == 2 and t["placement"]["zone"] == "lower_third" and t["case"] == "sentence"
+    assert t["caption_cadence"]["words_per_cue"]["typical"] == 3.5
+    assert t["emphasis"] == {"word_reveal": round(1 / 3, 3)} and "cr_caption_zone" in rep["rules"]

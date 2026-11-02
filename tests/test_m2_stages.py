@@ -232,6 +232,41 @@ def test_tracks_follow_a_caption_block_that_shifts_up_as_lines_are_added():
     assert first["reveal_steps"] >= 2 and first["frame_first_seen"] == 0 and first["frame_last_seen"] == 18
 
 
+def test_noisy_cut_frame_and_reflow_do_not_fragment_a_caption_block():
+    from iris import textocr
+
+    W, H = 540, 960
+    def box(x0, x1, y):
+        return [x0, y, x1, y + 40]
+    block1 = [{"text": "He climbed onto a", "conf": 0.97, "box": box(120, 420, 600)}, {"text": "platform,", "conf": 0.96, "box": box(190, 350, 650)}]
+    dets = {
+        0: block1, 6: block1,
+        9: [{"text": "Hc clmbd", "conf": 0.41, "box": box(100, 300, 610)}],          # blurred cut frame: garbage, other lines missed
+        12: block1, 18: block1,
+        24: [{"text": "hadamn", "conf": 0.97, "box": box(200, 340, 560)}, {"text": "cut theon", "conf": 0.95, "box": box(160, 380, 610)}],
+        30: [{"text": "hadamou", "conf": 0.80, "box": box(200, 340, 560)}, {"text": "cut the only", "conf": 0.97, "box": box(150, 390, 610)},
+             {"text": "cable", "conf": 0.99, "box": box(220, 320, 660)}],
+        # block re-flows: every line jumps up by 0.33 of the frame when the next line arrives
+        36: [{"text": "hadamn", "conf": 0.96, "box": box(200, 340, 240)}, {"text": "cut the only", "conf": 0.97, "box": box(150, 390, 290)},
+             {"text": "cable", "conf": 0.99, "box": box(220, 320, 340)}, {"text": "holding him up,", "conf": 0.95, "box": box(130, 410, 390)}],
+        42: [{"text": "hadamo", "conf": 0.90, "box": box(200, 340, 240)}, {"text": "cut the only", "conf": 0.97, "box": box(150, 390, 290)},
+             {"text": "cable", "conf": 0.99, "box": box(220, 320, 340)}, {"text": "holding him up,", "conf": 0.95, "box": box(130, 410, 390)}],
+    }
+    tracks = textocr.build_tracks(dets, W, H, step=6, n_frames=60)
+    texts = sorted(t["text"] for t in tracks)
+    assert texts == sorted(["He climbed onto a", "platform,", "Hc clmbd", "hadamn", "cut the only", "cable", "holding him up,"]), texts
+    by = {t["text"]: t for t in tracks}
+    assert by["He climbed onto a"]["frame_first_seen"] == 0 and by["He climbed onto a"]["frame_last_seen"] == 18
+    assert by["cable"]["frame_first_seen"] == 30 and by["cable"]["frame_last_seen"] == 42
+    assert by["hadamn"]["frame_first_seen"] == 24 and by["hadamn"]["frame_last_seen"] == 42
+    # blocks: lines that leave together are one cue
+    assert by["He climbed onto a"]["block_id"] == by["platform,"]["block_id"]
+    assert len({by[t]["block_id"] for t in ("hadamn", "cut the only", "cable", "holding him up,")}) == 1
+    blocks = textocr.blocks_from_tracks(tracks)
+    second = next(b for b in blocks if "cable" in b["text"])
+    assert second["text"] == "hadamn cut the only cable holding him up," and second["lines"] == 4
+
+
 def test_forced_recompute_that_fails_keeps_previous_output(ws, monkeypatch):
     out1, ref = _analyze(ws, "cfr_30.mp4")
     before = (ref / "audio.json").read_bytes()

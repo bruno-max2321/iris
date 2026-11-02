@@ -90,6 +90,20 @@ def caption_tracks(docs: dict[str, Any]) -> list[dict[str, Any]] | None:
     return caps or tracks
 
 
+def caption_blocks(docs: dict[str, Any]) -> list[dict[str, Any]] | None:
+    """Caption cues (blocks of lines shown and cleared together). Falls back to one cue per caption track for
+    text.json written before textocr 0.3.0."""
+    caps = caption_tracks(docs)
+    if not caps:
+        return None
+    ids = {t["track_id"] for t in caps}
+    blocks = [b for b in (docs.get("text") or {}).get("blocks") or [] if set(b.get("track_ids") or []) & ids]
+    if blocks:
+        return blocks
+    return [{"block_id": t["track_id"], "track_ids": [t["track_id"]], "text": t.get("text") or "", "lines": 1,
+             "words": len((t.get("text") or "").split()), "frame_first_seen": t["frame_first_seen"], "frame_last_seen": t["frame_last_seen"]} for t in caps]
+
+
 def _track_unit(t: dict[str, Any], value: Any, fps: float) -> dict[str, Any]:
     f0, f1 = int(t.get("frame_first_seen", 0)), int(t.get("frame_last_seen", 0))
     return {"value": value, "track_id": t.get("track_id"), "frame": f0, "t": f"{f0 / fps:.2f}-{(f1 + 1) / fps:.2f}"}

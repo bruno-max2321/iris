@@ -16,6 +16,7 @@ import csv
 import difflib
 import importlib.util
 import io
+import json
 import os
 import shutil
 import subprocess
@@ -28,9 +29,12 @@ import numpy as np
 
 from . import decode, worker
 
-METHOD_VERSION = "textocr@0.2.2"
+METHOD_VERSION = "textocr@0.3.0"
 OCR_LONG_SIDE = int(os.environ.get("IRIS_OCR_LONG_SIDE", "960"))
 ECONOMY_STEP = 6
+MISS_FRAMES_FACTOR = 2      # a track survives this many sampling steps without a matching detection
+MIN_FREE_MATCH_CHARS = 4    # identical text this long continues a track wherever it moved
+BLOCK_MAX_DY = 0.35         # lines of one caption block sit within this share of the frame height
 FIRST_FRAME_BUDGET_S = float(os.environ.get("IRIS_OCR_FIRST_FRAME_BUDGET_S", "180"))   # model load + first frame
 FRAME_BUDGET_S = float(os.environ.get("IRIS_OCR_FRAME_BUDGET_S", "20"))                 # stall budget per frame
 MAX_RESTARTS = 3
@@ -239,9 +243,13 @@ def _near(prev_box: list[float], box: list[float]) -> bool:
 
 
 def _match_score(tr: dict[str, Any], d_norm: str, nb: list[float]) -> tuple[float, str] | None:
-    """Return (score, kind) when detection continues the track. kind: same | grow | shrink | similar."""
+    """Return (score, kind) when detection continues the track. kind: same | grow | shrink | similar | moved."""
     t_norm = tr["norm"]
-    if not t_norm or not d_norm or not _near(tr["box"], nb):
+    if not t_norm or not d_norm:
+        return None
+    if not _near(tr["box"], nb):
+        if t_norm == d_norm and len(t_norm) >= MIN_FREE_MATCH_CHARS:
+            return 1.8, "moved"             # block re-flowed: the same line jumped to another place
         return None
     iou = _iou(tr["box"], nb)
     if t_norm == d_norm:
@@ -257,43 +265,57 @@ def _match_score(tr: dict[str, Any], d_norm: str, nb: list[float]) -> tuple[floa
 
 
 def build_tracks(detections: dict[int, list[dict[str, Any]]], img_w: int, img_h: int, step: int, n_frames: int) -> list[dict[str, Any]]:
-    """Group per-frame detections into text tracks. A caption revealed word by word (the dominant short-form
-    style) is one track: its growth steps are counted in `reveal_steps` and its final text is the longest
-    reading, preferring the variant with the most spaces (recognisers often merge italic words)."""
+    """Group per-frame detections into text tracks, one per caption line. A line revealed word by word is one
+    track (growth steps counted in `reveal_steps`). Robust to the failure modes of short-form video:
+
+    - a sampled frame that misreads or drops a line (cut frames, motion blur, flashes) does not end the
+      track: a track survives up to MISS_FRAMES_FACTOR * step frames without a matching detection;
+    - detections are assigned to tracks globally, best score first, so an early track cannot steal the
+      detection that belongs to a later one;
+    - identical text (>= MIN_FREE_MATCH_CHARS characters) continues a track even when the block re-flows
+      and the line jumps elsewhere;
+    - after tracking, temporally adjacent tracks with the same or similar text in the same place merge.
+
+    Lines that are on screen together and leave together form a block (`block_id`): one caption cue."""
     tracks: list[dict[str, Any]] = []
     open_tracks: list[dict[str, Any]] = []
+    gap = MISS_FRAMES_FACTOR * step
     for fid in sorted(detections):
+        alive = []
+        for tr in open_tracks:
+            (alive if fid - tr["last_sampled_frame"] <= gap else tracks).append(tr)
+        open_tracks = alive
         dets = detections[fid]
         norm_dets = [(_norm(d["text"]), [d["box"][0] / img_w, d["box"][1] / img_h, d["box"][2] / img_w, d["box"][3] / img_h]) for d in dets]
-        matched: set[int] = set()
-        still_open = []
-        for tr in open_tracks:
-            best, best_i, best_kind = None, -1, ""
-            for i, d in enumerate(dets):
-                if i in matched:
-                    continue
+        pairs = []
+        for ti, tr in enumerate(open_tracks):
+            for i in range(len(dets)):
                 res = _match_score(tr, norm_dets[i][0], norm_dets[i][1])
-                if res and (best is None or res[0] > best):
-                    best, best_i, best_kind = res[0], i, res[1]
-            if best_i >= 0 and fid - tr["last_sampled_frame"] <= step * 2:
-                d = dets[best_i]
-                d_norm, nb = norm_dets[best_i]
-                matched.add(best_i)
-                tr["last_sampled_frame"] = fid
-                tr["samples"].append(fid)
-                tr["readings"].append((d["text"], d["conf"], d_norm, fid))
-                if best_kind == "grow" or (best_kind == "similar" and len(d_norm) > len(tr["norm"]) + 1):
-                    # growth, including growth read with a recogniser slip ("climbea" -> "climbed onto")
-                    tr["reveal_steps"] += 1
-                    tr["norm"], tr["box"] = d_norm, nb
-                elif best_kind in ("same", "similar"):
-                    tr["box"] = [(x + y) / 2 for x, y in zip(tr["box"], nb)]
-                    if d["conf"] > tr["conf"]:
-                        tr["conf"] = d["conf"]
-                still_open.append(tr)
-            else:
-                tracks.append(tr)
-        open_tracks = still_open
+                if res:
+                    pairs.append((res[0], ti, i, res[1]))
+        pairs.sort(key=lambda p: (-p[0], p[1], p[2]))
+        used_t: set[int] = set()
+        matched: set[int] = set()
+        for _score, ti, i, kind in pairs:
+            if ti in used_t or i in matched:
+                continue
+            used_t.add(ti)
+            matched.add(i)
+            tr, d = open_tracks[ti], dets[i]
+            d_norm, nb = norm_dets[i]
+            tr["last_sampled_frame"] = fid
+            tr["samples"].append(fid)
+            tr["readings"].append((d["text"], d["conf"], d_norm, fid))
+            if kind == "grow" or (kind == "similar" and len(d_norm) > len(tr["norm"]) + 1):
+                # growth, including growth read with a recogniser slip ("climbea" -> "climbed onto")
+                tr["reveal_steps"] += 1
+                tr["norm"], tr["box"] = d_norm, nb
+            elif kind == "moved":
+                tr["box"] = nb
+            elif kind in ("same", "similar"):
+                tr["box"] = [(x + y) / 2 for x, y in zip(tr["box"], nb)]
+            if d["conf"] > tr["conf"]:
+                tr["conf"] = d["conf"]
         for i, d in enumerate(dets):
             if i in matched:
                 continue
@@ -302,6 +324,7 @@ def build_tracks(detections: dict[int, list[dict[str, Any]]], img_w: int, img_h:
                                 "last_sampled_frame": fid, "samples": [fid], "reveal_steps": 0,
                                 "readings": [(d["text"], d["conf"], d_norm, fid)]})
     tracks.extend(open_tracks)
+    tracks = _merge_adjacent(sorted(tracks, key=lambda t: (t["first_sampled_frame"], t["box"][1])), gap)
     out = []
     for k, tr in enumerate(tracks):
         # final text: majority vote over normalised readings that are at least 80% as long as the longest
@@ -333,7 +356,86 @@ def build_tracks(detections: dict[int, list[dict[str, Any]]], img_w: int, img_h:
             "readings": len(tr["readings"]),
             "one_frame_candidate": len(tr["samples"]) == 1,
         })
+    _assign_blocks(out, step)
     return out
+
+
+def _merge_adjacent(tracks: list[dict[str, Any]], gap: int) -> list[dict[str, Any]]:
+    """Join track B into track A when B starts after A ends, within `gap` frames, with the same, grown or
+    similar text, in the same place (or anywhere for identical long text)."""
+    merged: list[dict[str, Any]] = []
+    for tr in tracks:
+        host = None
+        for cand in reversed(merged):
+            dt = tr["first_sampled_frame"] - cand["last_sampled_frame"]
+            if dt <= 0 or dt > gap:
+                continue
+            if _match_score(cand, tr["norm"], tr["box"]) or any(_match_score(cand, r[2], tr["box"]) for r in tr["readings"][:3]):
+                host = cand
+                break
+        if host is None:
+            merged.append(tr)
+            continue
+        if tr["norm"].startswith(host["norm"]) and len(tr["norm"]) > len(host["norm"]):
+            host["reveal_steps"] += 1
+            host["norm"] = tr["norm"]
+        host["reveal_steps"] += tr["reveal_steps"]
+        host["samples"] += tr["samples"]
+        host["readings"] += tr["readings"]
+        host["last_sampled_frame"] = tr["last_sampled_frame"]
+        host["box"] = tr["box"]
+        host["conf"] = max(host["conf"], tr["conf"])
+    return merged
+
+
+def _assign_blocks(tracks: list[dict[str, Any]], step: int) -> None:
+    """Lines on screen at the same time, stacked in the same column, that leave within one sample of each
+    other belong to one caption block (one cue). Sets `block_id` on every track."""
+    n = len(tracks)
+    parent = list(range(n))
+
+    def find(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for i in range(n):
+        a = tracks[i]
+        for j in range(i + 1, n):
+            b = tracks[j]
+            if a["frame_first_seen"] > b["frame_last_seen"] or b["frame_first_seen"] > a["frame_last_seen"]:
+                continue
+            if abs(a["frame_last_seen"] - b["frame_last_seen"]) > step:
+                continue
+            ba, bb = a["box_norm"], b["box_norm"]
+            if abs((ba[1] + ba[3]) / 2 - (bb[1] + bb[3]) / 2) > BLOCK_MAX_DY or min(ba[2], bb[2]) - max(ba[0], bb[0]) <= 0:
+                continue
+            parent[find(j)] = find(i)
+    roots: dict[int, str] = {}
+    for i, t in enumerate(tracks):
+        r = find(i)
+        roots.setdefault(r, f"b{len(roots):04d}")
+        t["block_id"] = roots[r]
+
+
+def blocks_from_tracks(tracks: list[dict[str, Any]], pts: dict[int, Any] | None = None) -> list[dict[str, Any]]:
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for t in tracks:
+        groups.setdefault(t.get("block_id") or t["track_id"], []).append(t)
+    out = []
+    for bid, lines in groups.items():
+        lines = sorted(lines, key=lambda t: (t["box_norm"][1] + t["box_norm"][3]) / 2)
+        f0 = min(t["frame_first_seen"] for t in lines)
+        f1 = max(t["frame_last_seen"] for t in lines)
+        cy = sum((t["box_norm"][1] + t["box_norm"][3]) / 2 for t in lines) / len(lines)
+        text = " ".join(t["text"] for t in lines)
+        out.append({"block_id": bid, "track_ids": [t["track_id"] for t in lines], "text": text, "lines": len(lines),
+                    "words": len(text.split()), "frame_first_seen": f0, "frame_last_seen": f1,
+                    "t_first_seen": (pts or {}).get(f0), "t_last_seen": (pts or {}).get(f1),
+                    "zone": "upper_third" if cy < 1 / 3 else ("middle_band" if cy < 2 / 3 else "lower_third"),
+                    "caption_like": any(t.get("class") == "subtitle_candidate" or t.get("zone") != "upper_third" for t in lines)})
+    return sorted(out, key=lambda b: (b["frame_first_seen"], b["block_id"]))
 
 
 # ----------------------------------------------------------------------------------------------- stage
@@ -381,6 +483,11 @@ def run(src: Path, ref_dir: Path, shots: list[dict[str, Any]], n_frames: int, di
     for tr in tracks:
         tr["t_first_seen"] = pts.get(tr["frame_first_seen"])
         tr["t_last_seen"] = pts.get(tr["frame_last_seen"])
+    blocks = blocks_from_tracks(tracks, pts)
+    # raw detections, so the tracker can be retuned without running OCR again
+    raw = {"schema_version": "1.0.0", "method_version": METHOD_VERSION, "image_size": [size[0], size[1]] if size else None, "step": step,
+           "detections": {str(f): [[d["text"], round(float(d["conf"]), 3), *[int(round(v)) for v in d["box"]]] for d in v] for f, v in sorted(detections.items())}}
+    (ref_dir / "text_detections.json").write_text(json.dumps(raw, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     timings = res.get("timings") or []
     reason = res.get("reason")
     if res["status"] == "ok" and res.get("timed_out"):
@@ -394,6 +501,7 @@ def run(src: Path, ref_dir: Path, shots: list[dict[str, Any]], n_frames: int, di
         "seconds_per_frame": round(sum(timings) / len(timings), 3) if timings else None,
         "timing": {**timing, "model_init_s": res.get("init_s")},
         "frames_with_text": len(detections), "detections": sum(len(v) for v in detections.values()),
-        "image_size": [img_w, img_h], "tracks": tracks,
+        "image_size": [img_w, img_h], "tracks": tracks, "blocks": blocks,
+        "caption_blocks": sum(1 for b in blocks if b["caption_like"]),
         "cue_timing_uncertainty_frames": step - 1, "dedup_threshold": DEDUP_THRESHOLD,
     }

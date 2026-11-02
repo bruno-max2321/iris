@@ -203,6 +203,10 @@ def _caps(rd) -> list[dict[str, Any]] | None:
     return continuity.caption_tracks(rd["docs"])
 
 
+def _blocks(rd) -> list[dict[str, Any]] | None:
+    return continuity.caption_blocks(rd["docs"])
+
+
 def _cap_duration_s(t, fps) -> float:
     return (int(t["frame_last_seen"]) - int(t["frame_first_seen"]) + 1) / fps
 
@@ -263,9 +267,11 @@ def ref_facts(rd) -> dict[str, float]:
     if caps:
         put("first_text_at_s", min(int(t["frame_first_seen"]) for t in caps) / rd["fps"])
         put("caption_size_p50", float(np.median([t["rel_height"] for t in caps])))
-        if m.get("duration_s"):
-            put("cues_per_10s", len(caps) / float(m["duration_s"]) * 10.0)
-        put("words_per_cue_p50", float(np.median([len((t.get("text") or "").split()) for t in caps])))
+        blocks = _blocks(rd) or []
+        if m.get("duration_s") and blocks:
+            put("cues_per_10s", len(blocks) / float(m["duration_s"]) * 10.0)
+        if blocks:
+            put("words_per_cue_p50", float(np.median([b["words"] for b in blocks])))
     for region in ("background", "whole_frame"):
         vals = [c["regions"][region]["lab_mean"][0] for c in (rd["docs"].get("color") or {}).get("shots", [])
                 if c.get("status") == "ok" and (c.get("regions") or {}).get(region)]
@@ -653,9 +659,10 @@ def build(asset_ids: list[str], style_id: str, workspace: Path | None = None) ->
         letters = "".join(ch for _, c in caps for ch in (c.get("text") or "") if ch.isalpha())
         if letters:
             up = sum(ch.isupper() for ch in letters) / len(letters)
-            firsts = [w[0] for _, c in caps for w in (c.get("text") or "").split()[:1] if w[:1].isalpha()]
-            first_up = (sum(ch.isupper() for ch in firsts) / len(firsts)) if firsts else 0.0
-            case = "upper" if up > 0.9 else ("lower" if up < 0.02 else ("sentence" if first_up > 0.8 and up < 0.3 else "mixed"))
+            words = [w for _, c in caps for w in (c.get("text") or "").split() if w[:1].isalpha()]
+            capitalized = (sum(w[0].isupper() for w in words) / len(words)) if words else 0.0
+            inner_up = sum(ch.isupper() for w in words for ch in w[1:] if ch.isalpha())
+            case = ("upper" if up > 0.9 else "lower" if up < 0.02 else "mixed" if capitalized > 0.6 or inner_up > 0.1 * len(letters) else "sentence")
             ty.measured("case", case, text_refs)
         ty.measured("size_rel_frame_h", value_range([c["rel_height"] for _, c in caps], widen=widen, rel=tol["type_size_rel"], nd=4, lo=0.0,
                                                     spread=(10, 90)), text_refs)
@@ -664,14 +671,9 @@ def build(asset_ids: list[str], style_id: str, workspace: Path | None = None) ->
             zones[c["zone"]] = zones.get(c["zone"], 0) + 1
         zone = max(zones.items(), key=lambda kv: (kv[1], kv[0]))[0]
         ty.measured("placement", {"zone": ZONE_TO_PLACEMENT.get(zone, "center")}, text_refs)
-        max_lines, cpl = 1, []
-        for rd in text_refs:
-            frames: dict[int, int] = {}
-            for c in _caps(rd):
-                for f in range(int(c["frame_first_seen"]), int(c["frame_last_seen"]) + 1):
-                    frames[f] = frames.get(f, 0) + 1
-            max_lines = max(max_lines, max(frames.values(), default=1))
-            cpl += [len(c.get("text") or "") for c in _caps(rd)]
+        cues = [(rd, b) for rd in text_refs for b in _blocks(rd) or []]
+        max_lines = max([b["lines"] for _, b in cues], default=1)
+        cpl = [len(c.get("text") or "") for _, c in caps]
         ty.measured("lines", {"max": int(min(4, max_lines)), "chars_per_line_p90": int(np.percentile(cpl, 90))}, text_refs)
         build_on = sum(1 for _, c in caps if c.get("animation") == "build_on")
         if build_on:
@@ -679,15 +681,15 @@ def build(asset_ids: list[str], style_id: str, workspace: Path | None = None) ->
             ty.kinds.add("estimated")
             ty.notes.append("emphasis word_reveal = share of caption tracks that grow word by word in OCR")
         cad = {"cues_per_10s": frange("cues_per_10s", "cues", 2, lo=0.0),
-               "cue_duration_s": value_range([_cap_duration_s(c, rd["fps"]) for rd, c in caps], widen=widen, rel=tol["hold_rel"], nd=2, lo=0.0, unit="s", spread=(10, 90)),
-               "words_per_cue": value_range([len((c.get("text") or "").split()) for _, c in caps], widen=widen, abs_=tol["words_abs"], nd=1, lo=0.0, spread=(10, 90))}
+               "cue_duration_s": value_range([_cap_duration_s(b, rd["fps"]) for rd, b in cues], widen=widen, rel=tol["hold_rel"], nd=2, lo=0.0, unit="s", spread=(10, 90)),
+               "words_per_cue": value_range([b["words"] for _, b in cues], widen=widen, abs_=tol["words_abs"], nd=1, lo=0.0, spread=(10, 90))}
         leads = [x for rd in text_refs for x in caption_leads_ms(rd)]
         if leads:
             cad["lead_vs_speech_ms"] = value_range(leads, widen=widen, abs_=tol["lead_ms_abs"], nd=0, unit="ms", spread=(10, 90))
         ty.measured("caption_cadence", {k: v for k, v in cad.items() if v}, text_refs)
-        an.measured("hold_ms", value_range([_cap_duration_s(c, rd["fps"]) * 1000 for rd, c in caps], widen=widen, rel=tol["hold_rel"], nd=0, lo=0.0,
+        an.measured("hold_ms", value_range([_cap_duration_s(b, rd["fps"]) * 1000 for rd, b in cues], widen=widen, rel=tol["hold_rel"], nd=0, lo=0.0,
                                            unit="ms", spread=(10, 90)), text_refs)
-        an.notes.append("hold = caption track on screen, from OCR samples")
+        an.notes.append("hold = caption cue (block of lines) on screen, from OCR samples")
     elif any((rd["docs"].get("coverage") or {}).get("stages", {}).get("text", {}).get("status") != "ok" for rd in refs):
         ty.notes.append("text stage did not run on every reference")
 
