@@ -269,6 +269,32 @@ def test_noisy_cut_frame_and_reflow_do_not_fragment_a_caption_block():
     assert second["text"] == "hadamn cut the only cable holding him up," and second["lines"] == 4
 
 
+def test_lines_far_apart_or_arriving_later_in_another_size_are_separate_blocks():
+    from iris import textocr
+
+    W, H = 540, 960
+    def d(text, x0, x1, y, h=20):
+        return {"text": text, "conf": 0.97, "box": [x0, y, x1, y + h]}
+    small = [d("cut the only", 205, 285, 60), d("cable", 225, 270, 80)]          # earlier caption, shrunk in a picture-in-picture
+    dets = {
+        0: small, 6: small, 12: small + [d("and waited.", 225, 315, 315)],         # same size, far below: its own element
+        18: small + [d("and waited.", 225, 315, 315), d("That 3 second moment", 98, 400, 600, h=50)],
+        24: small + [d("and waited.", 225, 315, 315), d("That 3 second moment", 98, 400, 600, h=50)],
+        # a caption whose bigger emphasis line arrives with it stays one block
+        48: [d("nobody wants", 150, 390, 500, h=30), d("TO SOLVE", 120, 420, 535, h=70)],
+        54: [d("nobody wants", 150, 390, 500, h=30), d("TO SOLVE", 120, 420, 535, h=70)],
+        # a big line that arrives later right under a small one is a new element
+        78: [d("Otis takes off", 219, 316, 523, h=33)],
+        84: [d("Otis takes off", 219, 316, 523, h=33)],
+        96: [d("Otis takes off", 219, 316, 523, h=33), d("All safe, gentlemen.", 64, 476, 560, h=70)],
+        102: [d("Otis takes off", 219, 316, 523, h=33), d("All safe, gentlemen.", 64, 476, 560, h=70)],
+    }
+    tracks = textocr.build_tracks(dets, W, H, step=6, n_frames=110)
+    texts = sorted(b["text"] for b in textocr.blocks_from_tracks(tracks))
+    assert texts == sorted(["cut the only cable", "and waited.", "That 3 second moment", "nobody wants TO SOLVE", "Otis takes off",
+                            "All safe, gentlemen."]), texts
+
+
 def test_forced_recompute_that_fails_keeps_previous_output(ws, monkeypatch):
     out1, ref = _analyze(ws, "cfr_30.mp4")
     before = (ref / "audio.json").read_bytes()

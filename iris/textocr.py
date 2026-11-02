@@ -29,12 +29,13 @@ import numpy as np
 
 from . import decode, worker
 
-METHOD_VERSION = "textocr@0.4.0"
+METHOD_VERSION = "textocr@0.4.1"
 OCR_LONG_SIDE = int(os.environ.get("IRIS_OCR_LONG_SIDE", "960"))
 ECONOMY_STEP = 6
 MISS_FRAMES_FACTOR = 2      # a track survives this many sampling steps without a matching detection
 MIN_FREE_MATCH_CHARS = 4    # identical text this long continues a track wherever it moved
-BLOCK_MAX_DY = 0.35         # lines of one caption block sit within this share of the frame height
+BLOCK_MAX_GAP_LINES = 1.2   # stacked lines of one caption block leave at most this many line heights between them
+BLOCK_MAX_HEIGHT_RATIO = 1.8  # and their letters differ in height by at most this factor
 CONF_MIN = 0.6              # tracks whose best reading is less confident than this are dropped
 FRAGMENT_MAX_SPAN_STEPS = 1  # a track lasting at most this many steps that begins a track starting right after is its reveal
 LINE_JOIN_GAP = 0.6         # boxes on one line closer than this share of the line height are one piece of text
@@ -508,8 +509,11 @@ def drop_reason(track: dict[str, Any], lang: str = "en") -> str | None:
 
 
 def _assign_blocks(tracks: list[dict[str, Any]], step: int) -> None:
-    """Lines on screen at the same time, stacked in the same column, that leave within one sample of each
-    other belong to one caption block (one cue). Sets `block_id` on every track."""
+    """Lines on screen at the same time, stacked in the same column with at most BLOCK_MAX_GAP_LINES line
+    heights between them and letters of similar height (or a bigger line that arrived with them), that leave within one sample of each other belong
+    to one caption block (one cue). Lines far apart on screen are separate blocks even when they leave
+    together (a caption over a shrinking picture-in-picture that still shows earlier text). Final boxes are
+    compared: lines that leave together were last read in the same frame. Sets `block_id` on every track."""
     n = len(tracks)
     parent = list(range(n))
 
@@ -528,7 +532,14 @@ def _assign_blocks(tracks: list[dict[str, Any]], step: int) -> None:
             if abs(a["frame_last_seen"] - b["frame_last_seen"]) > step:
                 continue
             ba, bb = a["box_norm"], b["box_norm"]
-            if abs((ba[1] + ba[3]) / 2 - (bb[1] + bb[3]) / 2) > BLOCK_MAX_DY or min(ba[2], bb[2]) - max(ba[0], bb[0]) <= 0:
+            if min(ba[2], bb[2]) - max(ba[0], bb[0]) <= 0:
+                continue
+            ha, hb = max(ba[3] - ba[1], 1e-6), max(bb[3] - bb[1], 1e-6)
+            gap = max(0.0, max(ba[1], bb[1]) - min(ba[3], bb[3]))
+            if gap > BLOCK_MAX_GAP_LINES * max(ha, hb):
+                continue
+            # a bigger emphasis line shown with its caption joins it; one that arrives later is a new element
+            if max(ha, hb) / min(ha, hb) > BLOCK_MAX_HEIGHT_RATIO and abs(a["frame_first_seen"] - b["frame_first_seen"]) > 2 * step:
                 continue
             parent[find(j)] = find(i)
     roots: dict[int, str] = {}
