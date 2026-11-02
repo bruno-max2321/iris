@@ -1,7 +1,7 @@
 """Stage L: Style Bible build, lint, approve.
 
 `build` aggregates N analysed references into styles/<style_id>/style_bible.json (+ .md, .sha256,
-build_report.json):
+build_report.json, and the style board: screenshots in visual/ and style_board.html, see style_board.py):
 
 - measured fields come straight from the stage outputs (code measurements are accepted as a block);
 - estimated and interpreted labels come only from claims a human `accepted` or `corrected`, and a term
@@ -904,12 +904,23 @@ def build(asset_ids: list[str], style_id: str, workspace: Path | None = None) ->
         report["trimmed_for_budget"] = trimmed
     if not brief_sha:
         report["brief_template"] = str(paths.SCHEMAS_DIR / "examples" / "style_brief.example.json")
+    report["visual"] = _board(style_id, ws)
     (out_dir / "build_report.json").write_text(json.dumps({**report, "generated_at": _now(), "method_version": METHOD_VERSION}, indent=1), encoding="utf-8")
     issues = lint(style_id, ws)["issues"]
     if issues:
         report["ok"] = False
         report["lint_issues"] = issues
     return report
+
+
+def _board(style_id: str, ws: Path) -> dict[str, Any]:
+    """The style board (screenshots + style_board.html) never decides whether a build or approval succeeds."""
+    from . import style_board
+
+    try:
+        return style_board.build(style_id, ws)
+    except Exception as exc:  # a decode failure must not lose the bible
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
 
 
 # ------------------------------------------------------------------------------------- files
@@ -1148,4 +1159,4 @@ def approve(style_id: str, author: str, workspace: Path | None = None) -> dict[s
     bible["token_budget"]["measured"] = measure_tokens(bible)
     sha = write_bible(style_dir(style_id, ws), bible)
     res = lint(style_id, ws)
-    return {"ok": res["ok"], "style_id": style_id, "status": "approved", "sha256": sha, "issues": res["issues"]}
+    return {"ok": res["ok"], "style_id": style_id, "status": "approved", "sha256": sha, "issues": res["issues"], "visual": _board(style_id, ws)}

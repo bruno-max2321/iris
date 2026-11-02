@@ -239,3 +239,22 @@ def test_caption_cadence_counts_blocks_not_lines(ws):
     assert rep["ok"] and t["lines"]["max"] == 2 and t["placement"]["zone"] == "lower_third" and t["case"] == "sentence"
     assert t["caption_cadence"]["words_per_cue"]["typical"] == 3.5
     assert t["emphasis"] == {"word_reveal": round(1 / 3, 3)} and "cr_caption_zone" in rep["rules"]
+
+
+def test_build_writes_a_style_board_of_screenshots_without_touching_the_bible(ws):
+    a = _ref(ws, "pan_right.mp4")
+    _decide(ws, a)
+    rep = style.build([a], "board-v1", workspace=ws)
+    v = rep["visual"]
+    assert rep["ok"] and v["ok"] and v["screenshots"] >= 5 and not v["missing_frames"], v
+    d = ws / "styles" / "board-v1"
+    doc = json.loads((d / "visual" / "board.json").read_text())
+    picks = [p for lst in doc["sections"].values() for p in lst]
+    assert {"opening", "color", "camera", "screen_time"} <= set(doc["sections"]) and len(doc["sections"]["camera"]) == 3
+    assert all(p["file"] and (d / p["file"]).exists() for p in picks) and any(p.get("bible_exemplar") for p in picks)
+    assert (d / "style_board.html").read_text().count("data:image/jpeg;base64,") == v["screenshots"]
+    assert doc["bible_sha256"] == (d / "style_bible.sha256").read_text().strip() and style.lint("board-v1", ws)["ok"]
+    before = {p.name: p.stat().st_mtime_ns for p in (d / "visual").glob("*.jpg")}
+    from iris import style_board
+    assert style_board.build("board-v1", ws)["screenshots"] == v["screenshots"]
+    assert {p.name: p.stat().st_mtime_ns for p in (d / "visual").glob("*.jpg")} == before  # screenshots are reused, not re-decoded
