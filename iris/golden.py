@@ -37,6 +37,7 @@ TOLERANCE = {  # absolute, unless the key is in RELATIVE
     "audio.integrated_lufs": 0.5, "audio.true_peak_dbtp": 0.5, "audio.transcript_words": 0.1, "index.nominal_fps": 0.01,
 }
 RELATIVE = {"audio.transcript_words"}
+INFORMATIONAL = {"audio.transcript_words"}  # reported when it differs, never a failure: speech-to-text is not part of the style
 TEXT_MIN_RATIO = 0.9
 STAGE_OF = {"text.": "text", "audio.transcript": "transcript"}
 
@@ -68,7 +69,10 @@ def facts(ref_dir: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         "audio.status": au.get("status"),
     }
     if tx.get("status") == "ok":
-        f["text.blocks"] = [b.get("text") for b in tx.get("blocks") or []]
+        # the OCR reading, before the transcript repair: captions are compared on what the OCR saw, so a
+        # transcript that varies between runs does not fail the caption facts
+        ocr = {t["track_id"]: t.get("text_ocr") or t.get("text") or "" for t in tx.get("tracks") or []}
+        f["text.blocks"] = [" ".join(ocr[i] for i in b.get("track_ids") or [] if i in ocr) or b.get("text") for b in tx.get("blocks") or []]
         f["text.block_frames"] = [[b.get("frame_first_seen"), b.get("frame_last_seen")] for b in tx.get("blocks") or []]
     if au.get("status") == "ok":
         f["audio.integrated_lufs"] = (au.get("loudness") or {}).get("integrated_lufs")
@@ -90,7 +94,7 @@ def _close(a: Any, b: Any, tol: float, rel: bool) -> bool:
 
 
 def compare(frozen: dict[str, Any], frozen_backends: dict[str, Any], got: dict[str, Any], got_backends: dict[str, Any]) -> dict[str, Any]:
-    diffs, skipped, checked = [], [], 0
+    diffs, skipped, notes, checked = [], [], [], 0
     for k, want in frozen.items():
         stage = next((v for p, v in STAGE_OF.items() if k.startswith(p)), None)
         if stage and k not in ("text.status",) and frozen_backends.get(stage) != got_backends.get(stage):
@@ -106,8 +110,8 @@ def compare(frozen: dict[str, Any], frozen_backends: dict[str, Any], got: dict[s
         else:
             ok = want == have
         if not ok:
-            diffs.append({"fact": k, "frozen": want, "now": have})
-    return {"checked": checked, "diffs": diffs, "skipped_facts": skipped}
+            (notes if k in INFORMATIONAL else diffs).append({"fact": k, "frozen": want, "now": have})
+    return {"checked": checked, "diffs": diffs, "skipped_facts": skipped, "notes": notes}
 
 
 def _source_of(manifest: dict[str, Any]) -> dict[str, Any]:

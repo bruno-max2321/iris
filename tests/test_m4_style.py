@@ -130,8 +130,8 @@ def test_brief_fills_prose_and_is_validated(ws):
     assert rep["brief"] == "unreviewed" and b["concept"]["meta"]["review_status"] == "pending"
     assert b["camera"]["never"] == ["camera.movement.whip_pan"] and b["never_global"] == ["montage.transition.wipe"]
     assert any(r["rule_id"] == "cr_peak_ceiling" and r["source"] == "brief" for r in b["continuity_rules"])
-    brief["reviewed_by"] = reviewer
-    (sdir / "brief.json").write_text(json.dumps(brief))
+    assert main(["style", "approve-brief", "brief-test-v1", "--author", reviewer, "--workspace", str(ws)]) == 0
+    assert json.loads((sdir / "brief.json").read_text())["reviewed_by"] == reviewer
     style.build([a], "brief-test-v1", workspace=ws)
     b = _bible(ws, "brief-test-v1")
     assert b["concept"]["meta"]["review_status"] == "accepted" and b["identity"]["one_line"].startswith("Calm")

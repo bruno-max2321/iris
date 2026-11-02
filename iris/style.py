@@ -1129,6 +1129,21 @@ def lint(style_id: str, workspace: Path | None = None) -> dict[str, Any]:
             "sha256": _sha(data), "issues": issues}
 
 
+def approve_brief(style_id: str, author: str, workspace: Path | None = None) -> dict[str, Any]:
+    """Record that a person read and accepted the brief draft (sets `reviewed_by`). Run only on the user's word."""
+    if not author:
+        raise StyleError("brief approval needs --author", "usage")
+    p = style_dir(style_id, workspace) / "brief.json"
+    if not p.exists():
+        raise StyleError(f"no brief at {p}: draft styles/{style_id}/brief.json first", "usage")
+    brief, _ = load_brief(style_id, workspace)
+    brief["reviewed_by"] = author[:80]
+    p.write_text(json.dumps(brief, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    _, sha = load_brief(style_id, workspace)
+    return {"ok": True, "style_id": style_id, "reviewed_by": brief["reviewed_by"], "brief_sha256": sha,
+            "next": f"iris style build --from <ids> --style-id {style_id}"}
+
+
 def approval_blockers(bible: dict[str, Any]) -> list[str]:
     out = []
     if len(bible.get("built_from") or []) < 3:

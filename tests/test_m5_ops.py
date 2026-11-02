@@ -173,6 +173,9 @@ def test_golden_skips_stage_with_another_backend_and_missing_sources(ws, judged,
     other = dict(frozen, **{"text.blocks": ["something else"]})
     cmp = golden.compare(other, dict(b, text="another-ocr"), frozen, b)
     assert not cmp["diffs"] and any(s["fact"] == "text.blocks" for s in cmp["skipped_facts"])
+    # speech-to-text drift is reported, never a failure
+    cmp = golden.compare({"audio.transcript_words": 204}, {}, {"audio.transcript_words": 98}, {})
+    assert not cmp["diffs"] and cmp["notes"][0]["fact"] == "audio.transcript_words"
     gdir = tmp_path / "golden"
     (gdir / "real").mkdir(parents=True)
     (gdir / "real" / "golden.json").write_text(json.dumps({"name": "real", "source": {"sha256": "0" * 64}, "facts": {}}))

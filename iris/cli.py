@@ -223,6 +223,9 @@ def cmd_style(args: argparse.Namespace) -> int:
         if args.action == "lint":
             res = style.lint(args.style_id, workspace=_ws(args))
             return _emit(res, exit_codes.OK if res["ok"] else exit_codes.VALIDATION)
+        if args.action == "approve-brief":
+            author = args.author or os.environ.get("IRIS_REVIEWER", "")
+            return _emit(style.approve_brief(args.style_id, author, workspace=_ws(args)))
         if args.action == "board":
             from . import style_board
 
@@ -431,11 +434,11 @@ def build_parser() -> argparse.ArgumentParser:
     lg.set_defaults(func=cmd_ledger)
 
     st = sub.add_parser("style", help="Build, lint, approve a Style Bible, or redraw its style board")
-    st.add_argument("action", choices=["build", "lint", "approve", "board"])
+    st.add_argument("action", choices=["build", "lint", "approve", "approve-brief", "board"])
     st.add_argument("style_id", nargs="?", help="(lint, approve, board) style id, e.g. kinetic-editorial-v1")
     st.add_argument("--from", dest="from_refs", help="(build) comma-separated asset ids")
     st.add_argument("--style-id", dest="style_id_opt", help="(build) style id")
-    st.add_argument("--author", help="(approve) who approves; default $IRIS_REVIEWER")
+    st.add_argument("--author", help="(approve, approve-brief) who approves; default $IRIS_REVIEWER")
     st.add_argument("--workspace")
     st.add_argument("--json", action="store_true")
     st.set_defaults(func=cmd_style)
