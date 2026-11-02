@@ -381,7 +381,7 @@ def test_motion_on_twos_is_a_pan_and_a_glitch_is_not():
                                {"type": "freeze", "frame_first": 20, "length_frames": 30}]) == {10, 11}
 
 
-def test_outputs_of_an_older_method_version_are_recomputed(ws):
+def test_outputs_of_an_older_method_version_are_recomputed(ws, capsys):
     out, ref = _analyze(ws, "pan_right.mp4")
     a = out["job"]["asset_id"]
     m = _j(ref / "motion.json")
@@ -394,3 +394,9 @@ def test_outputs_of_an_older_method_version_are_recomputed(ws):
     assert _j(ref / "motion.json")["method_version"] == motion.METHOD_VERSION
     assert (ref / "text.done.json").stat().st_mtime_ns == text_before  # other checkpoints are kept
     assert "recomputed_stale_stages" not in analyze.analyze(a, workspace=ws)
+    from iris.cli import main
+    m["method_version"] = "motion_phasecorr@0.0.1"
+    (ref / "motion.json").write_text(json.dumps(m))
+    capsys.readouterr()
+    assert main(["analyze", a]) == 0
+    assert json.loads(capsys.readouterr().out)["recomputed_stale_stages"] == ["motion"]
