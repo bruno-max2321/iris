@@ -158,11 +158,16 @@ def task_whisper(payload: dict[str, Any], fh: TextIO) -> dict[str, Any]:
     _emit(fh, {"event": "ready", "model": name, "init_s": round(time.time() - t0, 3), "threads": threads})
     # temperature 0 only: the default fallback samples at higher temperatures when a segment looks poor, so
     # the same audio could give a different transcript on every run; not conditioning on the previous text
-    # keeps one bad segment from dragging the rest into a repetition loop
-    segments, info = model.transcribe(y, word_timestamps=True, vad_filter=True, temperature=0.0, condition_on_previous_text=False)
+    # keeps one bad segment from dragging the rest into a repetition loop. No segment is dropped as
+    # "no speech": VAD already removed the silence, and on a voice-over under music that probability sits
+    # near the threshold, so a whole 30 s window could vanish on one run and not on the next (204 vs 98 words)
+    segments, info = model.transcribe(y, word_timestamps=True, vad_filter=True, temperature=0.0, condition_on_previous_text=False,
+                                      no_speech_threshold=None, log_prob_threshold=None)
     words: list[dict[str, Any]] = []
     text_parts: list[str] = []
+    n_seg = 0
     for seg in segments:
+        n_seg += 1
         text_parts.append(seg.text)
         for w in seg.words or []:
             words.append({"w": w.word.strip(), "start": round(w.start, 3), "end": round(w.end, 3), "p": round(float(w.probability), 3)})
@@ -171,7 +176,9 @@ def task_whisper(payload: dict[str, Any], fh: TextIO) -> dict[str, Any]:
     return {"status": "ok", "model": f"faster-whisper {name} int8", "language": info.language,
             "language_probability": round(float(info.language_probability), 3),
             "text": " ".join(t.strip() for t in text_parts), "words": words, "word_count": len(words),
-            "words_per_minute": round(len(words) / dur * 60, 1) if dur > 0 else None,
+            "words_per_minute": round(len(words) / dur * 60, 1) if dur > 0 else None, "segments": n_seg,
+            "audio_s": round(y.size / 16000, 3),
+            "speech_after_vad_s": round(float(getattr(info, "duration_after_vad", 0.0) or 0.0), 3),
             "elapsed_s": round(time.time() - t0, 3)}
 
 

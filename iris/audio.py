@@ -11,7 +11,7 @@ from typing import Any
 
 import numpy as np
 
-METHOD_VERSION = "audio@0.3.0"
+METHOD_VERSION = "audio@0.3.1"
 
 
 def _ffmpeg(args: list[str], timeout: int = 900) -> tuple[int, str]:
