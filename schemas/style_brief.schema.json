@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://iris.calorico.local/schemas/style_brief.schema.json",
   "title": "Iris style brief",
-  "description": "The reviewer's input to `iris style build`: prose the measurement cannot produce, terms judged by a person, prohibitions and extra continuity rules. Prose fields may not contain digits: numbers come from measurement only. Blocks fed by the brief stay `pending` until `reviewed_by` is set.",
+  "description": "The reviewer's input to `iris style build`: prose the measurement cannot produce, terms judged by a person, prohibitions and extra continuity rules. Prose fields may not contain digits: numbers come from measurement only. Blocks fed by the brief stay `pending` until `iris style approve-brief` sets `reviewed_by` and `reviewed_sha256`; editing the brief afterwards voids the approval.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -21,6 +21,11 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 80
+    },
+    "reviewed_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Set by `iris style approve-brief`: hash of the brief without its approval fields. A brief edited after approval no longer matches and counts as unreviewed."
     },
     "identity": {
       "type": "object",

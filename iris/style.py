@@ -540,6 +540,18 @@ def load_brief(style_id: str, workspace: Path | None) -> tuple[dict[str, Any] | 
     return brief, _sha(raw)
 
 
+def brief_content_sha(brief: dict[str, Any]) -> str:
+    """Hash of what the reviewer approves: the brief without its approval fields."""
+    return _sha(_canon({k: v for k, v in brief.items() if k not in ("reviewed_by", "reviewed_sha256")}))
+
+
+def brief_review_state(brief: dict[str, Any]) -> str:
+    """reviewed | changed_since_review (edited after approve-brief, or approved by hand) | unreviewed."""
+    if not brief.get("reviewed_by"):
+        return "unreviewed"
+    return "reviewed" if brief.get("reviewed_sha256") == brief_content_sha(brief) else "changed_since_review"
+
+
 # ------------------------------------------------------------------------------------- build
 def _q_term(dim: str, term: str) -> str:
     return term if dim == "composition" else f"{dim}.{term}"
@@ -589,7 +601,8 @@ def build(asset_ids: list[str], style_id: str, workspace: Path | None = None) ->
     tol = DEFAULT_TOLERANCES
     brief, brief_sha = load_brief(style_id, ws)
     brief = brief or {}
-    reviewed = bool(brief.get("reviewed_by"))
+    review_state = brief_review_state(brief) if brief_sha else "absent"
+    reviewed = review_state == "reviewed"
     facts = {rd["asset_id"]: ref_facts(rd) for rd in refs}
     B = {name: Block(name, n) for name in BLOCKS}
 
@@ -843,6 +856,23 @@ def build(asset_ids: list[str], style_id: str, workspace: Path | None = None) ->
     for name, terms in (brief.get("never") or {}).items():
         B[name].data["never"] = [registry.resolve(t).qualified if registry.resolve(t).dimension != "composition" else registry.resolve(t).term for t in terms]
         B[name].brief_used = True
+    # the brief's prohibitions win over what the references show: a prohibited term leaves the distribution
+    # (the rest is renormalised) and the block notes how much of the references it covered
+    prohibited = {registry.resolve(t).qualified for lst in list((brief.get("never") or {}).values()) + [brief.get("never_global") or []] for t in lst}
+    for (blk, field), dim in DIST_DIMS.items():
+        dist_ = B[blk].data.get(field)
+        if not isinstance(dist_, dict):
+            continue
+        gone = {t: v for t, v in dist_.items() if f"{dim}.{t}" in prohibited}
+        if not gone:
+            continue
+        kept = {t: v for t, v in dist_.items() if t not in gone}
+        total = sum(kept.values())
+        if kept and total > 0:
+            B[blk].data[field] = {t: round(v / total, 3) for t, v in kept.items()}
+        else:
+            del B[blk].data[field]
+        B[blk].notes.append(f"{field}: brief prohibits " + ", ".join(f"{t} (refs {v:.0%})" for t, v in gone.items()))
 
     # ---- continuity rules from the tightest measured ranges
     rules: list[dict[str, Any]] = []
@@ -983,7 +1013,7 @@ def build(asset_ids: list[str], style_id: str, workspace: Path | None = None) ->
               "continuity_rules": len(rules), "rules": [r["rule_id"] for r in rules],
               "blocks": {name: {k: bible[name]["meta"].get(k) for k in ("claim_kind", "review_status", "n_refs", "provisional", "missing") if k in bible[name]["meta"]} for name in BLOCKS},
               "pending_blocks": [name for name in BLOCKS if bible[name]["meta"]["review_status"] == "pending"],
-              "brief": "reviewed" if reviewed else ("unreviewed" if brief_sha else "absent"),
+              "brief": review_state,
               "membership": mem, "membership_warnings": [m["asset_id"] for m in mem if m["warning"]],
               "decided_claims_used": sum(len(rd["decided"]) for rd in refs),
               "files": {k: str(out_dir / v) for k, v in (("json", "style_bible.json"), ("md", "style_bible.md"), ("sha256", "style_bible.sha256"))}}
@@ -1182,6 +1212,19 @@ def lint(style_id: str, workspace: Path | None = None) -> dict[str, Any]:
     for t in terms:
         if not registry.resolve(t):
             issues.append(f"term not in the vocabulary: {t}")
+    never_q = {registry.resolve(t).qualified for name in VISUAL_NEVER + ["sound"] for t in (bible.get(name) or {}).get("never") or [] if registry.resolve(t)}
+    never_q |= {registry.resolve(t).qualified for t in bible.get("never_global") or [] if registry.resolve(t)}
+    recommended: list[tuple[str, str]] = []
+    for path in TERM_FIELDS:
+        v = _get(bible, path)
+        for t in (v if isinstance(v, list) else [v] if v is not None else []):
+            if registry.resolve(t):
+                recommended.append((".".join(path), registry.resolve(t).qualified))
+    for (blk, field), dim in DIST_DIMS.items():
+        recommended += [(f"{blk}.{field}", f"{dim}.{k}") for k in (_get(bible, (blk, field)) or {})]
+    for where, q in recommended:
+        if q in never_q:
+            issues.append(f"{where} recommends {q}, which a never list prohibits")
     for (blk, field), dim in DIST_DIMS.items():
         dist_ = _get(bible, (blk, field)) or {}
         valid = set(registry.term_ids(dim))
@@ -1225,6 +1268,7 @@ def approve_brief(style_id: str, author: str, workspace: Path | None = None) -> 
         raise StyleError(f"no brief at {p}: draft styles/{style_id}/brief.json first", "usage")
     brief, _ = load_brief(style_id, workspace)
     brief["reviewed_by"] = author[:80]
+    brief["reviewed_sha256"] = brief_content_sha(brief)
     p.write_text(json.dumps(brief, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     _, sha = load_brief(style_id, workspace)
     return {"ok": True, "style_id": style_id, "reviewed_by": brief["reviewed_by"], "brief_sha256": sha,

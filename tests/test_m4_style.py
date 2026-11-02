@@ -136,6 +136,21 @@ def test_brief_fills_prose_and_is_validated(ws):
     b = _bible(ws, "brief-test-v1")
     assert b["concept"]["meta"]["review_status"] == "accepted" and b["identity"]["one_line"].startswith("Calm")
     assert b["provenance"]["brief_sha256"] and style.lint("brief-test-v1", ws)["ok"]
+    assert b["camera"]["movement"] == {"pan_right": 1.0}
+    # editing the brief after approval voids it; a prohibited movement leaves the distribution
+    approved = json.loads((sdir / "brief.json").read_text())
+    approved["never"]["camera"] = ["camera.movement.whip_pan", "camera.movement.pan_right"]
+    (sdir / "brief.json").write_text(json.dumps(approved))
+    rep = style.build([a], "brief-test-v1", workspace=ws)
+    b = _bible(ws, "brief-test-v1")
+    assert rep["brief"] == "changed_since_review" and b["concept"]["meta"]["review_status"] == "pending"
+    assert "movement" not in b["camera"] and "brief prohibits pan_right (refs 100%)" in b["camera"]["meta"]["notes"]
+    assert style.lint("brief-test-v1", ws)["ok"]
+    # a bible that recommends what it prohibits (edited by hand) fails lint
+    bad = dict(b, camera=dict(b["camera"], movement={"pan_right": 1.0}))
+    style.write_bible(sdir, bad)
+    issues = style.lint("brief-test-v1", ws)["issues"]
+    assert any("camera.movement recommends camera.movement.pan_right" in i for i in issues)
 
 
 def test_lint_catches_tampering_and_approve_needs_three_refs(ws):
