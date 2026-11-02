@@ -260,6 +260,16 @@ def test_caption_cadence_counts_blocks_not_lines(ws):
     assert t["emphasis"] == {"word_reveal": round(1 / 3, 3)} and "cr_caption_zone" in rep["rules"]
 
 
+def test_caption_variants_keep_each_reference_look_when_they_differ():
+    yellow = {"text_color": "#1A1A1A", "box": "solid", "box_color": "#FAEC4D"}
+    per_ref = [("ref_a", 40, yellow), ("ref_b", 30, {"text_color": "#F5F5F5", "box": "solid", "box_color": "#1F5560"}),
+               ("ref_c", 20, {"text_color": "#FFFFFF", "box": "none"}), ("ref_d", 10, dict(yellow, box_color="#F8EA50"))]
+    v = style.caption_variants(per_ref)
+    assert [x["refs"] for x in v] == [["ref_a", "ref_d"], ["ref_b"], ["ref_c"]]
+    assert v[0]["box_color"] == "#FAEC4D" and "box_color" not in v[2]
+    assert len(style.caption_variants([("ref_a", 5, yellow), ("ref_d", 5, dict(yellow, box_color="#F8EA50"))])) == 1
+
+
 def test_build_writes_a_style_board_of_screenshots_without_touching_the_bible(ws):
     a = _ref(ws, "pan_right.mp4")
     _decide(ws, a)

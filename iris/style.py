@@ -283,6 +283,33 @@ def caption_look(caps: list[tuple[dict, dict]], cues: list[tuple[dict, dict]]) -
     return look, note
 
 
+def _close_hex(a: str | None, b: str | None) -> bool:
+    if a is None or b is None:
+        return a == b
+    return len(_color_clusters([a, b])) == 1
+
+
+def caption_variants(per_ref: list[tuple[str, int, dict[str, Any]]]) -> list[dict[str, Any]]:
+    """Distinct caption looks across references, largest first: [{text_color, box, box_color?, refs}].
+    Two looks are the same when the box kind matches and both colours are within the clustering distance."""
+    out: list[dict[str, Any]] = []
+    weight: list[int] = []
+    for asset_id, n, lk in sorted(per_ref, key=lambda x: -x[1]):
+        for i, v in enumerate(out):
+            if v["box"] == lk.get("box") and _close_hex(v["text_color"], lk.get("text_color")) and _close_hex(v.get("box_color"), lk.get("box_color")):
+                v["refs"].append(asset_id)
+                weight[i] += n
+                break
+        else:
+            v = {"text_color": lk["text_color"], "box": lk.get("box", "none"), "refs": [asset_id]}
+            if lk.get("box_color"):
+                v["box_color"] = lk["box_color"]
+            out.append(v)
+            weight.append(n)
+    order = sorted(range(len(out)), key=lambda i: -weight[i])
+    return [out[i] for i in order]
+
+
 def _cap_duration_s(t, fps) -> float:
     return (int(t["frame_last_seen"]) - int(t["frame_first_seen"]) + 1) / fps
 
@@ -765,6 +792,19 @@ def build(asset_ids: list[str], style_id: str, workspace: Path | None = None) ->
         zone = max(zones.items(), key=lambda kv: (kv[1], kv[0]))[0]
         cues = [(rd, b) for rd in text_refs for b in spoken[rd["asset_id"]][1]]
         look, look_note = caption_look(caps, cues)
+        # the style is what the references share: when they dress their captions differently, each look is an
+        # allowed variant (one per video) instead of the pooled majority standing for all of them
+        per_ref = []
+        for rd in text_refs:
+            rcaps, rcues = spoken[rd["asset_id"]][0], spoken[rd["asset_id"]][1]
+            lk, _ = caption_look([(rd, c) for c in rcaps], [(rd, b) for b in rcues])
+            if lk.get("text_color"):
+                per_ref.append((rd["asset_id"], len(rcaps), lk))
+        variants = caption_variants(per_ref)
+        if len(variants) > 1:
+            look = {k: v for k, v in look.items() if k == "x_align"}
+            look["looks"] = variants
+            look_note = f"{len(variants)} caption looks across the references; any one fits the style, keep one per video"
         ty.measured("placement", {"zone": ZONE_TO_PLACEMENT.get(zone, "center"), **look}, text_refs)
         if look_note:
             ty.notes.append(look_note)

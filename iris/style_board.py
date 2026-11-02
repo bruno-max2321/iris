@@ -247,6 +247,10 @@ def _caption_swatches(bible: dict[str, Any]) -> str:
     pl = (bible.get("typography") or {}).get("placement") or {}
     out = [f'<span class="pal"><b>{_e(k.replace("_", " "))}</b> <i class="sw" style="background:{_e(pl[k])}" title="{_e(pl[k])}"></i> {_e(pl[k])}</span>'
            for k in ("text_color", "box_color") if pl.get(k)]
+    for i, v in enumerate(pl.get("looks") or [], 1):
+        sw = "".join(f'<i class="sw" style="background:{_e(v[k])}" title="{_e(v[k])}"></i>' for k in ("text_color", "box_color") if v.get(k))
+        box = f"text on a {_e(v['box_color'])} box" if v.get("box_color") else "text, no box"
+        out.append(f'<span class="pal"><b>look {i}</b> {sw} {_e(v["text_color"])} {box} ({_e(", ".join(v["refs"]))})</span>')
     return f'<div class="pals">{"".join(out)}</div>' if out else ""
 
 

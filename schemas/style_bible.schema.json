@@ -761,6 +761,44 @@
             },
             "shadow": {
               "type": "boolean"
+            },
+            "looks": {
+              "description": "Caption looks the references use when they differ; any one fits the style (one per video). When present, text_color / box / box_color are not set at the top level.",
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 6,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "text_color",
+                  "box",
+                  "refs"
+                ],
+                "properties": {
+                  "text_color": {
+                    "$ref": "#/$defs/hex"
+                  },
+                  "box": {
+                    "enum": [
+                      "none",
+                      "solid",
+                      "pill",
+                      "outline"
+                    ]
+                  },
+                  "box_color": {
+                    "$ref": "#/$defs/hex"
+                  },
+                  "refs": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
             }
           }
         },
