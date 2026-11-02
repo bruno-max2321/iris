@@ -30,7 +30,7 @@ import numpy as np
 
 from . import decode, worker
 
-METHOD_VERSION = "textocr@0.5.0"
+METHOD_VERSION = "textocr@0.5.1"
 OCR_LONG_SIDE = int(os.environ.get("IRIS_OCR_LONG_SIDE", "960"))
 ECONOMY_STEP = 6
 MISS_FRAMES_FACTOR = 2      # a track survives this many sampling steps without a matching detection
@@ -385,6 +385,8 @@ def build_tracks(detections: dict[int, list[dict[str, Any]]], img_w: int, img_h:
             "box_norm": [round(v, 4) for v in tr["box"]], "zone": zone, "rel_height": round(rel_h, 4),
             "frame_first_seen": tr["first_sampled_frame"], "frame_last_seen": tr["last_sampled_frame"],
             "frame_full_text_seen": t_full,
+            # the sampled frames where the full line was read: the caption look is measured on several of them
+            "full_text_frames": sorted({r[3] for r in finals if r[2] == _norm(text)}),
             # candidate span: the text may have appeared up to (step-1) frames before the first sample
             "frame_first_candidate": max(0, tr["first_sampled_frame"] - (step - 1)),
             "frame_last_candidate": min(n_frames - 1, tr["last_sampled_frame"] + (step - 1)),
@@ -661,6 +663,7 @@ def repair_with_transcript(text_doc: dict[str, Any], audio_doc: dict[str, Any] |
 STYLE_MIN_TEXT_SHARE = 0.04   # the text class must cover at least this share of its box
 BACKING_MAX_STD_L = 10.0      # a backing box is flat: robust lightness spread of the non-text pixels inside the box
 BACKING_MIN_DE = 6.0          # and differs from the picture around it (a white card on cream is about 7)
+STYLE_MAX_FRAMES = 5          # frames per line the look is measured on; one frame can land on a cut, a glitch or a box animating
 
 
 def _hex(rgb: np.ndarray) -> str:
@@ -669,19 +672,40 @@ def _hex(rgb: np.ndarray) -> str:
 
 
 def _track_style(track: dict[str, Any], files: dict[int, Path]) -> dict[str, Any] | None:
-    """How a caption line looks, from the last sampled frame where it is fully shown: text colour, the colour
-    behind it, and whether that is a flat backing box (one colour inside the box, another around it) or the
-    picture. Letters and background are split by lightness (Otsu); the letters are the smaller class."""
+    """How a caption line looks: text colour, the colour behind it, and whether that is a flat backing box or
+    the picture. Measured on up to STYLE_MAX_FRAMES sampled frames where the full line is read, spread over its
+    span, because one frame can land on a cut, a glitch or a box still animating in. The backing is solid when
+    at least half of the measured frames see a box; the colours are the medians over the frames that agree."""
+    fids = [f for f in track.get("full_text_frames") or [] if f in files]
+    if not fids:
+        fid = track.get("frame_full_text_seen") if track.get("frame_full_text_seen") in files else track["frame_last_seen"]
+        fids = [fid] if fid in files else []
+    if len(fids) > STYLE_MAX_FRAMES:
+        fids = [fids[round(i * (len(fids) - 1) / (STYLE_MAX_FRAMES - 1))] for i in range(STYLE_MAX_FRAMES)]
+    looks = [st for st in (_frame_style(track, f, files[f]) for f in fids) if st]
+    if not looks:
+        return None
+    solid = [st for st in looks if st["backing"] == "solid"]
+    pool = solid if len(solid) * 2 >= len(looks) else [st for st in looks if st["backing"] != "solid"]
+    out = dict(pool[len(pool) // 2])
+    for k in ("text_hex", "back_hex", "around_hex"):
+        vals = [st[k] for st in pool if k in st]
+        if vals:
+            out[k] = _hex(np.median(np.array([[int(h[i:i + 2], 16) for i in (1, 3, 5)] for h in vals], dtype=float), axis=0))
+    out["frames_measured"], out["frames_solid"] = len(looks), len(solid)
+    return out
+
+
+def _frame_style(track: dict[str, Any], fid: int, path: Path) -> dict[str, Any] | None:
+    """The look of one caption line in one frame. Letters and background are split by lightness (Otsu); the
+    letters are the smaller class."""
     from PIL import Image
 
     from .measure import srgb_to_lab
     from .regions import ciede2000
 
-    fid = track.get("frame_full_text_seen") if track.get("frame_full_text_seen") in files else track["frame_last_seen"]
-    if fid not in files:
-        return None
     try:
-        img = np.asarray(Image.open(files[fid]).convert("RGB"))
+        img = np.asarray(Image.open(path).convert("RGB"))
     except OSError:
         return None
     H, W = img.shape[:2]

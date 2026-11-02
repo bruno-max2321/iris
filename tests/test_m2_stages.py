@@ -412,6 +412,40 @@ def test_spoken_tracks_are_the_captions_not_the_picture_text():
     assert textocr.spoken_track_ids(text, audio) == {"t0"}
 
 
+def _caption_frames(tmp_path: Path, boxed: list[bool]) -> tuple[dict, dict[int, Path]]:
+    """Black text on a yellow label over a grey engraving-like texture; frames where `boxed` is False lose the
+    label (a cut or a glitch landing on the sample)."""
+    import numpy as np
+    from PIL import Image, ImageDraw
+
+    rng = np.random.default_rng(3)
+    files = {}
+    for k, box in enumerate(boxed):
+        tex = (rng.random((640, 360)) * 120 + 70).astype(np.uint8)
+        img = Image.fromarray(np.stack([tex] * 3, axis=-1))
+        d = ImageDraw.Draw(img)
+        if box:
+            d.rectangle([120, 300, 240, 324], fill=(250, 236, 77))
+        d.text((128, 306), "on weekends", fill=(10, 10, 10))
+        files[k * 6] = tmp_path / f"f{k}.png"
+        img.save(files[k * 6])
+    track = {"box_norm": [120 / 360, 300 / 640, 240 / 360, 324 / 640], "frame_full_text_seen": 0,
+             "frame_last_seen": 6 * (len(boxed) - 1), "full_text_frames": sorted(files)}
+    return track, files
+
+
+def test_caption_look_votes_over_frames_so_one_glitch_frame_does_not_drop_the_box(tmp_path):
+    track, files = _caption_frames(tmp_path, [False, True, True, False, True])
+    st = textocr._track_style(track, files)
+    assert st["backing"] == "solid" and st["frames_measured"] == 5 and st["frames_solid"] == 3, st
+    r, g, b = (int(st["back_hex"][i:i + 2], 16) for i in (1, 3, 5))
+    assert r > 220 and g > 200 and b < 120, st  # the yellow label
+    # before the vote, the look came from one frame: the first full reading, here a frame without the label
+    assert textocr._frame_style(track, 0, files[0])["backing"] == "none"
+    track, files = _caption_frames(tmp_path, [False, False, True, False, False])
+    assert textocr._track_style(track, files)["backing"] == "none"
+
+
 def _palette_frames(pictures: list[str], per: int = 30) -> tuple[list[dict], dict]:
     """Frames table of same-palette shots: histogram and pixel changes stay small except at the cuts."""
     frames = []
