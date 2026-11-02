@@ -1,7 +1,7 @@
 {
  "schema_version": "1.0.0",
  "name": "duplicate_frames",
- "frozen_at": "2026-11-02T02:27:56+00:00",
+ "frozen_at": "2026-11-02T13:58:52+00:00",
  "iris_version": "0.1.0",
  "pipeline_version": "m2.1",
  "source": {
@@ -26,7 +26,7 @@
   "montage.cuts_per_s": 0.0,
   "events": [],
   "motion.class": [
-   "handheld"
+   "tilt_up"
   ],
   "light.key": [
    "mid_key"

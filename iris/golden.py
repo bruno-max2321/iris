@@ -202,7 +202,15 @@ def check(names: list[str] | None = None, workspace: Path | None = None, golden_
             analyze.analyze(aid, workspace=tmp)
             got, got_backends = facts(tmp / "refs" / aid)
             cmp = compare(g["facts"], g.get("backends") or {}, got, got_backends)
-            results.append({"name": g["name"], "ok": not cmp["diffs"], **cmp})
+            res = {"name": g["name"], "ok": not cmp["diffs"], **cmp}
+            if cmp["diffs"]:  # keep what the re-analysis wrote, to see why it differs
+                keep = ws / LOCAL_DIR / g["name"] / "last_failed_run"
+                shutil.rmtree(keep, ignore_errors=True)
+                keep.mkdir(parents=True)
+                for p in (tmp / "refs" / aid).glob("*.json"):
+                    shutil.copy2(p, keep / p.name)
+                res["kept_run"] = str(keep)
+            results.append(res)
         except Exception as exc:
             results.append({"name": g["name"], "ok": False, "error": f"{type(exc).__name__}: {exc}"})
         finally:

@@ -156,7 +156,10 @@ def task_whisper(payload: dict[str, Any], fh: TextIO) -> dict[str, Any]:
     y = np.load(payload["pcm"]).astype(np.float32)
     model = WhisperModel(name, device="cpu", compute_type="int8", cpu_threads=threads)
     _emit(fh, {"event": "ready", "model": name, "init_s": round(time.time() - t0, 3), "threads": threads})
-    segments, info = model.transcribe(y, word_timestamps=True, vad_filter=True)
+    # temperature 0 only: the default fallback samples at higher temperatures when a segment looks poor, so
+    # the same audio could give a different transcript on every run; not conditioning on the previous text
+    # keeps one bad segment from dragging the rest into a repetition loop
+    segments, info = model.transcribe(y, word_timestamps=True, vad_filter=True, temperature=0.0, condition_on_previous_text=False)
     words: list[dict[str, Any]] = []
     text_parts: list[str] = []
     for seg in segments:

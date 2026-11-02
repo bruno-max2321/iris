@@ -359,3 +359,38 @@ def test_transcript_repairs_glued_words_and_is_idempotent():
     assert t["t0000"]["text_ocr"] == "He climbedontoa" and t["t0000"]["text"] == "He climbed onto a"
     textocr.repair_with_transcript(doc, None)  # transcript gone: back to the OCR reading
     assert t["t0000"]["text"] == "He climbedontoa" and "text_source" not in t["t0000"]
+
+
+def test_motion_on_twos_is_a_pan_and_a_glitch_is_not():
+    import numpy as np
+
+    from iris import motion
+
+    w, fps = 192, 24.0
+    still = {"dx": 0.0, "dy": 0.0, "div": 0.0, "mag": 0.0}
+    step = {"dx": -2.0, "dy": 0.0, "div": 0.0, "mag": 2.0}
+    sharp = np.full(25, 100.0)
+    # animation on twos: the picture moves every other frame, so the median pair is still
+    on_twos = [dict(step) if i % 2 else dict(still) for i in range(24)]
+    assert motion.classify(on_twos, sharp, w, fps)["class"] == "pan_right"
+    # a static shot with one glitched pair stays static
+    glitch = [dict(still) for _ in range(24)]
+    glitch[10] = {"dx": 40.0, "dy": -30.0, "div": 3.0, "mag": 50.0}
+    assert motion.classify(glitch, sharp, w, fps)["class"] == "static"
+    assert motion.event_pairs([{"type": "flash", "frame_first": 10, "length_frames": 1},
+                               {"type": "freeze", "frame_first": 20, "length_frames": 30}]) == {10, 11}
+
+
+def test_outputs_of_an_older_method_version_are_recomputed(ws):
+    out, ref = _analyze(ws, "pan_right.mp4")
+    a = out["job"]["asset_id"]
+    m = _j(ref / "motion.json")
+    m["method_version"] = "motion_phasecorr@0.0.1"
+    (ref / "motion.json").write_text(json.dumps(m))
+    text_before = (ref / "text.done.json").stat().st_mtime_ns
+    out = analyze.analyze(a, workspace=ws)
+    assert out["recomputed_stale_stages"] == ["motion"]
+    from iris import motion
+    assert _j(ref / "motion.json")["method_version"] == motion.METHOD_VERSION
+    assert (ref / "text.done.json").stat().st_mtime_ns == text_before  # other checkpoints are kept
+    assert "recomputed_stale_stages" not in analyze.analyze(a, workspace=ws)

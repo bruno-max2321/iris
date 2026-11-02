@@ -1,7 +1,7 @@
 {
  "schema_version": "1.0.0",
  "name": "vfr_mixed",
- "frozen_at": "2026-11-02T02:27:46+00:00",
+ "frozen_at": "2026-11-02T13:59:24+00:00",
  "iris_version": "0.1.0",
  "pipeline_version": "m2.1",
  "source": {
@@ -26,7 +26,7 @@
   "montage.cuts_per_s": 0.0,
   "events": [],
   "motion.class": [
-   "pan_left"
+   "tilt_up"
   ],
   "light.key": [
    "mid_key"

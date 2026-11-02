@@ -87,6 +87,31 @@ def stage_measure(src: Path, ref_dir: Path, manifest: dict[str, Any], index: dic
     return result
 
 
+def stage_versions() -> dict[str, tuple[str, str]]:
+    """stage -> (output file carrying `method_version`, current method version)."""
+    from . import audio, motion, regions, shots, textocr
+
+    return {"shots": ("shots.json", shots.METHOD_VERSION), "motion": ("motion.json", motion.METHOD_VERSION),
+            "text": ("text.json", textocr.METHOD_VERSION), "regions": ("color.json", regions.METHOD_VERSION),
+            "audio": ("audio.json", audio.METHOD_VERSION)}
+
+
+def stale_stages(ref_dir: Path) -> list[str]:
+    """Checkpointed stages whose output was written by another method version than the code now has: a
+    checkpoint must never keep an output the current code would not produce."""
+    out = []
+    for name, (fname, version) in stage_versions().items():
+        p = ref_dir / fname
+        if (ref_dir / f"{name}.done.json").exists() and p.exists():
+            try:
+                have = json.loads(p.read_text(encoding="utf-8")).get("method_version")
+            except (OSError, json.JSONDecodeError):
+                have = None
+            if have != version:
+                out.append(name)
+    return out
+
+
 STAGE_OUTPUTS = {"shots": ["shots.json", "events.json"], "motion": ["motion.json"], "text": ["text.json"],
                  "regions": ["color.json"], "audio": ["audio.json"], "sheets": ["sheets.json"]}
 
@@ -152,7 +177,8 @@ def run_derived_stages(src: Path, ref_dir: Path, manifest: dict[str, Any], index
     work.mkdir(exist_ok=True)
 
     def do_motion():
-        doc = motion.run(src, dw, dh, shot_list, frames, fps)
+        events = (_read(ref_dir / "events.json") if (ref_dir / "events.json").exists() else {}).get("events")
+        doc = motion.run(src, dw, dh, shot_list, frames, fps, events=events)
         _write(ref_dir / "motion.json", doc)
         classes: dict[str, int] = {}
         for s in doc["shots"]:
@@ -272,6 +298,9 @@ def analyze(asset_id: str, mode: str = "economy", workspace: Path | None = None,
         job, created = store.create_or_get_job(key, asset_id, "analyze", mode)
         ref_dir = store.workspace / "refs" / asset_id
         cov_path = ref_dir / "coverage.json"
+        stale = [] if created else stale_stages(ref_dir)
+        if stale and not force:
+            force, stages = True, stale  # recompute what older code wrote, plus its consumers
         if force and not created:
             # keep index and per-frame measurement (versioned in the job key); recompute the derived stages
             # asked for (default all) plus the stages that consume their output
@@ -290,7 +319,10 @@ def analyze(asset_id: str, mode: str = "economy", workspace: Path | None = None,
             return {"job": job, "created": False, "coverage": cov, "stages": cov.get("stages")}
         try:
             with store.heavy_job_lock():
-                return _run(store, job, manifest, ref_dir, mode)
+                res = _run(store, job, manifest, ref_dir, mode)
+                if stale:
+                    res["recomputed_stale_stages"] = stale
+                return res
         except BlockingIOError:
             raise AnalyzeError("another heavy job holds the lock", "locked")
     finally:

@@ -9,10 +9,12 @@ secrets/
 db/
 artifacts/
 refs/
-styles/*/build_log.json
 checks/
 ledger/
 /golden/
+proposals/
+styles/*/
+*.egg-info/
 # generated fixtures (regenerate with tools/make_fixtures.sh)
 fixtures/synthetic/*.mp4
 fixtures/synthetic/*.png
